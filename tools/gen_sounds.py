@@ -4,7 +4,7 @@ import wave
 import os
 import random
 
-def generate_instrumental_wave(filename, duration, notes, volume=0.5, instrument_type="koto"):
+def generate_elegant_tuplet(filename, duration, notes, volume=0.5, instrument_type="koto"):
     sample_rate = 44100
     num_samples = int(duration * sample_rate)
     
@@ -21,52 +21,52 @@ def generate_instrumental_wave(filename, duration, notes, volume=0.5, instrument
                 if t < start_time: continue
                 dt = t - start_time
                 
-                # Koto/Shamisen Timbre: Strong fundamental + non-harmonic overtones
-                # Shamisen has a "buzzing" quality (Sawari)
-                # Koto has a bright, metallic pluck
-                
-                # Base tone
+                # Base tone + Harmonics
                 n_val = math.sin(2.0 * math.pi * freq * dt)
-                # Overtones
-                n_val += 0.5 * math.sin(2.0 * math.pi * freq * 2.0 * dt) # Octave
-                n_val += 0.25 * math.sin(2.0 * math.pi * freq * 3.01 * dt) # Sharp 3rd harmonic
-                n_val += 0.1 * math.sin(2.0 * math.pi * freq * 4.0 * dt)
+                n_val += 0.4 * math.sin(2.0 * math.pi * freq * 2.01 * dt)
+                n_val += 0.2 * math.sin(2.0 * math.pi * freq * 3.0 * dt)
                 
                 if instrument_type == "shamisen":
-                    # Add "Sawari" buzz (slight distortion/noise)
-                    buzz = (random.random() * 2.0 - 1.0) * 0.1 * math.exp(-20.0 * dt)
-                    n_val += buzz
+                    # Snappier attack and slight buzz
+                    n_val += (random.random() * 2.0 - 1.0) * 0.05 * math.exp(-40.0 * dt)
+                    decay_rate = 12.0
+                else:
+                    # Softer Koto decay
+                    decay_rate = 8.0
                 
-                # Sharp Pluck Envelope (Fast attack, rapid initial decay, long tail)
-                attack = 0.005
+                # Elegant Envelope
+                attack = 0.004
                 if dt < attack:
                     env = dt / attack
                 else:
-                    # Characteristic string decay
-                    env = math.exp(-6.0 * dt / duration) * (1.0 / (1.0 + 10.0 * dt))
+                    env = math.exp(-decay_rate * dt)
                 
                 val += n_val * note_vol * env
 
             final_val = val * volume
+            # Soft clipping
             final_val = max(-1.0, min(1.0, final_val))
             sample = int(final_val * 32767)
             f.writeframes(struct.pack('h', sample))
 
-# 1. Move: Low Koto pluck (C3 ~130Hz)
-generate_instrumental_wave('assets/sounds/move.wav', 0.4, [(130.81, 0.0, 1.0)], volume=0.6, instrument_type="koto")
+# 1. Move: A slightly higher but still warm and subtle Koto doublet
+move_notes = [(164.81, 0.0, 0.4), (246.94, 0.08, 0.2)] # E3 -> B3
+generate_elegant_tuplet('assets/sounds/move.wav', 0.5, move_notes, volume=0.2, instrument_type="koto")
 
-# 2. Capture: Snappy Shamisen strike (higher tension)
-generate_instrumental_wave('assets/sounds/capture.wav', 0.4, [(196.00, 0.0, 1.0)], volume=0.7, instrument_type="shamisen")
+# 2. Capture: A warm Shamisen doublet at lower frequency
+cap_notes = [(110.0, 0.0, 1.0), (146.83, 0.08, 0.8)] # A2 -> D3
+generate_elegant_tuplet('assets/sounds/capture.wav', 0.5, cap_notes, volume=0.35, instrument_type="shamisen")
 
-# 3. Promote: A very subtle, delicate Koto ripple (high harmonics)
-promote_notes = [(1760, i*0.08, 0.4 - i*0.05) for i in range(4)]
-generate_instrumental_wave('assets/sounds/promote.wav', 1.0, promote_notes, volume=0.15, instrument_type="koto")
+# 3. Promote: A very warm, low Koto triplet ripple
+prom_notes = [(98.0, 0.0, 0.4), (130.81, 0.07, 0.3), (164.81, 0.14, 0.2)] # G2 -> C3 -> E3
+generate_elegant_tuplet('assets/sounds/promote.wav', 1.0, prom_notes, volume=0.2, instrument_type="koto")
 
-# 4. Check: Resonant Koto Octave (A4 + A5)
-generate_instrumental_wave('assets/sounds/check.wav', 1.0, [(440, 0.0, 1.0), (880, 0.0, 0.5)], volume=0.5, instrument_type="koto")
+# 4. Check: A deep, resonant Koto tuplet
+check_notes = [(82.41, 0.0, 0.8), (110.0, 0.1, 0.6), (82.41, 0.25, 0.5)] # E2 -> A2 -> E2
+generate_elegant_tuplet('assets/sounds/check.wav', 1.2, check_notes, volume=0.4, instrument_type="koto")
 
-# 5. Checkmate: Solemn Shamisen sequence (Descending)
-mate_notes = [(146.83, 0.0, 1.0), (110.00, 0.3, 0.8), (73.41, 0.7, 0.6)]
-generate_instrumental_wave('assets/sounds/checkmate.wav', 2.0, mate_notes, volume=0.6, instrument_type="shamisen")
+# 5. Checkmate: A solemn Shamisen/Koto phrase (descending)
+mate_notes = [(220, 0.0, 0.8), (164.81, 0.2, 0.7), (110, 0.5, 0.6)] # A3 -> E3 -> A2
+generate_elegant_tuplet('assets/sounds/checkmate.wav', 2.0, mate_notes, volume=0.5, instrument_type="shamisen")
 
-print("Traditional Japanese instrumental sound effects (Koto/Shamisen) generated.")
+print("Subtle tuplet-based Japanese instrumental sounds generated.")
