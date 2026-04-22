@@ -16,7 +16,10 @@ func _ready() -> void:
 	_load_texture()
 
 func _load_texture() -> void:
-	if FileAccess.file_exists(wood_texture_path):
+	# On Android only the imported .ctex lives in the APK, not the raw
+	# .png — so FileAccess.file_exists() on the source path is false.
+	# ResourceLoader.exists() consults the .import sidecar.
+	if ResourceLoader.exists(wood_texture_path):
 		_wood_texture = load(wood_texture_path)
 		if _wood_texture:
 			queue_redraw()
