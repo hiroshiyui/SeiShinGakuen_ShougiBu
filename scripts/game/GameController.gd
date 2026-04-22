@@ -252,9 +252,28 @@ func _on_promo_canceled() -> void:
 
 func _commit_move(m: Dictionary) -> void:
 	var mover := "後手" if _core.side_to_move_gote() else "先手"
+	
+	# Determine if it's a capture BEFORE applying the move
+	var to_pos = m["to"]
+	var target_piece = _core.piece_at(int(to_pos.x), int(to_pos.y))
+	var is_capture: bool = target_piece != null
+	
 	if not bool(_core.apply_move(m)):
 		print("[game] rejected: %s" % m)
 		return
+	
+	# Sound Logic
+	if bool(_core.is_checkmate()):
+		SoundManager.play("checkmate")
+	elif bool(_core.is_check()):
+		SoundManager.play("check")
+	elif bool(m.get("promote", false)):
+		SoundManager.play("promote")
+	elif is_capture:
+		SoundManager.play("capture")
+	else:
+		SoundManager.play("move")
+
 	_log_move(mover, m)
 	_last_move = m.duplicate()
 	_clear_selection()
