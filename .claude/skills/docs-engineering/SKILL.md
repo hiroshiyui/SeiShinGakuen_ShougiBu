@@ -40,29 +40,34 @@ Avoid: marketing adjectives, feature lists that duplicate the code, changelogs (
 
 ### ROADMAP
 
-Answers "what order are we building this in, and what's the current slice?" — for contributors and stakeholders who want to know what comes next without reading the issue tracker.
+Answers "what order are we building this in, and what's the current phase?" — for contributors and stakeholders who want to know what comes next without reading the issue tracker.
 
-Structure:
-1. **Intro** — one paragraph on the sequencing philosophy (e.g. "small shippable slices, don't start N+1 until N works").
-2. **Numbered slices** — each slice has a short title, a goal stated in terms of observable behavior, and any load-bearing constraints that must be designed in at that slice (not bolted on later).
-3. **Out of scope** — optional, but useful if the project attracts "why don't you just…" suggestions.
+Structure (phase-with-checkboxes shape):
+
+1. **Goals & Non-Goals** — bullet list of what v1 includes and explicitly excludes.
+2. **Target stack / architecture** — tech choices table or short prose, so phases can reference them by name.
+3. **Repository layout (target)** — tree diagram of where code will live once the project matures, even if directories don't exist yet.
+4. **Phase plan** — numbered `### Phase N — Title` sections, in dependency order. Each phase contains:
+   - **Deliverable:** one sentence stating observable behavior at the end of the phase.
+   - A `- [ ]` GitHub-flavored checkbox list of the sub-tasks.
+   - **Done when:** one sentence defining the exit criterion (how you know the phase is shipped).
+5. **Key technical decisions & risks** — each with a short mitigation. Anything load-bearing across phases belongs here, not buried in a phase.
+6. **Testing strategy** — one paragraph per test layer.
+7. **Milestones table** — `| tag | content |` mapping git tags (e.g. `v0.3-rust-core`) to the phase whose completion they mark.
+8. **Open Questions** — `- [ ]` list of decisions deferred until they're needed. Don't invent answers; surface them.
 
 Rules:
 - One roadmap per repo. Don't fork it into `docs/roadmap-v2.md` — edit in place.
-- Slices are ordered by dependency, not priority. If slice 5 depends on slice 3, it must come after.
-- Don't put dates on slices unless there's a real external deadline. Fighting-game-engine time is not calendar time.
-- Decisions that affect *every* slice (determinism, licensing, input abstraction in this repo) belong in the intro or in slice 1, not scattered.
+- Phases are ordered by dependency, not priority. If phase 5 depends on phase 3, it must come after.
+- Don't put dates on phases unless there's a real external deadline.
+- A single `*Last updated: YYYY-MM-DD*` line at the bottom is fine and useful; per-phase dates are not.
+- Decisions that affect *every* phase (determinism, licensing, target platform) belong in "Key technical decisions" or the architecture section, not scattered into phases.
 
-**When a slice (or sub-task inside a slice) is done:** update `ROADMAP.md` in the same change that delivers the work. Don't defer it to a follow-up commit — the roadmap drifts out of sync within days otherwise.
+**When a sub-task inside a phase is done:** tick its checkbox (`- [x]`) in the same change that delivers the work. Don't defer — the roadmap drifts out of sync within days.
 
-1. **Mark it done** in the heading: `## 1. Rust GDExtension scaffold ✅` (or `[done]` — pick one convention and keep it consistent across the file).
-2. **Summarize what actually shipped** in 1–3 bullets directly under the heading, replacing the forward-looking prose. Focus on what a future reader needs to know:
-   - Concrete deliverables (classes, files, crates added).
-   - Decisions that were made during the slice and are now load-bearing (e.g. "picked `I32F32` as the sim numeric type"). These may also warrant an ADR.
-   - Any scope that was *deferred* out of the slice — note it explicitly so it isn't lost.
-3. **Keep the slice in place.** Don't renumber, don't move to a separate "done" section. The roadmap is also a log; order and numbering are stable references.
-4. **Don't delete the original intent.** If the original description is useful context, move it under a `Original plan:` sub-bullet rather than overwriting it.
-5. If the slice shipped *differently* than planned (scope changed, approach pivoted), say so in one line. Silent rewrites hide useful history.
+**When an entire phase is done:** append ` ✅` to the phase heading (pick one convention — ✅ or `[done]` — and keep it consistent across the file). Do not renumber or move the phase; the numbering is a stable reference used by the milestones table and by git tags.
+
+Optional, when it adds value: under a completed phase heading, add a one-line note if the phase shipped *differently* than planned (scope changed, approach pivoted). Silent rewrites hide useful history. Don't rewrite the checkbox list into prose — leave the ticked boxes as the log.
 
 Avoid: vague aspirations ("better performance"), marketing bullets, anything that belongs in an ADR (decisions) or CHANGELOG (what already shipped, with dates).
 
