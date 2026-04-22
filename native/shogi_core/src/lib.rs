@@ -1,7 +1,9 @@
 mod board;
 mod encode;
+mod mcts;
 mod move_index;
 mod movegen;
+mod nn;
 mod rules;
 mod sfen;
 mod types;
@@ -11,10 +13,15 @@ mod parity_tests;
 #[cfg(test)]
 mod tests;
 
+use std::path::PathBuf;
+
 use godot::prelude::*;
 
 use crate::board::Board;
+use crate::mcts::Searcher;
+use crate::nn::NeuralNet;
 use crate::rules::{SennichiteStatus, detect_sennichite, is_check, is_checkmate, jishogi_points, king_entered, legal_drops, legal_moves_from};
+use crate::sfen::parse_sfen;
 use crate::types::{Color, Kind, Move, Square};
 
 struct ShogiCoreExt;
@@ -26,12 +33,13 @@ unsafe impl ExtensionLibrary for ShogiCoreExt {}
 #[class(base=RefCounted)]
 pub struct ShogiCore {
     board: Board,
+    nn: Option<NeuralNet>,
 }
 
 #[godot_api]
 impl IRefCounted for ShogiCore {
     fn init(_base: Base<RefCounted>) -> Self {
-        Self { board: Board::default() }
+        Self { board: Board::default(), nn: None }
     }
 }
 
@@ -178,6 +186,64 @@ impl ShogiCore {
     #[func]
     fn jishogi_points(&self, is_gote: bool) -> i64 {
         jishogi_points(&self.board, Color::from_gote(is_gote)) as i64
+    }
+
+    // --- SFEN import --------------------------------------------------------
+
+    #[func]
+    fn load_sfen(&mut self, sfen: GString) -> bool {
+        match parse_sfen(&sfen.to_string()) {
+            Ok(b) => {
+                self.board = b;
+                true
+            }
+            Err(e) => {
+                godot_warn!("load_sfen failed: {e}");
+                false
+            }
+        }
+    }
+
+    // --- AI -----------------------------------------------------------------
+
+    #[func]
+    fn load_model(&mut self, path: GString) -> bool {
+        match NeuralNet::load(&PathBuf::from(path.to_string())) {
+            Ok(nn) => {
+                self.nn = Some(nn);
+                true
+            }
+            Err(e) => {
+                godot_warn!("load_model failed: {e}");
+                false
+            }
+        }
+    }
+
+    #[func]
+    fn has_model(&self) -> bool {
+        self.nn.is_some()
+    }
+
+    /// Run MCTS from the current position and return the best move as a
+    /// `Dictionary` (same shape as `legal_moves_from`). Returns `null` if
+    /// no model is loaded or the search found no legal moves.
+    ///
+    /// This is synchronous and will block for the duration of the search.
+    /// GDScript is expected to call it from a `Thread` to avoid UI stalls.
+    #[func]
+    fn think_best_move(&mut self, playouts: i64) -> Variant {
+        let Some(nn) = self.nn.as_ref() else {
+            godot_warn!("think_best_move called before load_model");
+            return Variant::nil();
+        };
+        let n = playouts.max(1) as u32;
+        let mut searcher = Searcher::new(nn);
+        let mv = searcher.best_move(&mut self.board, n);
+        match mv {
+            Some(m) => move_to_dict(m).to_variant(),
+            None => Variant::nil(),
+        }
     }
 }
 

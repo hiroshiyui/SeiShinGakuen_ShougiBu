@@ -161,22 +161,29 @@ Shipped differently:
 - Exposed API is superset of the target shape (adds `clear_board / place / set_hand_count / set_side_to_move_gote / seal_initial_position` for test setup and a future editor; `legal_moves` is split into `legal_moves_from(file, rank)` + `legal_drops(kind)` matching the tap-driven UI flow).
 - Perft suite verifies depth 1 (30) and depth 2 (900) from the starting position; deeper fixtures deferred until AI strength tuning needs them.
 
-### Phase 5 — AI: ONNX + MCTS (desktop)
+### Phase 5 — AI: ONNX + MCTS (desktop) ✅
 **Deliverable:** playable vs. AI on desktop; configurable playout budget.
 
-- [ ] Add `ort` dep; bundle `models/bonanza.onnx`
-- [ ] `encode.rs`: implement the exact 45-plane board encoding used in ShogiDojo (verify against Python by diffing a tensor on a known SFEN)
-- [ ] Implement the 139-plane move index (match ShogiDojo's convention)
-- [ ] `nn.rs`: load session, run `(45,9,9) → (policy_logits, value)`
-- [ ] `mcts.rs`: PUCT MCTS with Dirichlet noise at root, virtual loss optional, single-threaded first
-- [ ] Expose `think(ms|playouts) -> best_move` to GDScript
-- [ ] Main-menu mode select: Human vs Human / Human (sente) vs AI / Human (gote) vs AI
-- [ ] Settings: playout count (128 / 400 / 1600), temperature
-- [ ] Thinking runs on Rust thread; GDScript shows spinner, awaits via signal
+- [x] Add `ort` dep; bundle `models/bonanza.onnx`
+- [x] `encode.rs`: implement the exact 45-plane board encoding used in ShogiDojo (verify against Python by diffing a tensor on a known SFEN)
+- [x] Implement the 139-plane move index (match ShogiDojo's convention)
+- [x] `nn.rs`: load session, run `(45,9,9) → (policy_logits, value)`
+- [x] `mcts.rs`: PUCT MCTS with Dirichlet noise at root, virtual loss optional, single-threaded first
+- [x] Expose `think(ms|playouts) -> best_move` to GDScript
+- [x] Main-menu mode select: Human vs Human / Human (sente) vs AI / Human (gote) vs AI
+- [x] Settings: playout count (128 / 400 / 1600), temperature
+- [x] Thinking runs on Rust thread; GDScript shows spinner, awaits via signal
 
 **Done when:** AI plays legal moves, beats a random-mover consistently, and responds within ~2s at default budget.
 
 **Encoding-parity test (critical):** a small Python script in `tools/` dumps `(planes, policy_index)` for 20 diverse SFENs using ShogiDojo's code; Rust test loads the same SFENs and asserts byte-exact match.
+
+Shipped differently:
+- **Inference runtime is `tract`, not `ort`.** `ort` rc builds had a TLS-config regression and the v2 ep-vitis bindings mismatch against the sys crate across rc.10/rc.11/rc.12, costing hours of toolchain pain for a 1.3 MB model. `tract-onnx` is pure-Rust, statically links with no shared-lib dependency, loads the Bonanza model identically, and makes Phase 6 cross-compilation trivial. Inference cost: ~5 ms per forward pass on desktop. Revisit `ort` only if Phase 6 arm64 throughput is inadequate.
+- **Fixture set is 13 SFENs**, not 20 — `tools/gen_fixtures.py` uses ShogiDojo's actual `encode_position` / `encode_move`. Tested on starting position (both colours-to-move), 8 mid-opening positions, a promoted-pieces-with-hand case, an edge-rank lance, and two kings-in-corners. All produce byte-exact tensor and u32-exact move-index output.
+- **Temperature knob is not exposed yet** — MCTS currently always picks the most-visited root move. Sampling with a temperature is a one-line change in `Searcher::best_move`; defer until AI-strength tuning surfaces a need.
+- **Async thinking runs on a Godot `Thread`**, not a Rust-owned thread. `ShogiCore::think_best_move` is synchronous; GameController spawns a `Thread` for it and polls `is_alive()` / `wait_to_finish()` in `_process`. Simpler than managing Rust threads across the FFI boundary.
+- **Model path is dev-only at `res://models/bonanza.onnx`.** Android (Phase 6) will need to extract from the PCK into `user://` at first launch before `load_model` can reach it.
 
 ### Phase 6 — Android build
 **Deliverable:** signed APK runs on device, AI works offline.

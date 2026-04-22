@@ -11,9 +11,13 @@ config_version=5
 [application]
 
 config/name="seishingakuen_shougibu"
-run/main_scene="res://scenes/Main.tscn"
+run/main_scene="res://scenes/MainMenu.tscn"
 config/features=PackedStringArray("4.6", "Mobile")
 config/icon="res://icon.svg"
+
+[autoload]
+
+Settings="*res://scripts/autoload/Settings.gd"
 
 [display]
 

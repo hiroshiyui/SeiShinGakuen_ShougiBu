@@ -13,6 +13,11 @@ const HandViewScript := preload("res://scripts/game/HandView.gd")
 @onready var _promo_dialog: ConfirmationDialog = %PromotionDialog
 @onready var _gameover_dialog: AcceptDialog = %GameOverDialog
 @onready var _undo_btn: Button = %UndoButton
+@onready var _thinking_label: Label = %ThinkingLabel
+
+var _think_thread: Thread
+var _thinking: bool = false
+var _ai_enabled: bool = false
 
 const _RANK_KANJI := ["", "一", "二", "三", "四", "五", "六", "七", "八", "九"]
 
@@ -30,6 +35,7 @@ func _ready() -> void:
 		push_error("ShogiCore GDExtension not loaded — check addons/shogi_core.gdextension and native/bin")
 		return
 	_core = ClassDB.instantiate("ShogiCore")
+	_load_ai_if_needed()
 	_board_view.square_tapped.connect(_on_board_tapped)
 	_sente_hand.piece_tapped.connect(_on_hand_tapped.bind(false))
 	_gote_hand.piece_tapped.connect(_on_hand_tapped.bind(true))
@@ -41,6 +47,44 @@ func _ready() -> void:
 	_sente_hand.is_gote = false
 	_gote_hand.is_gote = true
 	_refresh_all()
+	_maybe_start_ai_turn()
+
+func _load_ai_if_needed() -> void:
+	if Settings.mode == Settings.Mode.H_VS_H:
+		_ai_enabled = false
+		return
+	var abs_path: String = ProjectSettings.globalize_path(Settings.model_path)
+	if not bool(_core.load_model(abs_path)):
+		push_error("load_model failed: %s" % abs_path)
+		_ai_enabled = false
+		return
+	_ai_enabled = true
+
+func _maybe_start_ai_turn() -> void:
+	if _game_over or _thinking or not _ai_enabled:
+		return
+	var stm_gote: bool = _core.side_to_move_gote()
+	if not Settings.side_is_ai(stm_gote):
+		return
+	_thinking = true
+	_thinking_label.visible = true
+	_undo_btn.disabled = true
+	_think_thread = Thread.new()
+	_think_thread.start(_run_ai_think.bind(Settings.ai_playouts))
+
+func _run_ai_think(playouts: int) -> Variant:
+	return _core.think_best_move(playouts)
+
+func _process(_delta: float) -> void:
+	if _thinking and _think_thread != null and not _think_thread.is_alive():
+		var mv: Variant = _think_thread.wait_to_finish()
+		_thinking = false
+		_thinking_label.visible = false
+		if mv == null:
+			push_warning("AI returned no move")
+			_refresh_all()
+			return
+		_commit_move(mv)
 
 func _refresh_all() -> void:
 	_board_view.render(_core)
@@ -65,7 +109,9 @@ func _clear_selection() -> void:
 	_gote_hand.render(_core)
 
 func _on_board_tapped(file: int, rank: int) -> void:
-	if _game_over:
+	if _game_over or _thinking:
+		return
+	if _ai_enabled and Settings.side_is_ai(_core.side_to_move_gote()):
 		return
 	var key := Vector2i(file, rank)
 	match _sel_state:
@@ -77,7 +123,9 @@ func _on_board_tapped(file: int, rank: int) -> void:
 			_handle_drop_target(key)
 
 func _on_hand_tapped(kind: int, is_gote: bool) -> void:
-	if _game_over or is_gote != _core.side_to_move_gote():
+	if _game_over or _thinking or is_gote != _core.side_to_move_gote():
+		return
+	if _ai_enabled and Settings.side_is_ai(is_gote):
 		return
 	_clear_selection()
 	var drops: Array = _core.legal_drops(kind)
@@ -188,6 +236,7 @@ func _commit_move(m: Dictionary) -> void:
 	_clear_selection()
 	_refresh_all()
 	_check_end_state()
+	_maybe_start_ai_turn()
 
 func _check_end_state() -> void:
 	if bool(_core.is_checkmate()):
