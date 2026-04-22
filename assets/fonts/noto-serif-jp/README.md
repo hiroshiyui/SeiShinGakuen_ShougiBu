@@ -2,32 +2,38 @@
 
 Japanese serif webfont used as the game's primary UI typeface.
 
-## Files vendored
+## Files
 
-- `NotoSerifCJKjp-Medium.otf` (25 MB) — default UI weight.
-- `NotoSerifCJKjp-Bold.otf` (25 MB) — for emphasis (`Bold` theme slot).
-- `OFL.txt` — SIL Open Font License v1.1 (upstream).
+- `NotoSerifCJKjp-Medium-full.otf` — upstream (25 MB). Source of truth
+  in the repo; excluded from the APK.
+- `NotoSerifCJKjp-Medium.otf` — subset (79 KB), default UI weight.
+  Shipped in the APK.
+- `NotoSerifCJKjp-Bold-full.otf` — upstream (25 MB). Excluded from APK.
+- `NotoSerifCJKjp-Bold.otf` — subset (79 KB), used for the bold slot
+  on Labels and as the default Button font so CTAs render bold.
+- `OFL.txt` — upstream SIL Open Font License v1.1.
+
+Subsets are re-derived by scanning `scripts/` and `scenes/` for
+Japanese characters + an ASCII safety range + a punctuation / digits
+safety set — see `tools/build_font_subsets.sh`.
 
 ## Source
 
-Files are the upstream JP subfonts from the Noto CJK project:
-<https://github.com/notofonts/noto-cjk>
-
-Google Fonts' distribution at
-<https://fonts.google.com/noto/specimen/Noto+Serif+JP> is a repackage of
-the same JP subfont (different filename metadata, effectively identical
-glyph set). Either works; the upstream files are vendored here so there
-is no hidden dependency on the Google Fonts CDN.
+Upstream OTFs from <https://github.com/notofonts/noto-cjk>
+(`Serif/OTF/Japanese/`). Google Fonts' distribution at
+<https://fonts.google.com/noto/specimen/Noto+Serif+JP> is a repackage
+of the same JP subfont (identical glyph set, different filename
+metadata); the upstream files are vendored here to avoid a hidden
+dependency on the Google Fonts CDN.
 
 ## License
 
-SIL Open Font License v1.1. Full text in [`OFL.txt`](./OFL.txt). Same
-license as the Fude Goshirae piece font — permissive redistribution
-inside application bundles, no standalone sale.
+SIL Open Font License, Version 1.1 — see [`OFL.txt`](./OFL.txt). The
+subsets are Modified Versions under the OFL and inherit the license;
+`OFL.txt` is distributed alongside them.
 
-## Size note
+Re-generate the subsets with:
 
-~50 MB total is a lot to ship; the game only uses a small slice of the
-glyph set. Phase 7 scheduled task: subset both weights to the actual UI
-text via the `pyftsubset`-driven `tools/` script — expected output
-~200 KB per weight.
+```bash
+./tools/build_font_subsets.sh
+```

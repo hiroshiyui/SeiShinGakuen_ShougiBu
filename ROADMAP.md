@@ -210,12 +210,15 @@ Shipped differently:
 - **Signing:** debug keystore only; release signing deferred to Phase 7 polish alongside the Play Store story.
 
 ### Phase 7 — Polish
-- [ ] **Subset Fude Goshirae font.** Ships today as a 40 MB full-CJK OTF, ~18 MB imported into the APK — the single biggest size win available. Only ~15 glyphs are actually rendered (`歩香桂銀金角飛王玉とう杏圭全馬龍`). Approach: a `tools/subset_font.py` wrapper around `pyftsubset` (`pip install fonttools`) that re-runs deterministically, plus `--drop-tables+=FFTM,DSIG,GPOS,GSUB,MATH` to strip unused tables. Expected output: **tens of KB** (a ~30 MB APK shrink). Stretch: migrate piece glyphs to pre-rendered sprite atlas (see sprite task below) and drop the font entirely.
-- [ ] **String-scan-driven font subsetting for UI fonts.** Classic console-game / VN pattern: when we vendor a UI font (bigger glyph budget than the brush font's 15 piece kanji), don't hand-curate the character list — derive it mechanically. Two parts:
-    - *Centralise user-facing text* in one file (e.g. `scripts/autoload/Strings.gd`) as `const` declarations. Makes the subsetter's input unambiguous and gives us a localisation seam for free.
-    - *Scan + subset* script (`tools/build_font_subset.sh`): `grep -oE` the Japanese ranges + ASCII from the strings file, union with an "always include" set (`0-9`, punctuation, any `%d`-injected substitutions), pipe to `pyftsubset --text-file=…`. Re-runs every time the strings file changes.
+- [x] **Subset Fude Goshirae piece font + scan-driven subsetting for the UI font.** Both done in `tools/build_font_subsets.sh`. Piece font is subset to 15 fixed glyphs; Noto Serif JP Medium + Bold are subset against all Japanese characters grep'd from `scripts/` + `scenes/` plus an always-include ASCII range (`0020-007E`) and a safety set for runtime-injected glyphs (digits, `→`, `×`, Japanese punctuation). Re-run after editing UI strings.
 
-    Rationale: catches new characters automatically as the UI evolves, without anyone remembering to edit a `--text=` argument. Watch out for runtime-formatted strings — `"… %d手目" % n` only has the literal in source, so digits must be in the always-include set.
+    Results: Fude Goshirae 39 MB → 175 KB; Noto Medium 24 MB → 79 KB; Noto Bold 25 MB → 79 KB. APK dropped from 103 MB to **42 MB** (the other fat items are `libgodot_android.so` and `libshogi_core.so` which are already at release/strip settings).
+
+    Originals live in repo under `assets/fonts/**/*-full.otf`, excluded from the APK by `export_presets.cfg`'s `exclude_filter="*-full.otf"`. Script reads from `-full.otf` and writes to the canonical filename referenced by `assets/themes/ui.tres` and `scripts/game/Square.gd`.
+
+    Watch-out: runtime-formatted strings (`"… %d手目" % n`) only have the literal in source, so digits are in the safety set. Add new characters there if future UI gets them via code rather than literals.
+
+    Stretch still open: migrate piece glyphs to pre-rendered sprite atlas (see sprite task below) and drop the font entirely.
 - [ ] Move history panel + scrubbing
 - [ ] Multi-level undo + resign button
 - [ ] Sound: move / capture / promote / check / checkmate
