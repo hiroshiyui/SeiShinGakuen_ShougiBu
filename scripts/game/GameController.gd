@@ -263,16 +263,20 @@ func _commit_move(m: Dictionary) -> void:
 		return
 	
 	# Sound Logic
-	if bool(_core.is_checkmate()):
-		SoundManager.play("checkmate")
-	elif bool(_core.is_check()):
-		SoundManager.play("check")
-	elif bool(m.get("promote", false)):
-		SoundManager.play("promote")
-	elif is_capture:
-		SoundManager.play("capture")
+	var sm = get_node_or_null("/root/SoundManager")
+	if sm:
+		if bool(_core.is_checkmate()):
+			sm.play("checkmate")
+		elif bool(_core.is_check()):
+			sm.play("check")
+		elif bool(m.get("promote", false)):
+			sm.play("promote")
+		elif is_capture:
+			sm.play("capture")
+		else:
+			sm.play("move")
 	else:
-		SoundManager.play("move")
+		push_warning("SoundManager not found")
 
 	_log_move(mover, m)
 	_last_move = m.duplicate()
