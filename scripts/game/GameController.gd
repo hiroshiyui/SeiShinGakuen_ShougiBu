@@ -13,6 +13,8 @@ const HandViewScript := preload("res://scripts/game/HandView.gd")
 @onready var _promo_dialog: ConfirmationDialog = %PromotionDialog
 @onready var _gameover_dialog: AcceptDialog = %GameOverDialog
 @onready var _undo_btn: Button = %UndoButton
+@onready var _exit_btn: Button = %ExitButton
+@onready var _quit_dialog: ConfirmationDialog = %QuitDialog
 @onready var _thinking_label: Label = %ThinkingLabel
 
 var _think_thread: Thread
@@ -44,6 +46,8 @@ func _ready() -> void:
 	_promo_dialog.close_requested.connect(_on_promo_canceled)
 	_gameover_dialog.confirmed.connect(_on_restart)
 	_undo_btn.pressed.connect(_on_undo)
+	_exit_btn.pressed.connect(_on_exit_pressed)
+	_quit_dialog.confirmed.connect(_on_quit_confirmed)
 	_sente_hand.is_gote = false
 	_gote_hand.is_gote = true
 	get_viewport().size_changed.connect(_refit_board)
@@ -287,6 +291,18 @@ func _on_undo() -> void:
 	if bool(_core.undo_move()):
 		_clear_selection()
 		_refresh_all()
+
+func _on_exit_pressed() -> void:
+	_quit_dialog.popup_centered()
+
+func _on_quit_confirmed() -> void:
+	# Ensure any AI worker thread has finished before tearing down the
+	# scene — wait_to_finish on a live thread blocks, but abandoning a
+	# JoinHandle leaks.
+	if _thinking and _think_thread != null:
+		_think_thread.wait_to_finish()
+		_thinking = false
+	get_tree().change_scene_to_file("res://scenes/MainMenu.tscn")
 
 func _log_move(mover: String, m: Dictionary) -> void:
 	if m.has("drop_kind"):

@@ -53,6 +53,10 @@ unique_name_in_owner = true
 text = "待った"
 disabled = true
 
+[node name="ExitButton" type="Button" parent="Layout/StatusBar"]
+unique_name_in_owner = true
+text = "投了"
+
 [node name="ThinkingLabel" type="Label" parent="."]
 unique_name_in_owner = true
 visible = false
@@ -93,3 +97,10 @@ cancel_button_text = "不成"
 unique_name_in_owner = true
 title = "対局終了"
 ok_button_text = "再戦"
+
+[node name="QuitDialog" type="ConfirmationDialog" parent="."]
+unique_name_in_owner = true
+title = "投了"
+dialog_text = "投了してタイトル画面に戻りますか?"
+ok_button_text = "はい"
+cancel_button_text = "いいえ"
