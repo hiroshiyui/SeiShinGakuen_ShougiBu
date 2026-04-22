@@ -114,19 +114,23 @@ drops and promotion.
 
 **Done when:** can play a complete game to checkmate without violating movement rules.
 
-### Phase 3 — Full rule enforcement (GDScript)
+### Phase 3 — Full rule enforcement (GDScript) ✅
 **Deliverable:** all illegal moves are refused; game ends correctly.
 
-- [ ] `is_check(side)` using reverse-attack lookup from king square
-- [ ] Legal-move filter: no move may leave own king in check
-- [ ] 二歩 (nifu): cannot drop 歩 on a file that already has own unpromoted 歩
-- [ ] 打ち歩詰め (uchifuzume): cannot deliver mate with a dropped 歩
-- [ ] Checkmate / stalemate detection → game-over screen
-- [ ] 千日手 (sennichite): track position history by hashed SFEN; draw after 4-fold (perpetual-check variant = loss for checker)
-- [ ] 入玉 / 持将棋 (entering-king / impasse) — 27-point rule, basic handling
-- [ ] Undo last move (single-level) for convenience
+- [x] `is_check(side)` using reverse-attack lookup from king square
+- [x] Legal-move filter: no move may leave own king in check
+- [x] 二歩 (nifu): cannot drop 歩 on a file that already has own unpromoted 歩
+- [x] 打ち歩詰め (uchifuzume): cannot deliver mate with a dropped 歩
+- [x] Checkmate / stalemate detection → game-over screen
+- [x] 千日手 (sennichite): track position history by hashed SFEN; draw after 4-fold (perpetual-check variant = loss for checker)
+- [x] 入玉 / 持将棋 (entering-king / impasse) — 27-point rule, basic handling
+- [x] Undo last move (single-level) for convenience
 
 **Done when:** the engine cannot be tricked into an illegal state; verified with a test suite of SFEN fixtures.
+
+Shipped differently:
+- 入玉 is detection-only (`Rules.king_entered` + `Rules.jishogi_points`). No in-game claim button yet; deferred to Phase 7 polish along with a resign button.
+- Test harness is pure GDScript headless (`scripts/tests/rules_tests.gd` runnable via `godot --headless -s`) rather than a SFEN-import-driven fixture set — fixtures are constructed programmatically through `BoardState.clear_board() / place() / set_hand_count() / set_side_to_move() / seal_initial_position()`.
 
 ### Phase 4 — Rust core (GDExtension), desktop only
 **Deliverable:** move gen + rule checks run in Rust; GDScript calls into it.
