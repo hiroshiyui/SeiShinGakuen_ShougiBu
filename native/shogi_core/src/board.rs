@@ -67,6 +67,11 @@ pub struct Board {
     pub side_to_move: Color,
     pub log: Vec<LogEntry>,
     pub position_counts: HashMap<String, u32>,
+    /// Ply number of the first move reachable from this instance. For a
+    /// default starting position this is `1`; for a position imported via
+    /// SFEN it is the SFEN's trailing move number. `current_ply()` is
+    /// `starting_ply + log.len()`.
+    pub starting_ply: u32,
 }
 
 impl Default for Board {
@@ -86,7 +91,20 @@ impl Board {
             side_to_move: Color::Sente,
             log: Vec::new(),
             position_counts: HashMap::new(),
+            starting_ply: 1,
         }
+    }
+
+    #[inline]
+    pub fn current_ply(&self) -> u32 {
+        self.starting_ply + self.log.len() as u32
+    }
+
+    /// Number of times the *current* position has previously occurred —
+    /// i.e. the sennichite counter minus one (the current occurrence).
+    pub fn repetition_count(&self) -> u32 {
+        let key = crate::sfen::position_key(self);
+        self.position_counts.get(&key).copied().unwrap_or(0).saturating_sub(1)
     }
 
     pub fn reset_starting(&mut self) {
@@ -119,6 +137,7 @@ impl Board {
         self.side_to_move = Color::Sente;
         self.log.clear();
         self.position_counts.clear();
+        self.starting_ply = 1;
     }
 
     #[inline]

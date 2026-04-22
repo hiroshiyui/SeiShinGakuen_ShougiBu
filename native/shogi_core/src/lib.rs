@@ -1,9 +1,13 @@
 mod board;
+mod encode;
+mod move_index;
 mod movegen;
 mod rules;
 mod sfen;
 mod types;
 
+#[cfg(test)]
+mod parity_tests;
 #[cfg(test)]
 mod tests;
 
