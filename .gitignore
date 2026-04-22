@@ -5,3 +5,8 @@
 # Rust build artefacts
 native/**/target/
 native/bin/
+
+# Godot Android export artefacts
+/build/
+*.keystore
+*.jks

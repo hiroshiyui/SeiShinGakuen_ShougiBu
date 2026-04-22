@@ -46,15 +46,28 @@ func _ready() -> void:
 	_undo_btn.pressed.connect(_on_undo)
 	_sente_hand.is_gote = false
 	_gote_hand.is_gote = true
+	get_viewport().size_changed.connect(_refit_board)
+	_refit_board()
 	_refresh_all()
 	_maybe_start_ai_turn()
+
+# Board is a square sized to the smaller of (viewport_w - 2*gutter) and the
+# vertical slot left after the two hands + status bar. Recomputed on every
+# viewport size change so orientation / window-resize / split-screen stay fit.
+func _refit_board() -> void:
+	const GUTTER := 20.0
+	const VERTICAL_RESERVED := 72.0 + 72.0 + 40.0 + 8.0 * 3 + 16.0
+	var vp: Vector2 = get_viewport_rect().size
+	var side: float = min(vp.x - 2.0 * GUTTER, vp.y - VERTICAL_RESERVED)
+	side = clamp(side, 240.0, 1600.0)
+	_board_view.custom_minimum_size = Vector2(side, side)
 
 func _load_ai_if_needed() -> void:
 	if Settings.mode == Settings.Mode.H_VS_H:
 		_ai_enabled = false
 		return
-	var abs_path: String = ProjectSettings.globalize_path(Settings.model_path)
-	if not bool(_core.load_model(abs_path)):
+	var abs_path: String = Settings.model_absolute_path()
+	if abs_path == "" or not bool(_core.load_model(abs_path)):
 		push_error("load_model failed: %s" % abs_path)
 		_ai_enabled = false
 		return
@@ -94,7 +107,8 @@ func _refresh_all() -> void:
 	var mover := "後手" if side_gote else "先手"
 	var in_check: bool = _core.is_check()
 	_check_banner.visible = in_check and not _game_over
-	_status.text = "%s の手番 | SFEN: %s" % [mover, str(_core.to_sfen())]
+	var ply: int = int(_core.move_log_size()) + 1
+	_status.text = "%s の手番 (%d手目)" % [mover, ply]
 	_undo_btn.disabled = int(_core.move_log_size()) == 0 or _game_over
 
 func _clear_selection() -> void:

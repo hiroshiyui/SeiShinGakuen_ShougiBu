@@ -12,10 +12,11 @@ const PieceScript := preload("res://scripts/game/Piece.gd")
 var _selected_kind: int = -1
 
 func _ready() -> void:
-	if is_gote:
-		_row.pivot_offset = size * 0.5
-		_row.rotation = PI
-		resized.connect(func(): _row.pivot_offset = size * 0.5)
+	# Gote-side rotation previously flipped the row with rotation=PI; that
+	# turned out to cause the VBoxContainer layout to shift on every
+	# render. Keeping hand buttons upright for now; gote piece-kanji
+	# rotation lives in the board squares which do it correctly.
+	pass
 
 func render(core: Object) -> void:
 	for child in _row.get_children():

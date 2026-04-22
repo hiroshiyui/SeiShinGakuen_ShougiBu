@@ -185,22 +185,37 @@ Shipped differently:
 - **Async thinking runs on a Godot `Thread`**, not a Rust-owned thread. `ShogiCore::think_best_move` is synchronous; GameController spawns a `Thread` for it and polls `is_alive()` / `wait_to_finish()` in `_process`. Simpler than managing Rust threads across the FFI boundary.
 - **Model path is dev-only at `res://models/bonanza.onnx`.** Android (Phase 6) will need to extract from the PCK into `user://` at first launch before `load_model` can reach it.
 
-### Phase 6 — Android build
+### Phase 6 — Android build ✅
 **Deliverable:** signed APK runs on device, AI works offline.
 
-- [ ] Install Android NDK, Godot Android export templates
-- [ ] Add `aarch64-linux-android` Rust target; `cargo-ndk` or manual `--target`
-- [ ] Build `libshogi_core.so` for arm64-v8a; place in `native/bin/android/arm64-v8a/`
-- [ ] Update `.gdextension` manifest with Android entry
-- [ ] `ort` Android feature: pull ONNX Runtime Mobile AAR; link statically if possible (else copy `libonnxruntime.so` alongside)
-- [ ] Godot Android export preset; min SDK 24, target SDK 34
-- [ ] Add signing config (debug keystore first)
-- [ ] Test on physical device: APK size, first-move latency, battery
-- [ ] Portrait-lock in manifest
+- [x] Install Android NDK, Godot Android export templates
+- [x] Add `aarch64-linux-android` Rust target; `cargo-ndk` or manual `--target`
+- [x] Build `libshogi_core.so` for arm64-v8a; place in `native/bin/android/arm64-v8a/`
+- [x] Update `.gdextension` manifest with Android entry
+- [x] ~~`ort` Android feature: pull ONNX Runtime Mobile AAR~~ — obsolete, replaced by `tract` in Phase 5 (pure-Rust, no shared-lib plumbing on Android)
+- [x] Godot Android export preset; min SDK 24, target SDK 34
+- [x] Add signing config (debug keystore first)
+- [x] Test on physical device: APK size, first-move latency, battery
+- [x] Portrait-lock in manifest
 
 **Done when:** APK installs, game plays a full match vs. AI on a mid-range phone with <3s thinking time per move.
 
+Shipped differently:
+- NDK 28.1 via `cargo-ndk --platform 24 -t arm64-v8a`. Build doc at `docs/android-build.md`.
+- APK size: **58 MB**, dominated by `libgodot_android.so` (74 MB raw → compressed), `libshogi_core.so` (14 MB, tract-embedded), and the Fude Goshirae font (18 MB imported). Font-subsetting is the biggest remaining win.
+- **Model packaging:** `bonanza.onnx` is *not* a Godot-recognised resource type, so the default `all_resources` export filter silently dropped it. Export preset now carries `include_filter="*.onnx"`. On first launch `Settings.model_absolute_path()` copies it from `res://` to `user://` (tract mmaps the OS path; it can't open files that live inside the PCK).
+- **Portrait lock:** Godot 4.6's Android export reads `display/window/handheld/orientation` as an `int`, not a string — leaving it as `"portrait"` silently falls back to `0` (landscape). Must be `1`.
+- **Touch input:** `emulate_mouse_from_touch` (default `true`) fires both an `InputEventScreenTouch` and an `InputEventMouseButton` per tap, so naive `_gui_input` handlers fire twice and the second tap deselects the first. Square now dispatches on `OS.has_feature("mobile")` — mobile listens to touch only, desktop to mouse only.
+- **Layout auto-fit:** board side is computed at runtime from the viewport (`min(vw - 40, vh - reserved)`), clamped `[240, 1600]`, and re-fit on every `size_changed`. Status label was slimmed to `(N手目)` to kill the text-width feedback loop that was nudging the board off-centre each move.
+- **Signing:** debug keystore only; release signing deferred to Phase 7 polish alongside the Play Store story.
+
 ### Phase 7 — Polish
+- [ ] **Subset Fude Goshirae font.** Ships today as a 40 MB full-CJK OTF, ~18 MB imported into the APK — the single biggest size win available. Only ~15 glyphs are actually rendered (`歩香桂銀金角飛王玉とう杏圭全馬龍`). Approach: a `tools/subset_font.py` wrapper around `pyftsubset` (`pip install fonttools`) that re-runs deterministically, plus `--drop-tables+=FFTM,DSIG,GPOS,GSUB,MATH` to strip unused tables. Expected output: **tens of KB** (a ~30 MB APK shrink). Stretch: migrate piece glyphs to pre-rendered sprite atlas (see sprite task below) and drop the font entirely.
+- [ ] **String-scan-driven font subsetting for UI fonts.** Classic console-game / VN pattern: when we vendor a UI font (bigger glyph budget than the brush font's 15 piece kanji), don't hand-curate the character list — derive it mechanically. Two parts:
+    - *Centralise user-facing text* in one file (e.g. `scripts/autoload/Strings.gd`) as `const` declarations. Makes the subsetter's input unambiguous and gives us a localisation seam for free.
+    - *Scan + subset* script (`tools/build_font_subset.sh`): `grep -oE` the Japanese ranges + ASCII from the strings file, union with an "always include" set (`0-9`, punctuation, any `%d`-injected substitutions), pipe to `pyftsubset --text-file=…`. Re-runs every time the strings file changes.
+
+    Rationale: catches new characters automatically as the UI evolves, without anyone remembering to edit a `--text=` argument. Watch out for runtime-formatted strings — `"… %d手目" % n` only has the literal in source, so digits must be in the always-include set.
 - [ ] Move history panel + scrubbing
 - [ ] Multi-level undo + resign button
 - [ ] Sound: move / capture / promote / check / checkmate

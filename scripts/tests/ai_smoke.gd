@@ -8,7 +8,7 @@ func _initialize() -> void:
 		push_error("ShogiCore not registered")
 		quit(1); return
 	var core: Object = ClassDB.instantiate("ShogiCore")
-	var abs_path: String = ProjectSettings.globalize_path("res://models/bonanza.onnx")
+	var abs_path: String = Settings.model_absolute_path()
 	print("loading model from: %s" % abs_path)
 	var t0 := Time.get_ticks_msec()
 	if not bool(core.load_model(abs_path)):

@@ -23,13 +23,20 @@ func _ready() -> void:
 	_refresh_label_metrics()
 
 func _gui_input(event: InputEvent) -> void:
+	# On touchscreens `emulate_mouse_from_touch` also fires an
+	# InputEventMouseButton for each real InputEventScreenTouch, so we'd
+	# get two taps per gesture and the second one would deselect the
+	# first. Listen only to the native event type per platform.
 	var is_press := false
-	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
-		is_press = true
-	elif event is InputEventScreenTouch and event.pressed:
-		is_press = true
+	if OS.has_feature("mobile"):
+		if event is InputEventScreenTouch and event.pressed:
+			is_press = true
+	else:
+		if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
+			is_press = true
 	if is_press:
 		tapped.emit(file, rank)
+		accept_event()
 
 func set_piece(text: String, is_gote: bool) -> void:
 	_label.text = text
