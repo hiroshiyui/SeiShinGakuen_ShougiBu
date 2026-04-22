@@ -15,8 +15,7 @@ func _ready() -> void:
 	_highlight.visible = false
 	_move_hint.visible = false
 
-	var font := SystemFont.new()
-	font.font_names = PackedStringArray(["Noto Sans CJK JP", "Noto Sans JP", "Source Han Sans JP", "sans-serif"])
+	var font: FontFile = load("res://assets/fonts/fude-goshirae/fude-goshirae.otf")
 	_label.add_theme_font_override("font", font)
 
 	resized.connect(_refresh_label_metrics)
