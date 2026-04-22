@@ -6,7 +6,7 @@ signal tapped(file: int, rank: int)
 @export var file: int = 0
 @export var rank: int = 0
 
-@onready var _label: Label = $PieceLabel
+@onready var _piece_view: Control = $PieceView
 @onready var _highlight: ColorRect = $Highlight
 @onready var _move_hint: ColorRect = $MoveHint
 @onready var _last_move_hint: ColorRect = $LastMoveHint
@@ -17,18 +17,7 @@ func _ready() -> void:
 	_move_hint.visible = false
 	_last_move_hint.visible = false
 
-	var shogi_font: FontFile = load("res://assets/fonts/fude-goshirae/fude-goshirae.otf")
-	_label.add_theme_font_override("font", shogi_font)
-	_label.add_theme_color_override("font_color", Color.BLACK)
-
-	resized.connect(_refresh_label_metrics)
-	_refresh_label_metrics()
-
 func _gui_input(event: InputEvent) -> void:
-	# On touchscreens `emulate_mouse_from_touch` also fires an
-	# InputEventMouseButton for each real InputEventScreenTouch, so we'd
-	# get two taps per gesture and the second one would deselect the
-	# first. Listen only to the native event type per platform.
 	var is_press := false
 	if OS.has_feature("mobile"):
 		if event is InputEventScreenTouch and event.pressed:
@@ -41,13 +30,13 @@ func _gui_input(event: InputEvent) -> void:
 		accept_event()
 
 func set_piece(text: String, is_gote: bool) -> void:
-	_label.text = text
-	_label.rotation = PI if is_gote else 0.0
-	_refresh_label_metrics()
+	_piece_view.text = text
+	_piece_view.is_gote = is_gote
+	_piece_view.visible = true
 
 func clear_piece() -> void:
-	_label.text = ""
-	_label.rotation = 0.0
+	_piece_view.text = ""
+	_piece_view.visible = false
 
 func set_highlight(on: bool) -> void:
 	_highlight.visible = on
@@ -57,10 +46,3 @@ func set_move_hint(on: bool) -> void:
 
 func set_last_move_hint(on: bool) -> void:
 	_last_move_hint.visible = on
-
-func _refresh_label_metrics() -> void:
-	if _label == null:
-		return
-	var side: float = minf(size.x, size.y)
-	_label.add_theme_font_size_override("font_size", int(side * 0.72))
-	_label.pivot_offset = _label.size * 0.5
