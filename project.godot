@@ -11,8 +11,17 @@ config_version=5
 [application]
 
 config/name="seishingakuen_shougibu"
+run/main_scene="res://scenes/Main.tscn"
 config/features=PackedStringArray("4.6", "Mobile")
 config/icon="res://icon.svg"
+
+[display]
+
+window/size/viewport_width=720
+window/size/viewport_height=1280
+window/stretch/mode="canvas_items"
+window/stretch/aspect="expand"
+window/handheld/orientation="portrait"
 
 [physics]
 

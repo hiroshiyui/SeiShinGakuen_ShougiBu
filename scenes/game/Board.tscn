@@ -1,0 +1,22 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/game/BoardView.gd" id="1_bv"]
+
+[node name="BoardView" type="AspectRatioContainer"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+ratio = 1.0
+script = ExtResource("1_bv")
+
+[node name="Frame" type="ColorRect" parent="."]
+anchor_right = 1.0
+anchor_bottom = 1.0
+color = Color(0, 0, 0, 1)
+mouse_filter = 2
+
+[node name="Grid" type="GridContainer" parent="."]
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_constants/h_separation = 2
+theme_override_constants/v_separation = 2
+columns = 9

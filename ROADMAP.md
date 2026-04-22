@@ -84,17 +84,19 @@ SeiShinGakuen_ShougiBu/
 Each phase ends in a runnable, demoable state. Tag a git commit at the end
 of each phase.
 
-### Phase 1 — Board & input skeleton (GDScript)
+### Phase 1 — Board & input skeleton (GDScript) ✅
 **Deliverable:** a 9×9 board renders on screen; tapping a square highlights it.
 
-- [ ] Create `scenes/game/Board.tscn` with a 9×9 `GridContainer` of `Square` nodes
-- [ ] `scripts/game/Square.gd` — handles touch, emits `tapped(file, rank)`
-- [ ] `scripts/game/BoardView.gd` — renders a stub board state (all 40 pieces in starting position, kanji text in `Label`s)
-- [ ] Portrait camera / layout; test on Android emulator or device
-- [ ] Piece orientation: 先手 bottom (upright), 後手 top (rotated 180°)
-- [ ] Pure presentation — no rules yet
+- [x] Create `scenes/game/Board.tscn` with a 9×9 `GridContainer` of `Square` nodes
+- [x] `scripts/game/Square.gd` — handles touch, emits `tapped(file, rank)`
+- [x] `scripts/game/BoardView.gd` — renders a stub board state (all 40 pieces in starting position, kanji text in `Label`s)
+- [x] Portrait camera / layout; test on Android emulator or device
+- [x] Piece orientation: 先手 bottom (upright), 後手 top (rotated 180°)
+- [x] Pure presentation — no rules yet
 
 **Done when:** starting position displays correctly; taps print coordinates.
+
+Shipped differently: Android on-device test deferred to Phase 6 (portrait viewport configured in `project.godot`; desktop smoke-tested headless only).
 
 ### Phase 2 — Movement rules & hands (GDScript)
 **Deliverable:** two humans can play a full legal game locally, including
