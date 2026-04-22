@@ -9,6 +9,12 @@ var mode: int = Mode.H_VS_AI_GOTE
 var ai_playouts: int = 128
 var model_res_path: String = "res://models/bonanza.onnx"
 
+# Populated by MainMenu when the user picks 続きから; consumed once by
+# GameController._ready. Empty string = start from the standard position.
+var resume_sfen: String = ""
+
+const SAVE_PATH := "user://saved_game.cfg"
+
 func ai_plays_gote() -> bool:
 	return mode == Mode.H_VS_AI_GOTE
 
@@ -17,6 +23,36 @@ func ai_plays_sente() -> bool:
 
 func side_is_ai(is_gote: bool) -> bool:
 	return (is_gote and ai_plays_gote()) or (not is_gote and ai_plays_sente())
+
+# --- save / resume ---------------------------------------------------------
+
+func has_saved_game() -> bool:
+	return FileAccess.file_exists(SAVE_PATH)
+
+func save_game(sfen: String) -> void:
+	var cfg := ConfigFile.new()
+	cfg.set_value("game", "sfen", sfen)
+	cfg.set_value("game", "mode", mode)
+	cfg.set_value("game", "playouts", ai_playouts)
+	var err: int = cfg.save(SAVE_PATH)
+	if err != OK:
+		push_warning("save_game: ConfigFile.save returned %d" % err)
+
+# Returns {sfen, mode, playouts} on success, or an empty Dictionary on
+# failure (corrupt / missing file).
+func load_saved_game() -> Dictionary:
+	var cfg := ConfigFile.new()
+	if cfg.load(SAVE_PATH) != OK:
+		return {}
+	return {
+		sfen = str(cfg.get_value("game", "sfen", "")),
+		mode = int(cfg.get_value("game", "mode", Mode.H_VS_AI_GOTE)),
+		playouts = int(cfg.get_value("game", "playouts", 128)),
+	}
+
+func clear_saved_game() -> void:
+	if has_saved_game():
+		DirAccess.remove_absolute(ProjectSettings.globalize_path(SAVE_PATH))
 
 # Return an absolute OS path to the ONNX model that `tract` can mmap.
 #

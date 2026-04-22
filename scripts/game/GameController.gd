@@ -38,6 +38,10 @@ func _ready() -> void:
 		return
 	_core = ClassDB.instantiate("ShogiCore")
 	_load_ai_if_needed()
+	if Settings.resume_sfen != "":
+		if not bool(_core.load_sfen(Settings.resume_sfen)):
+			push_warning("resume: load_sfen failed; starting fresh. SFEN was: %s" % Settings.resume_sfen)
+		Settings.resume_sfen = ""
 	_board_view.square_tapped.connect(_on_board_tapped)
 	_sente_hand.piece_tapped.connect(_on_hand_tapped.bind(false))
 	_gote_hand.piece_tapped.connect(_on_hand_tapped.bind(true))
@@ -253,7 +257,11 @@ func _commit_move(m: Dictionary) -> void:
 	_log_move(mover, m)
 	_clear_selection()
 	_refresh_all()
+	if OS.has_feature("mobile"):
+		Input.vibrate_handheld(50)
 	_check_end_state()
+	if not _game_over:
+		Settings.save_game(str(_core.to_sfen()))
 	_maybe_start_ai_turn()
 
 func _check_end_state() -> void:
@@ -276,6 +284,7 @@ func _end_game(text: String) -> void:
 	_undo_btn.disabled = true
 	_gameover_dialog.dialog_text = text
 	_gameover_dialog.popup_centered()
+	Settings.clear_saved_game()
 	print("[game] %s" % text.replace("\n", " "))
 
 func _on_restart() -> void:
@@ -302,7 +311,21 @@ func _on_quit_confirmed() -> void:
 	if _thinking and _think_thread != null:
 		_think_thread.wait_to_finish()
 		_thinking = false
+	var resigner := _resignation_side()
+	var winner := "後手" if resigner == "先手" else "先手"
+	print("[game] %s の投了 — %s の勝ち" % [resigner, winner])
+	Settings.clear_saved_game()
 	get_tree().change_scene_to_file("res://scenes/MainMenu.tscn")
+
+# Best-effort attribution of who resigned. In AI modes the human is the
+# only one who can tap 投了, so we attribute to the human side. In H-v-H
+# we attribute to whoever's turn it currently is.
+func _resignation_side() -> String:
+	if Settings.mode == Settings.Mode.H_VS_AI_GOTE:
+		return "先手"
+	if Settings.mode == Settings.Mode.H_VS_AI_SENTE:
+		return "後手"
+	return "後手" if _core.side_to_move_gote() else "先手"
 
 func _log_move(mover: String, m: Dictionary) -> void:
 	if m.has("drop_kind"):
