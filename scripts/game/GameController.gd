@@ -16,6 +16,7 @@ const HandViewScript := preload("res://scripts/game/HandView.gd")
 @onready var _exit_btn: Button = %ExitButton
 @onready var _quit_dialog: ConfirmationDialog = %QuitDialog
 @onready var _thinking_label: Label = %ThinkingLabel
+@onready var _layout: VBoxContainer = $Layout
 
 var _think_thread: Thread
 var _thinking: bool = false
@@ -56,6 +57,8 @@ func _ready() -> void:
 	_sente_hand.is_gote = false
 	_gote_hand.is_gote = true
 	get_viewport().size_changed.connect(_refit_board)
+	get_viewport().size_changed.connect(_apply_safe_area)
+	_apply_safe_area()
 	_refit_board()
 	_refresh_all()
 	_maybe_start_ai_turn()
@@ -70,6 +73,37 @@ func _refit_board() -> void:
 	var side: float = min(vp.x - 2.0 * GUTTER, vp.y - VERTICAL_RESERVED)
 	side = clamp(side, 240.0, 1600.0)
 	_board_view.custom_minimum_size = Vector2(side, side)
+
+# Inset Layout so GoteHand / StatusBar don't sit under the Android status
+# bar, gesture-nav bar, or rounded-corner cutouts. DisplayServer
+# safe-area is in screen pixels; scale to Control coordinates via the
+# viewport/screen ratio. A fixed extra pad on every edge gives rounded
+# corners some breathing room. On desktop the OS-reported safe area is
+# the full window so only the fixed pad applies.
+func _apply_safe_area() -> void:
+	if _layout == null:
+		return
+	const EXTRA_H := 12.0
+	const EXTRA_TOP := 16.0
+	const EXTRA_BOTTOM := 32.0
+	var safe: Rect2i = DisplayServer.get_display_safe_area()
+	var screen_size: Vector2i = DisplayServer.screen_get_size()
+	var top := EXTRA_TOP
+	var bottom := EXTRA_BOTTOM
+	var left := EXTRA_H
+	var right := EXTRA_H
+	if safe.size != Vector2i.ZERO and screen_size != Vector2i.ZERO:
+		var vp: Vector2 = get_viewport_rect().size
+		var sx: float = vp.x / float(screen_size.x)
+		var sy: float = vp.y / float(screen_size.y)
+		top += float(safe.position.y) * sy
+		left += float(safe.position.x) * sx
+		bottom += float(screen_size.y - safe.position.y - safe.size.y) * sy
+		right += float(screen_size.x - safe.position.x - safe.size.x) * sx
+	_layout.offset_left = left
+	_layout.offset_top = top
+	_layout.offset_right = -right
+	_layout.offset_bottom = -bottom
 
 func _load_ai_if_needed() -> void:
 	if Settings.mode == Settings.Mode.H_VS_H:
