@@ -16,7 +16,11 @@ script = ExtResource("1_bv")
 layout_mode = 2
 script = ExtResource("2_bg")
 
-[node name="Grid" type="GridContainer" parent="."]
+[node name="GridMargin" type="MarginContainer" parent="."]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="Grid" type="GridContainer" parent="GridMargin"]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3

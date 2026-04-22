@@ -7,7 +7,8 @@ const SquareScene := preload("res://scenes/game/Square.tscn")
 const SquareScript := preload("res://scripts/game/Square.gd")
 const PieceScript := preload("res://scripts/game/Piece.gd")
 
-@onready var _grid: GridContainer = $Grid
+@onready var _grid: GridContainer = %GridMargin/Grid
+@onready var _margin_container: MarginContainer = %GridMargin
 
 var _squares: Dictionary = {}
 var _selected_key: Vector2i = Vector2i.ZERO
@@ -15,7 +16,20 @@ var _hint_keys: Array = []
 var _last_move_keys: Array = []
 
 func _ready() -> void:
+	resized.connect(_on_resized)
 	_build_grid()
+	_on_resized()
+
+func _on_resized() -> void:
+	var s := size
+	# Match the 0.04 MARGIN_PERCENT in BoardBackground.gd
+	var margin_x := int(s.x * 0.04)
+	var margin_y := int(s.y * 0.04)
+	
+	_margin_container.add_theme_constant_override("margin_left", margin_x)
+	_margin_container.add_theme_constant_override("margin_right", margin_x)
+	_margin_container.add_theme_constant_override("margin_top", margin_y)
+	_margin_container.add_theme_constant_override("margin_bottom", margin_y)
 
 func _build_grid() -> void:
 	for row in 9:
