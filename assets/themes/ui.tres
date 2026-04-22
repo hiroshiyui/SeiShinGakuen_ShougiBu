@@ -1,7 +1,10 @@
-[gd_resource type="Theme" load_steps=2 format=3]
+[gd_resource type="Theme" load_steps=3 format=3]
 
-[ext_resource type="FontFile" path="res://assets/fonts/samidare/XSAMIDAREMDX.ttf" id="1_font"]
+[ext_resource type="FontFile" path="res://assets/fonts/noto-serif-jp/NotoSerifCJKjp-Medium.otf" id="1_medium"]
+[ext_resource type="FontFile" path="res://assets/fonts/noto-serif-jp/NotoSerifCJKjp-Bold.otf" id="2_bold"]
 
 [resource]
-default_font = ExtResource("1_font")
+default_font = ExtResource("1_medium")
 default_font_size = 20
+Label/fonts/bold_font = ExtResource("2_bold")
+Button/fonts/font = ExtResource("2_bold")
