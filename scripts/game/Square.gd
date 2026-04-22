@@ -17,6 +17,7 @@ func _ready() -> void:
 
 	var shogi_font: FontFile = load("res://assets/fonts/fude-goshirae/fude-goshirae.otf")
 	_label.add_theme_font_override("font", shogi_font)
+	_label.add_theme_color_override("font_color", Color.BLACK)
 
 	resized.connect(_refresh_label_metrics)
 	_refresh_label_metrics()
