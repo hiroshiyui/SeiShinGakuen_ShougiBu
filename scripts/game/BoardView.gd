@@ -12,6 +12,7 @@ const PieceScript := preload("res://scripts/game/Piece.gd")
 var _squares: Dictionary = {}
 var _selected_key: Vector2i = Vector2i.ZERO
 var _hint_keys: Array = []
+var _last_move_keys: Array = []
 
 func _ready() -> void:
 	_build_grid()
@@ -61,6 +62,24 @@ func clear_move_hints() -> void:
 		if _squares.has(k):
 			_squares[k].set_move_hint(false)
 	_hint_keys.clear()
+
+# Blue-tinted overlay showing the from/to squares of the most recently
+# applied move so the player can spot what the opponent did at a glance.
+# `from == Vector2i.ZERO` is treated as "drop" and skipped.
+func show_last_move(from: Vector2i, to: Vector2i) -> void:
+	clear_last_move()
+	if from != Vector2i.ZERO and _squares.has(from):
+		_squares[from].set_last_move_hint(true)
+		_last_move_keys.append(from)
+	if to != Vector2i.ZERO and _squares.has(to):
+		_squares[to].set_last_move_hint(true)
+		_last_move_keys.append(to)
+
+func clear_last_move() -> void:
+	for k in _last_move_keys:
+		if _squares.has(k):
+			_squares[k].set_last_move_hint(false)
+	_last_move_keys.clear()
 
 func _on_square_tapped(file: int, rank: int) -> void:
 	square_tapped.emit(file, rank)

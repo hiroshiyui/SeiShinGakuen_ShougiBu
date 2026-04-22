@@ -9,11 +9,13 @@ signal tapped(file: int, rank: int)
 @onready var _label: Label = $PieceLabel
 @onready var _highlight: ColorRect = $Highlight
 @onready var _move_hint: ColorRect = $MoveHint
+@onready var _last_move_hint: ColorRect = $LastMoveHint
 
 func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_STOP
 	_highlight.visible = false
 	_move_hint.visible = false
+	_last_move_hint.visible = false
 
 	var shogi_font: FontFile = load("res://assets/fonts/fude-goshirae/fude-goshirae.otf")
 	_label.add_theme_font_override("font", shogi_font)
@@ -52,6 +54,9 @@ func set_highlight(on: bool) -> void:
 
 func set_move_hint(on: bool) -> void:
 	_move_hint.visible = on
+
+func set_last_move_hint(on: bool) -> void:
+	_last_move_hint.visible = on
 
 func _refresh_label_metrics() -> void:
 	if _label == null:

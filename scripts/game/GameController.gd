@@ -26,6 +26,7 @@ const _RANK_KANJI := ["", "一", "二", "三", "四", "五", "六", "七", "八"
 enum SelState { IDLE, BOARD, HAND }
 
 var _core: Object
+var _last_move: Dictionary = {}
 var _sel_state: int = SelState.IDLE
 var _sel_from: Vector2i = Vector2i.ZERO
 var _sel_drop_kind: int = -1
@@ -255,14 +256,25 @@ func _commit_move(m: Dictionary) -> void:
 		print("[game] rejected: %s" % m)
 		return
 	_log_move(mover, m)
+	_last_move = m.duplicate()
 	_clear_selection()
 	_refresh_all()
+	_refresh_last_move_hint()
 	if OS.has_feature("mobile"):
 		Input.vibrate_handheld(50)
 	_check_end_state()
 	if not _game_over:
 		Settings.save_game(str(_core.to_sfen()))
 	_maybe_start_ai_turn()
+
+func _refresh_last_move_hint() -> void:
+	if _last_move.is_empty():
+		_board_view.clear_last_move()
+		return
+	var from := Vector2i.ZERO
+	if not _last_move.has("drop_kind"):
+		from = Vector2i(_last_move["from"])
+	_board_view.show_last_move(from, Vector2i(_last_move["to"]))
 
 func _check_end_state() -> void:
 	if bool(_core.is_checkmate()):
@@ -291,15 +303,22 @@ func _on_restart() -> void:
 	_core.reset_starting()
 	_game_over = false
 	_pending_move = {}
+	_last_move = {}
 	_clear_selection()
 	_refresh_all()
+	_refresh_last_move_hint()
 
 func _on_undo() -> void:
 	if _game_over:
 		return
 	if bool(_core.undo_move()):
+		# No single-level cache of the move *before* the one we just undid;
+		# simplest correct behaviour is to blank the highlight until the
+		# next move is committed.
+		_last_move = {}
 		_clear_selection()
 		_refresh_all()
+		_refresh_last_move_hint()
 
 func _on_exit_pressed() -> void:
 	_quit_dialog.popup_centered()
