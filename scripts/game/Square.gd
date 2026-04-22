@@ -15,8 +15,8 @@ func _ready() -> void:
 	_highlight.visible = false
 	_move_hint.visible = false
 
-	var font: FontFile = load("res://assets/fonts/fude-goshirae/fude-goshirae.otf")
-	_label.add_theme_font_override("font", font)
+	var shogi_font: FontFile = load("res://assets/fonts/fude-goshirae/fude-goshirae.otf")
+	_label.add_theme_font_override("font", shogi_font)
 
 	resized.connect(_refresh_label_metrics)
 	_refresh_label_metrics()
