@@ -6,7 +6,6 @@ signal square_tapped(file: int, rank: int)
 const SquareScene := preload("res://scenes/game/Square.tscn")
 const SquareScript := preload("res://scripts/game/Square.gd")
 const PieceScript := preload("res://scripts/game/Piece.gd")
-const BoardStateScript := preload("res://scripts/game/BoardState.gd")
 
 @onready var _grid: GridContainer = $Grid
 
@@ -29,14 +28,16 @@ func _build_grid() -> void:
 			_grid.add_child(sq)
 			_squares[Vector2i(file, rank)] = sq
 
-func render(state: BoardStateScript) -> void:
+func render(core: Object) -> void:
 	for key in _squares.keys():
 		var sq: SquareScript = _squares[key]
-		var p: PieceScript = state.piece_at(key.x, key.y)
-		if p == null:
+		var piece: Variant = core.piece_at(key.x, key.y)
+		if piece == null:
 			sq.clear_piece()
 		else:
-			sq.set_piece(p.kanji_text(), p.is_gote)
+			var kind: int = int(piece["kind"])
+			var is_gote: bool = bool(piece["is_gote"])
+			sq.set_piece(PieceScript.kanji_for(kind, is_gote), is_gote)
 
 func set_selected(key: Vector2i) -> void:
 	if _selected_key != Vector2i.ZERO and _squares.has(_selected_key):

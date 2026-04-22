@@ -132,26 +132,34 @@ Shipped differently:
 - 入玉 is detection-only (`Rules.king_entered` + `Rules.jishogi_points`). No in-game claim button yet; deferred to Phase 7 polish along with a resign button.
 - Test harness is pure GDScript headless (`scripts/tests/rules_tests.gd` runnable via `godot --headless -s`) rather than a SFEN-import-driven fixture set — fixtures are constructed programmatically through `BoardState.clear_board() / place() / set_hand_count() / set_side_to_move() / seal_initial_position()`.
 
-### Phase 4 — Rust core (GDExtension), desktop only
+### Phase 4 — Rust core (GDExtension), desktop only ✅
 **Deliverable:** move gen + rule checks run in Rust; GDScript calls into it.
 Game still plays identically — this is a refactor, not a feature.
 
-- [ ] `native/shogi_core/` Cargo crate, `cdylib`, `godot` dep (gdext)
-- [ ] `addons/shogi_core.gdextension` manifest
-- [ ] Desktop linux build via `cargo build --release`; copy `.so` to `native/bin/linux/x86_64/`
-- [ ] Port types: `Piece`, `Color`, `Square`, `Move`, `Board`, `Hands`
-- [ ] Port move generation (bitboards preferred; start with mailbox if faster to write)
-- [ ] Port legality + special rules (二歩, 打ち歩詰め, check)
-- [ ] SFEN parse/serialize
-- [ ] Expose `ShogiCore` class to GDScript with:
+- [x] `native/shogi_core/` Cargo crate, `cdylib`, `godot` dep (gdext)
+- [x] `addons/shogi_core.gdextension` manifest
+- [x] Desktop linux build via `cargo build --release`; copy `.so` to `native/bin/linux/x86_64/`
+- [x] Port types: `Piece`, `Color`, `Square`, `Move`, `Board`, `Hands`
+- [x] Port move generation (bitboards preferred; start with mailbox if faster to write)
+- [x] Port legality + special rules (二歩, 打ち歩詰め, check)
+- [x] SFEN parse/serialize
+- [x] Expose `ShogiCore` class to GDScript with:
   - `load_sfen(s)`, `to_sfen()`
   - `legal_moves() -> PackedArray`
   - `apply_move(m)`, `undo()`
   - `is_check()`, `is_checkmate()`, `result()`
-- [ ] Replace GDScript rule code with calls into native
-- [ ] Rust unit tests for rules (perft on known positions)
+- [x] Replace GDScript rule code with calls into native
+- [x] Rust unit tests for rules (perft on known positions)
 
 **Done when:** `cargo test` passes perft suite; in-game behavior matches Phase 3.
+
+Shipped differently:
+- Rust edition 2024 (requires rustc ≥ 1.85; repo's 1.93 is fine).
+- godot-rust crate pinned at `0.2.4`; `.gdextension` declares `compatibility_minimum = 4.3` which works against Godot 4.6.
+- Representation is mailbox (`[Option<Piece>; 81]`) rather than bitboards — fast enough for interactive play; revisit if Phase 5 MCTS benchmarks demand it.
+- SFEN parser is not yet implemented (only serializer + `position_key`). Import will land with Phase 5 when the AI wants to round-trip positions.
+- Exposed API is superset of the target shape (adds `clear_board / place / set_hand_count / set_side_to_move_gote / seal_initial_position` for test setup and a future editor; `legal_moves` is split into `legal_moves_from(file, rank)` + `legal_drops(kind)` matching the tap-driven UI flow).
+- Perft suite verifies depth 1 (30) and depth 2 (900) from the starting position; deeper fixtures deferred until AI strength tuning needs them.
 
 ### Phase 5 — AI: ONNX + MCTS (desktop)
 **Deliverable:** playable vs. AI on desktop; configurable playout budget.

@@ -4,7 +4,6 @@ extends PanelContainer
 signal piece_tapped(kind: int)
 
 const PieceScript := preload("res://scripts/game/Piece.gd")
-const BoardStateScript := preload("res://scripts/game/BoardState.gd")
 
 @export var is_gote: bool = false
 
@@ -18,11 +17,11 @@ func _ready() -> void:
 		_row.rotation = PI
 		resized.connect(func(): _row.pivot_offset = size * 0.5)
 
-func render(state: BoardStateScript) -> void:
+func render(core: Object) -> void:
 	for child in _row.get_children():
 		child.queue_free()
-	var h := state.hand(is_gote)
-	for kind in BoardStateScript.HAND_ORDER:
+	var h: Dictionary = core.hand(is_gote)
+	for kind in PieceScript.HAND_ORDER:
 		var n: int = int(h.get(kind, 0))
 		if n <= 0:
 			continue
