@@ -15,6 +15,13 @@ anchor_bottom = 1.0
 color = Color(0.91, 0.75, 0.45, 1)
 mouse_filter = 2
 
+[node name="MoveHint" type="ColorRect" parent="."]
+visible = false
+anchor_right = 1.0
+anchor_bottom = 1.0
+color = Color(0.2, 0.7, 0.3, 0.35)
+mouse_filter = 2
+
 [node name="Highlight" type="ColorRect" parent="."]
 visible = false
 anchor_right = 1.0

@@ -98,19 +98,19 @@ of each phase.
 
 Shipped differently: Android on-device test deferred to Phase 6 (portrait viewport configured in `project.godot`; desktop smoke-tested headless only).
 
-### Phase 2 — Movement rules & hands (GDScript)
+### Phase 2 — Movement rules & hands (GDScript) ✅
 **Deliverable:** two humans can play a full legal game locally, including
 drops and promotion.
 
-- [ ] `scripts/game/BoardState.gd` — 9×9 array + two hands (`Dictionary[PieceType,int]`)
-- [ ] Per-piece move tables (歩 香 桂 銀 金 角 飛 王 + promoted variants)
-- [ ] Sliding piece ray logic (角 飛 香 and promoted 馬 龍)
-- [ ] Tap-to-select → highlight legal destinations → tap-to-move
-- [ ] Capture: move piece to hand (un-promoted)
-- [ ] Drop flow: tap piece in 駒台 → highlight legal drop squares → tap to drop
-- [ ] Promotion: when crossing the promotion zone, prompt dialog (must-promote for 歩/香 last rank, 桂 last two)
-- [ ] SFEN export (for debugging; read-only first)
-- [ ] Turn management, move log to console
+- [x] `scripts/game/BoardState.gd` — 9×9 array + two hands (`Dictionary[PieceType,int]`)
+- [x] Per-piece move tables (歩 香 桂 銀 金 角 飛 王 + promoted variants)
+- [x] Sliding piece ray logic (角 飛 香 and promoted 馬 龍)
+- [x] Tap-to-select → highlight legal destinations → tap-to-move
+- [x] Capture: move piece to hand (un-promoted)
+- [x] Drop flow: tap piece in 駒台 → highlight legal drop squares → tap to drop
+- [x] Promotion: when crossing the promotion zone, prompt dialog (must-promote for 歩/香 last rank, 桂 last two)
+- [x] SFEN export (for debugging; read-only first)
+- [x] Turn management, move log to console
 
 **Done when:** can play a complete game to checkmate without violating movement rules.
 

@@ -1,0 +1,11 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/game/HandView.gd" id="1_hv"]
+
+[node name="HandView" type="PanelContainer"]
+custom_minimum_size = Vector2(0, 72)
+script = ExtResource("1_hv")
+
+[node name="Row" type="HBoxContainer" parent="."]
+alignment = 1
+theme_override_constants/separation = 6

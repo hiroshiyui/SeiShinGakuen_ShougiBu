@@ -8,10 +8,12 @@ signal tapped(file: int, rank: int)
 
 @onready var _label: Label = $PieceLabel
 @onready var _highlight: ColorRect = $Highlight
+@onready var _move_hint: ColorRect = $MoveHint
 
 func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_STOP
 	_highlight.visible = false
+	_move_hint.visible = false
 
 	var font := SystemFont.new()
 	font.font_names = PackedStringArray(["Noto Sans CJK JP", "Noto Sans JP", "Source Han Sans JP", "sans-serif"])
@@ -40,6 +42,9 @@ func clear_piece() -> void:
 
 func set_highlight(on: bool) -> void:
 	_highlight.visible = on
+
+func set_move_hint(on: bool) -> void:
+	_move_hint.visible = on
 
 func _refresh_label_metrics() -> void:
 	if _label == null:
