@@ -218,17 +218,17 @@ Shipped differently:
 
     Watch-out: runtime-formatted strings (`"… %d手目" % n`) only have the literal in source, so digits are in the safety set. Add new characters there if future UI gets them via code rather than literals.
 
-    Stretch still open: migrate piece glyphs to pre-rendered sprite atlas (see sprite task below) and drop the font entirely.
+    Pieces now render procedurally (pentagonal wooden tiles, see below) so a sprite-atlas migration is no longer needed to move past the flat-Label look. Could still be pursued as a theming option — no longer tracked as a stretch goal.
 - [x] **投了 (resign) button with confirmation dialog, returns to main menu.** `scenes/Main.tscn::ExitButton + QuitDialog`, `GameController._on_exit_pressed / _on_quit_confirmed`. Waits for any live AI Thread via `wait_to_finish()` before scene change to avoid leaked JoinHandles.
 - [x] **Multi-level undo.** Underlying `Board::undo_move` stack is unbounded; GameController's 待った button pops one entry per press. No explicit "undo N" UI, but pressing repeatedly rewinds indefinitely.
 - [x] **Haptic feedback on move.** `Input.vibrate_handheld(50)` in `GameController._commit_move`, gated by `OS.has_feature("mobile")`. Fires for both human and AI moves so the phone bumps when the AI replies.
 - [x] **Save / resume current game.** `Settings.save_game(sfen)` after every commit, `clear_saved_game()` on checkmate / sennichite / 投了 / 新規対局. MainMenu shows 続きから when `has_saved_game()` is true. ConfigFile at `user://saved_game.cfg`. Caveat: `move_log` + `position_counts` aren't serialised — sennichite tracking resets on resume, board state round-trips fine.
 - [x] **Last-move highlight.** Blue-tinted `LastMoveHint` overlay on the from + to squares of the most recent applied move, so the player can spot what the AI just did at a glance. Drops highlight only the to-square.
+- [x] **Wooden board + pentagonal piece rendering.** Custom `_draw()`-based Kaya board background (grain, grid, hoshi) in `BoardBackground.gd`, pentagonal shogi-piece shapes with thickness, bevel, top-left highlight and soft drop shadow in `PieceView.gd`. Hand area gets a Koma-dai panel and tile-style pieces via `HandPiece.gd`. Still uses Fude Goshirae for the kanji glyph.
 - [ ] Move history panel + scrubbing
 - [ ] Sound: move / capture / promote / check / checkmate
 - [ ] Settings screen (difficulty, sound, piece style)
 - [ ] Simple main-menu art & app icon
-- [ ] (Stretch) sprite-based pieces as alternative to kanji text
 - [ ] (Stretch) 棋譜 KIF export/share intent
 
 ---
