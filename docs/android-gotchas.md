@@ -55,6 +55,38 @@ path is on the OS filesystem and any library can open it. See
 `Settings.gd::model_absolute_path()` for the pattern. No-op in the editor
 since `res://` is already a real OS path there.
 
+## `FileAccess.file_exists("res://foo.png")` is false on Android
+
+**Symptom:** a `load()` call guarded by
+`FileAccess.file_exists(path)` works in the editor and on desktop
+exports but the guard fails on Android, so the asset is treated as
+missing and the fallback path is taken. `unzip -l app.apk` confirms the
+asset *is* shipped (as `.ctex` / `.ctexarray` / imported audio).
+
+**Cause:** for any imported resource type (PNG/JPG/WEBP → `.ctex`,
+compressed audio, etc.), Godot strips the raw source from the APK and
+ships only the imported artefact under `assets/.godot/imported/`.
+`FileAccess.file_exists()` is a filesystem probe that walks the real
+PCK/APK layout, so it returns `false` for the original `res://…png`
+path even though `load()` would succeed (the `.import` sidecar
+redirects to the `.ctex`).
+
+**Fix:** use `ResourceLoader.exists(path)` — it consults the `.import`
+sidecar and works on both desktop and Android. Or just call `load()`
+and null-check the result.
+```gdscript
+# BAD — breaks on Android for imported resources
+if FileAccess.file_exists(path):
+    _tex = load(path)
+
+# GOOD
+if ResourceLoader.exists(path):
+    _tex = load(path)
+```
+Non-resource files that are explicitly whitelisted via
+`include_filter` (e.g. `.onnx`) *do* sit on the virtual filesystem, so
+`FileAccess.file_exists()` is fine for those.
+
 ## Every tap fires twice / immediate deselect after select
 
 **Symptom:** tapping a piece selects it and *instantly* deselects it, so
