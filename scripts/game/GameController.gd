@@ -77,14 +77,16 @@ func _ready() -> void:
 	_refresh_all()
 	_maybe_start_ai_turn()
 
-# Board is a square sized to the smaller of (viewport_w - 2*gutter) and the
-# vertical slot left after the two hands + status bar. Recomputed on every
-# viewport size change so orientation / window-resize / split-screen stay fit.
+# Board is a square sized to fit within the Layout. The Layout itself is
+# inset LAYOUT_H px on each side (from _apply_safe_area's EXTRA_H). Board
+# side must be ≤ Layout width or the CenterContainer overflows to the right,
+# causing an off-centre shift. Recomputed on every viewport size change.
 func _refit_board() -> void:
-	const GUTTER := 4.0
+	const GUTTER := 4.0        # breathing room inside BoardHolder
+	const LAYOUT_H := 12.0     # must match EXTRA_H in _apply_safe_area
 	# Hands (2×72) + status bar (40) + fixed breathing pad (16). TeacherRow
 	# and SuggestionsPanel are measured live since they toggle visibility.
-	var base: float = 72.0 + 72.0 + 40.0 + 16.0
+	var base: float = 72.0 + 72.0 + 56.0 + 16.0
 	var extras: float = 0.0
 	if _teacher_row != null and _teacher_row.visible:
 		extras += max(_teacher_row.size.y, _teacher_row.custom_minimum_size.y)
@@ -96,7 +98,7 @@ func _refit_board() -> void:
 	if _suggestions_panel != null and _suggestions_panel.visible: visible_items += 1
 	var separators: float = 8.0 * max(0, visible_items - 1)
 	var vp: Vector2 = get_viewport_rect().size
-	var side: float = min(vp.x - 2.0 * GUTTER, vp.y - base - extras - separators)
+	var side: float = min(vp.x - 2.0 * (GUTTER + LAYOUT_H), vp.y - base - extras - separators)
 	side = clamp(side, 240.0, 1600.0)
 	_board_view.custom_minimum_size = Vector2(side, side)
 
@@ -118,14 +120,16 @@ func _apply_safe_area() -> void:
 	var bottom := EXTRA_BOTTOM
 	var left := EXTRA_H
 	var right := EXTRA_H
+	# Only apply safe-area insets vertically. In portrait mode phones have
+	# no left/right hardware cutouts, and Android sometimes reports a
+	# non-zero safe.position.x (gesture navigation, foldable hinge, etc.)
+	# that would shift the layout sideways. Horizontal breathing room is
+	# handled by the fixed EXTRA_H alone.
 	if safe.size != Vector2i.ZERO and screen_size != Vector2i.ZERO:
 		var vp: Vector2 = get_viewport_rect().size
-		var sx: float = vp.x / float(screen_size.x)
 		var sy: float = vp.y / float(screen_size.y)
 		top += float(safe.position.y) * sy
-		left += float(safe.position.x) * sx
 		bottom += float(screen_size.y - safe.position.y - safe.size.y) * sy
-		right += float(screen_size.x - safe.position.x - safe.size.x) * sx
 	_layout.offset_left = left
 	_layout.offset_top = top
 	_layout.offset_right = -right

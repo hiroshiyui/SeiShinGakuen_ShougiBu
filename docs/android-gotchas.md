@@ -191,3 +191,20 @@ adb logcat godot:V '*:S'
 ```
 Include `:V` (verbose) — `print` lands at `I` (info) but errors at `E`.
 `*:S` silences all other tags.
+
+## Layout shifts sideways — board and UI ribbons right-shifted
+
+**Symptom:** with a full-screen background image visible, the entire
+game layout (board, hands, status bar) is shifted to the right rather
+than centred.
+
+**Cause:** `DisplayServer.get_display_safe_area()` on some Android
+devices returns a non-zero `safe.position.x` even in portrait mode
+(gesture-navigation edges, foldable hinge reports, driver quirks).
+Adding this to the left inset but not the right produces an asymmetric
+layout. Portrait-mode phones have no hardware left/right cutouts that
+need avoiding, so the horizontal safe-area term is spurious.
+
+**Fix:** apply safe-area insets **only vertically** (top / bottom).
+Keep a small fixed `EXTRA_H` on both sides for aesthetic breathing
+room. See `_apply_safe_area` in `scripts/game/GameController.gd`.
