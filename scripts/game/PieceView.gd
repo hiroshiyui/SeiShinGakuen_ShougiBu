@@ -119,7 +119,7 @@ func _draw() -> void:
 	if _font == null: return
 	var font_size := int(h * 0.62)
 	var x_offset := -_font.get_string_size(text, HORIZONTAL_ALIGNMENT_CENTER, -1, font_size).x * 0.5
-	var y_offset := font_size * 0.32
+	var y_offset := font_size * 0.46
 	
 	if is_gote:
 		draw_set_transform(center, PI, Vector2.ONE)
