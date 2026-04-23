@@ -107,7 +107,8 @@ APK export: [`docs/android-build.md`](./docs/android-build.md).
 - Asset folders under `assets/` are organised by purpose, not by
   filetype: `textures/` (piece + board wood grain), `backgrounds/`
   (gutter / full-screen decoration), `ui/` (icons, buttons),
-  `branding/` (title / splash / logo), `sounds/`, `fonts/`, `themes/`.
+  `branding/` (title / splash / logo), `characters/{teachers,students}/`
+  (将棋部 character portraits), `sounds/`, `fonts/`, `themes/`.
   Prefer `.webp` for photographic / AI-generated imagery (smaller APK
   than PNG at equivalent quality); use `.png` only when lossless edges
   matter (pixel-art icons). Commit the source image *and* its Godot

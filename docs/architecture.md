@@ -127,7 +127,12 @@ Square._gui_input(touch)                                  — UI tap
   under the folder that matches its role: `assets/backgrounds/` for
   gutter / full-screen decoration, `assets/ui/` for button/icon art,
   `assets/branding/` for title/splash/logo, `assets/textures/` for
-  board or piece surfaces. Prefer `.webp` for AI-generated imagery
+  board or piece surfaces, `assets/characters/{teachers,students}/`
+  for 将棋部 character portraits. Name characters kebab-case with
+  role-first (`sensei-tanaka.webp`, `student-akira.webp`) so they sort
+  naturally. For multi-expression characters, promote to a
+  per-character folder (`characters/students/akira/{neutral,thinking,
+  happy}.webp`). Prefer `.webp` for AI-generated imagery
   (smaller APK at equivalent quality) — reserve `.png` for pixel-art
   UI with hard edges. Keep source resolution reasonable (≤1024 px long
   edge for UI, ≤2048 px for full-screen backgrounds) since APK size
