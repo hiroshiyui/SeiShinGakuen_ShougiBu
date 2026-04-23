@@ -104,6 +104,14 @@ APK export: [`docs/android-build.md`](./docs/android-build.md).
 - Fonts live in-repo twice: `<name>-full.otf` (source, excluded from
   APK by `export_presets.cfg`'s `exclude_filter`) and `<name>.otf`
   (subset, shipped).
+- Asset folders under `assets/` are organised by purpose, not by
+  filetype: `textures/` (piece + board wood grain), `backgrounds/`
+  (gutter / full-screen decoration), `ui/` (icons, buttons),
+  `branding/` (title / splash / logo), `sounds/`, `fonts/`, `themes/`.
+  Prefer `.webp` for photographic / AI-generated imagery (smaller APK
+  than PNG at equivalent quality); use `.png` only when lossless edges
+  matter (pixel-art icons). Commit the source image *and* its Godot
+  `.import` sidecar.
 
 ## When working here
 

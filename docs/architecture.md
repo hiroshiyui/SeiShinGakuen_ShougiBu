@@ -123,6 +123,20 @@ Square._gui_input(touch)                                  — UI tap
   [`tools/build_font_subsets.sh`](../tools/build_font_subsets.sh); add
   the `-full.otf` original under `assets/fonts/`, keep the subset under
   the canonical filename. The script re-scans strings automatically.
+- **New visual asset (ComfyUI output, illustrations, icons)** — drop
+  under the folder that matches its role: `assets/backgrounds/` for
+  gutter / full-screen decoration, `assets/ui/` for button/icon art,
+  `assets/branding/` for title/splash/logo, `assets/textures/` for
+  board or piece surfaces. Prefer `.webp` for AI-generated imagery
+  (smaller APK at equivalent quality) — reserve `.png` for pixel-art
+  UI with hard edges. Keep source resolution reasonable (≤1024 px long
+  edge for UI, ≤2048 px for full-screen backgrounds) since APK size
+  grows fast: the current 43 MB is dominated by assets, not code.
+  Commit both the image and its Godot-generated `.import` sidecar. If
+  an asset is reference / work-in-progress and shouldn't ship, place
+  it under a leading-underscore prefix (`assets/_wip/…`) and add the
+  pattern to `export_presets.cfg`'s `exclude_filter`, same pattern
+  already used for `*-full.otf`.
 
 **Where you should not be adding code:**
 
