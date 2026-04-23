@@ -14,6 +14,37 @@ var model_res_path: String = "res://models/bonanza.onnx"
 var resume_sfen: String = ""
 
 const SAVE_PATH := "user://saved_game.cfg"
+const PREFS_PATH := "user://prefs.cfg"
+
+# User preferences that outlive a single game. Loaded once in _ready
+# and written back via set_teacher_side().
+var teacher_side: String = "right"  # "left" or "right"
+
+func _ready() -> void:
+	_load_prefs()
+
+func set_teacher_side(side: String) -> void:
+	if side != "left" and side != "right":
+		return
+	if side == teacher_side:
+		return
+	teacher_side = side
+	_save_prefs()
+
+func _load_prefs() -> void:
+	var cfg := ConfigFile.new()
+	if cfg.load(PREFS_PATH) != OK:
+		return
+	var side := str(cfg.get_value("ui", "teacher_side", "right"))
+	if side == "left" or side == "right":
+		teacher_side = side
+
+func _save_prefs() -> void:
+	var cfg := ConfigFile.new()
+	cfg.set_value("ui", "teacher_side", teacher_side)
+	var err: int = cfg.save(PREFS_PATH)
+	if err != OK:
+		push_warning("save_prefs: ConfigFile.save returned %d" % err)
 
 func ai_plays_gote() -> bool:
 	return mode == Mode.H_VS_AI_GOTE

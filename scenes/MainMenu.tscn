@@ -47,6 +47,14 @@ max_value = 3200.0
 step = 16.0
 value = 128.0
 
+[node name="TeacherSideLabel" type="Label" parent="Center/Box"]
+text = "先生ボタンの位置"
+theme_override_colors/font_color = Color(0.85, 0.85, 0.85, 1)
+
+[node name="TeacherSideSelect" type="OptionButton" parent="Center/Box"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 40)
+
 [node name="Spacer" type="Control" parent="Center/Box"]
 custom_minimum_size = Vector2(0, 8)
 

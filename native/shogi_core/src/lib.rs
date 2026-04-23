@@ -18,7 +18,9 @@ use std::path::PathBuf;
 use godot::prelude::*;
 
 use crate::board::Board;
-use crate::mcts::Searcher;
+use crate::encode::encode_position;
+use crate::mcts::{Searcher, all_legal_moves};
+use crate::move_index::encode_move;
 use crate::nn::NeuralNet;
 use crate::rules::{SennichiteStatus, detect_sennichite, is_check, is_checkmate, jishogi_points, king_entered, legal_drops, legal_moves_from};
 use crate::sfen::parse_sfen;
@@ -231,6 +233,59 @@ impl ShogiCore {
     ///
     /// This is synchronous and will block for the duration of the search.
     /// GDScript is expected to call it from a `Thread` to avoid UI stalls.
+    /// Policy-only move suggestions for 先生 (teacher) mode. Runs a single
+    /// NN forward pass, softmaxes the policy logits over legal moves, and
+    /// returns the top `top_k` as move dicts with an added `score` field
+    /// (prior probability, 0..1). Cheap (~few ms) so safe to call on the
+    /// main thread. Empty if no model / no legal moves.
+    #[func]
+    fn suggest_moves(&mut self, top_k: i64) -> Array<Dictionary> {
+        let Some(nn) = self.nn.as_ref() else {
+            godot_warn!("suggest_moves called before load_model");
+            return Array::new();
+        };
+        let legal = all_legal_moves(&mut self.board);
+        if legal.is_empty() {
+            return Array::new();
+        }
+        let (policy, _value) = match nn.forward(&encode_position(&self.board)) {
+            Ok(p) => p,
+            Err(e) => {
+                godot_warn!("suggest_moves: nn.forward failed: {e}");
+                return Array::new();
+            }
+        };
+        let stm = self.board.side_to_move;
+        let mut logits: Vec<f32> = legal
+            .iter()
+            .map(|&mv| {
+                let idx = encode_move(mv, stm).unwrap_or(0);
+                policy.get(idx).copied().unwrap_or(f32::MIN)
+            })
+            .collect();
+        let m = logits.iter().copied().fold(f32::MIN, f32::max);
+        for l in &mut logits {
+            *l = (*l - m).exp();
+        }
+        let sum: f32 = logits.iter().sum();
+        if sum > 0.0 {
+            for l in &mut logits {
+                *l /= sum;
+            }
+        }
+        let mut scored: Vec<(Move, f32)> =
+            legal.iter().zip(logits.iter()).map(|(&mv, &p)| (mv, p)).collect();
+        scored.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap_or(std::cmp::Ordering::Equal));
+        let k = (top_k.max(1) as usize).min(scored.len());
+        let mut out = Array::new();
+        for (mv, p) in scored.into_iter().take(k) {
+            let mut d = move_to_dict(mv);
+            d.set("score", p as f64);
+            out.push(&d);
+        }
+        out
+    }
+
     #[func]
     fn think_best_move(&mut self, playouts: i64) -> Variant {
         let Some(nn) = self.nn.as_ref() else {

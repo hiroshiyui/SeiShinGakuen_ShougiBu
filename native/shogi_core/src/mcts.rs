@@ -235,7 +235,7 @@ fn build_child_priors(legal: &[Move], policy_logits: &[f32], stm: Color) -> Vec<
         .collect()
 }
 
-fn all_legal_moves(board: &mut Board) -> Vec<Move> {
+pub fn all_legal_moves(board: &mut Board) -> Vec<Move> {
     let side = board.side_to_move;
     let mut out = Vec::new();
     for r in 1..=9i8 {

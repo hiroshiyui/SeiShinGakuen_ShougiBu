@@ -17,6 +17,13 @@ const HandViewScript := preload("res://scripts/game/HandView.gd")
 @onready var _quit_dialog: ConfirmationDialog = %QuitDialog
 @onready var _thinking_label: Label = %ThinkingLabel
 @onready var _layout: VBoxContainer = $Layout
+@onready var _teacher_row: HBoxContainer = %TeacherRow
+@onready var _teacher_btn: Button = %TeacherButton
+@onready var _teacher_left_spacer: Control = %LeftSpacer
+@onready var _teacher_right_spacer: Control = %RightSpacer
+@onready var _suggestions_panel: PanelContainer = %SuggestionsPanel
+@onready var _suggestions_list: VBoxContainer = %SuggestionsList
+@onready var _close_suggestions_btn: Button = %CloseSuggestionsButton
 
 var _think_thread: Thread
 var _thinking: bool = false
@@ -33,6 +40,8 @@ var _sel_from: Vector2i = Vector2i.ZERO
 var _sel_drop_kind: int = -1
 var _pending_move: Dictionary = {}
 var _game_over: bool = false
+var _suggestion_preview_from: Vector2i = Vector2i.ZERO
+var _suggestion_preview_to: Vector2i = Vector2i.ZERO
 
 func _ready() -> void:
 	if not ClassDB.class_exists("ShogiCore"):
@@ -54,6 +63,10 @@ func _ready() -> void:
 	_undo_btn.pressed.connect(_on_undo)
 	_exit_btn.pressed.connect(_on_exit_pressed)
 	_quit_dialog.confirmed.connect(_on_quit_confirmed)
+	_teacher_btn.pressed.connect(_on_teacher_pressed)
+	_close_suggestions_btn.pressed.connect(_close_suggestions)
+	_apply_teacher_side()
+	_teacher_row.visible = _ai_enabled
 	_sente_hand.is_gote = false
 	_gote_hand.is_gote = true
 	get_viewport().size_changed.connect(_refit_board)
@@ -68,9 +81,21 @@ func _ready() -> void:
 # viewport size change so orientation / window-resize / split-screen stay fit.
 func _refit_board() -> void:
 	const GUTTER := 4.0
-	const VERTICAL_RESERVED := 72.0 + 72.0 + 40.0 + 8.0 * 3 + 16.0
+	# Hands (2×72) + status bar (40) + fixed breathing pad (16). TeacherRow
+	# and SuggestionsPanel are measured live since they toggle visibility.
+	var base: float = 72.0 + 72.0 + 40.0 + 16.0
+	var extras: float = 0.0
+	if _teacher_row != null and _teacher_row.visible:
+		extras += max(_teacher_row.size.y, _teacher_row.custom_minimum_size.y)
+	if _suggestions_panel != null and _suggestions_panel.visible:
+		extras += _suggestions_panel.size.y
+	# VBox separation (8) between every pair of visible children.
+	var visible_items := 4  # GoteHand, Board, SenteHand, StatusBar
+	if _teacher_row != null and _teacher_row.visible: visible_items += 1
+	if _suggestions_panel != null and _suggestions_panel.visible: visible_items += 1
+	var separators: float = 8.0 * max(0, visible_items - 1)
 	var vp: Vector2 = get_viewport_rect().size
-	var side: float = min(vp.x - 2.0 * GUTTER, vp.y - VERTICAL_RESERVED)
+	var side: float = min(vp.x - 2.0 * GUTTER, vp.y - base - extras - separators)
 	side = clamp(side, 240.0, 1600.0)
 	_board_view.custom_minimum_size = Vector2(side, side)
 
@@ -125,6 +150,7 @@ func _maybe_start_ai_turn() -> void:
 	_thinking = true
 	_thinking_label.visible = true
 	_undo_btn.disabled = true
+	_teacher_btn.disabled = true
 	_think_thread = Thread.new()
 	_think_thread.start(_run_ai_think.bind(Settings.ai_playouts))
 
@@ -153,6 +179,8 @@ func _refresh_all() -> void:
 	var ply: int = int(_core.move_log_size()) + 1
 	_status.text = "%s の手番 (%d手目)" % [mover, ply]
 	_undo_btn.disabled = int(_core.move_log_size()) == 0 or _game_over
+	var ai_turn := _ai_enabled and Settings.side_is_ai(side_gote)
+	_teacher_btn.disabled = _game_over or _thinking or ai_turn or not _ai_enabled
 
 func _clear_selection() -> void:
 	_sel_state = SelState.IDLE
@@ -170,6 +198,7 @@ func _on_board_tapped(file: int, rank: int) -> void:
 		return
 	if _ai_enabled and Settings.side_is_ai(_core.side_to_move_gote()):
 		return
+	_clear_suggestion_preview()
 	var key := Vector2i(file, rank)
 	match _sel_state:
 		SelState.IDLE:
@@ -184,6 +213,7 @@ func _on_hand_tapped(kind: int, is_gote: bool) -> void:
 		return
 	if _ai_enabled and Settings.side_is_ai(is_gote):
 		return
+	_clear_suggestion_preview()
 	_clear_selection()
 	var drops: Array = _core.legal_drops(kind)
 	if drops.is_empty():
@@ -315,6 +345,8 @@ func _commit_move(m: Dictionary) -> void:
 	_log_move(mover, m)
 	_last_move = m.duplicate()
 	_clear_selection()
+	if _suggestions_panel.visible:
+		_close_suggestions()
 	_refresh_all()
 	_refresh_last_move_hint()
 	if OS.has_feature("mobile"):
@@ -415,3 +447,84 @@ func _log_move(mover: String, m: Dictionary) -> void:
 
 func _square_str(v: Vector2i) -> String:
 	return "%d%s" % [v.x, _RANK_KANJI[v.y]]
+
+# --- 先生モード (teacher mode) ---------------------------------------------
+
+func _apply_teacher_side() -> void:
+	# Both spacers carry size_flags_horizontal=3; disabling the expand
+	# flag on one side pushes the button there.
+	var right: bool = Settings.teacher_side == "right"
+	_teacher_left_spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL if right else 0
+	_teacher_right_spacer.size_flags_horizontal = 0 if right else Control.SIZE_EXPAND_FILL
+
+func _on_teacher_pressed() -> void:
+	if _game_over or _thinking or not _ai_enabled:
+		return
+	if Settings.side_is_ai(_core.side_to_move_gote()):
+		return
+	var suggestions: Array = _core.suggest_moves(3)
+	if suggestions.is_empty():
+		_status.text = "先生: 有効な手が見つかりません"
+		return
+	_clear_selection()
+	_populate_suggestions(suggestions)
+
+func _populate_suggestions(suggestions: Array) -> void:
+	for child in _suggestions_list.get_children():
+		child.queue_free()
+	for m in suggestions:
+		var btn := Button.new()
+		btn.custom_minimum_size = Vector2(0, 36)
+		btn.alignment = HORIZONTAL_ALIGNMENT_LEFT
+		btn.add_theme_font_size_override("font_size", 16)
+		btn.text = _format_suggestion(m)
+		btn.pressed.connect(_on_suggestion_tapped.bind(m))
+		_suggestions_list.add_child(btn)
+	_suggestions_panel.visible = true
+	_refit_board.call_deferred()
+
+func _format_suggestion(m: Dictionary) -> String:
+	var score: float = float(m.get("score", 0.0))
+	var pct := int(round(score * 100.0))
+	var notation: String
+	var to: Vector2i = Vector2i(m["to"])
+	if m.has("drop_kind"):
+		notation = "%s%s打" % [_square_str(to), PieceScript.KANJI[int(m["drop_kind"])]]
+	else:
+		var from: Vector2i = Vector2i(m["from"])
+		var piece = _core.piece_at(from.x, from.y)
+		var kanji := ""
+		if piece != null:
+			kanji = PieceScript.kanji_for(int(piece["kind"]), bool(piece["is_gote"]))
+		var suffix := "成" if bool(m.get("promote", false)) else ""
+		notation = "%s%s → %s%s" % [_square_str(from), kanji, _square_str(to), suffix]
+	return "%s  (%d%%)" % [notation, pct]
+
+func _on_suggestion_tapped(m: Dictionary) -> void:
+	# Preview only — highlight from/to on the board without committing.
+	# Tapping any square (board or hand) clears the preview via
+	# _clear_suggestion_preview calls in the existing flow.
+	_clear_suggestion_preview()
+	var to: Vector2i = Vector2i(m["to"])
+	var from: Vector2i = Vector2i.ZERO
+	if not m.has("drop_kind"):
+		from = Vector2i(m["from"])
+	_suggestion_preview_from = from
+	_suggestion_preview_to = to
+	var hints: Array = []
+	if from != Vector2i.ZERO:
+		hints.append(from)
+	hints.append(to)
+	_board_view.show_move_hints(hints)
+
+func _clear_suggestion_preview() -> void:
+	if _suggestion_preview_from == Vector2i.ZERO and _suggestion_preview_to == Vector2i.ZERO:
+		return
+	_suggestion_preview_from = Vector2i.ZERO
+	_suggestion_preview_to = Vector2i.ZERO
+	_board_view.clear_move_hints()
+
+func _close_suggestions() -> void:
+	_suggestions_panel.visible = false
+	_clear_suggestion_preview()
+	_refit_board.call_deferred()
