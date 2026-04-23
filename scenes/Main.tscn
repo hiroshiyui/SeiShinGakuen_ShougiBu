@@ -46,7 +46,7 @@ unique_name_in_owner = true
 
 [node name="TeacherRow" type="HBoxContainer" parent="Layout"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 48)
+custom_minimum_size = Vector2(0, 56)
 
 [node name="LeftSpacer" type="Control" parent="Layout/TeacherRow"]
 unique_name_in_owner = true
@@ -54,9 +54,9 @@ size_flags_horizontal = 3
 
 [node name="TeacherButton" type="Button" parent="Layout/TeacherRow"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 44)
+custom_minimum_size = Vector2(0, 52)
 text = "先生！教えてください！"
-theme_override_font_sizes/font_size = 18
+theme_override_font_sizes/font_size = 22
 
 [node name="RightSpacer" type="Control" parent="Layout/TeacherRow"]
 unique_name_in_owner = true
@@ -75,24 +75,24 @@ theme_override_constants/separation = 4
 text = "先生のお薦め"
 size_flags_horizontal = 3
 theme_override_colors/font_color = Color(0.95, 0.88, 0.6, 1)
-theme_override_font_sizes/font_size = 16
+theme_override_font_sizes/font_size = 22
 
 [node name="CloseSuggestionsButton" type="Button" parent="Layout/SuggestionsPanel/SuggestionsBox/SuggestionsHeader"]
 unique_name_in_owner = true
 text = "閉じる"
-theme_override_font_sizes/font_size = 14
+theme_override_font_sizes/font_size = 22
 
 [node name="SuggestionsList" type="VBoxContainer" parent="Layout/SuggestionsPanel/SuggestionsBox"]
 unique_name_in_owner = true
 theme_override_constants/separation = 2
 
 [node name="StatusBar" type="HBoxContainer" parent="Layout"]
-custom_minimum_size = Vector2(0, 40)
+custom_minimum_size = Vector2(0, 56)
 theme_override_constants/separation = 12
 
 [node name="StatusLabel" type="Label" parent="Layout/StatusBar"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 32)
+custom_minimum_size = Vector2(0, 44)
 size_flags_horizontal = 3
 theme_override_colors/font_color = Color(0.9, 0.9, 0.9, 1)
 vertical_alignment = 1

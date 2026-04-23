@@ -4,7 +4,7 @@
 [ext_resource type="PackedScene" path="res://scenes/game/PieceView.tscn" id="2_pv"]
 
 [node name="HandPiece" type="Control"]
-custom_minimum_size = Vector2(56, 64)
+custom_minimum_size = Vector2(64, 72)
 layout_mode = 3
 anchors_preset = 0
 script = ExtResource("1_hp")
@@ -25,6 +25,6 @@ grow_horizontal = 0
 grow_vertical = 0
 theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
 theme_override_constants/outline_size = 4
-theme_override_font_sizes/font_size = 18
+theme_override_font_sizes/font_size = 22
 text = "×2"
 horizontal_alignment = 2
