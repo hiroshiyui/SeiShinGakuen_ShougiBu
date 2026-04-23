@@ -82,4 +82,15 @@ subset \
     "$UI_TEXT"
 
 echo
+echo "Subsets written. Triggering Godot reimport so .godot/imported/ picks them up…"
+
+GODOT="${GODOT:-$HOME/.local/bin/Godot_v4.6.2-stable_linux.x86_64}"
+if [[ -x "$GODOT" ]]; then
+    "$GODOT" --headless --import --path "$REPO_ROOT" >/dev/null 2>&1 \
+        && echo "Reimport OK." \
+        || echo "Reimport failed — open the editor manually to refresh font cache." >&2
+else
+    echo "Godot not at $GODOT — skipping reimport. Open the editor to refresh." >&2
+fi
+
 echo "Done. Re-run after editing UI strings."
