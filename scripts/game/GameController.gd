@@ -67,7 +67,7 @@ func _ready() -> void:
 # vertical slot left after the two hands + status bar. Recomputed on every
 # viewport size change so orientation / window-resize / split-screen stay fit.
 func _refit_board() -> void:
-	const GUTTER := 20.0
+	const GUTTER := 4.0
 	const VERTICAL_RESERVED := 72.0 + 72.0 + 40.0 + 8.0 * 3 + 16.0
 	var vp: Vector2 = get_viewport_rect().size
 	var side: float = min(vp.x - 2.0 * GUTTER, vp.y - VERTICAL_RESERVED)
