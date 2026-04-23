@@ -42,6 +42,7 @@ var _pending_move: Dictionary = {}
 var _game_over: bool = false
 var _suggestion_preview_from: Vector2i = Vector2i.ZERO
 var _suggestion_preview_to: Vector2i = Vector2i.ZERO
+var _character: CharacterProfile = null
 
 func _ready() -> void:
 	if not ClassDB.class_exists("ShogiCore"):
@@ -140,6 +141,10 @@ func _load_ai_if_needed() -> void:
 		_ai_enabled = false
 		return
 	_ai_enabled = true
+	_character = Settings.load_character(Settings.selected_character_id)
+	if _character != null:
+		print("[game] AI character: %s (playouts=%d, τ=%.2f)" %
+			[_character.display_name, _character.playouts, _character.temperature])
 
 func _maybe_start_ai_turn() -> void:
 	if _game_over or _thinking or not _ai_enabled:
@@ -151,11 +156,13 @@ func _maybe_start_ai_turn() -> void:
 	_thinking_label.visible = true
 	_undo_btn.disabled = true
 	_teacher_btn.disabled = true
+	var playouts: int = _character.playouts if _character != null else Settings.ai_playouts
+	var temperature: float = _character.temperature if _character != null else 0.0
 	_think_thread = Thread.new()
-	_think_thread.start(_run_ai_think.bind(Settings.ai_playouts))
+	_think_thread.start(_run_ai_think.bind(playouts, temperature))
 
-func _run_ai_think(playouts: int) -> Variant:
-	return _core.think_best_move(playouts)
+func _run_ai_think(playouts: int, temperature: float) -> Variant:
+	return _core.think_sampled(playouts, temperature)
 
 func _process(_delta: float) -> void:
 	if _thinking and _think_thread != null and not _think_thread.is_alive():

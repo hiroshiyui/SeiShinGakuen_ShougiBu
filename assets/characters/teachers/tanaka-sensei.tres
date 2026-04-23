@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="CharacterProfile" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/CharacterProfile.gd" id="1_profile"]
+
+[resource]
+script = ExtResource("1_profile")
+id = "tanaka-sensei"
+display_name = "田中 先生"
+portrait_dir = "res://assets/characters/teachers/tanaka-sensei/"
+playouts = 512
+temperature = 0.1
+strength_label = "師範"
+tagline = "将棋部の顧問"

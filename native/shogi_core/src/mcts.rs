@@ -57,8 +57,17 @@ impl<'a> Searcher<'a> {
     }
 
     /// Run `n_playouts` MCTS iterations from the current board state and
-    /// return the most-visited root move.
-    pub fn best_move(&mut self, board: &mut Board, n_playouts: u32) -> Option<Move> {
+    /// Run `n_playouts` MCTS iterations from the current board state and
+    /// pick a root move by sampling from visit counts raised to
+    /// `1/temperature`. `temperature == 0.0` → greedy (most-visited).
+    /// Higher τ flattens the distribution; τ=1 is proportional to visits.
+    /// Gives weaker characters plausible-looking mistakes without retraining.
+    pub fn sample_move(
+        &mut self,
+        board: &mut Board,
+        n_playouts: u32,
+        temperature: f32,
+    ) -> Option<Move> {
         // Expand root first so Dirichlet noise can be applied.
         self.ensure_expanded(0, board).ok()?;
         self.add_root_dirichlet_noise();
@@ -69,10 +78,40 @@ impl<'a> Searcher<'a> {
 
         let root = &self.nodes[0];
         let children = root.children.as_ref()?;
-        children
+        if children.is_empty() {
+            return None;
+        }
+
+        if temperature <= 1e-6 {
+            return children
+                .iter()
+                .max_by_key(|c| c.node.map(|i| self.nodes[i].n).unwrap_or(0))
+                .map(|c| c.mv);
+        }
+
+        // visits^(1/τ). Small τ sharpens toward greedy; τ=1 leaves visits as-is.
+        let inv_t = 1.0_f32 / temperature;
+        let weights: Vec<f64> = children
             .iter()
-            .max_by_key(|c| c.node.map(|i| self.nodes[i].n).unwrap_or(0))
-            .map(|c| c.mv)
+            .map(|c| {
+                let n = c.node.map(|i| self.nodes[i].n).unwrap_or(0) as f32;
+                (n.max(1.0).powf(inv_t)) as f64
+            })
+            .collect();
+        let sum: f64 = weights.iter().sum();
+        if sum <= 0.0 {
+            return children.first().map(|c| c.mv);
+        }
+        let mut rng = rand::rng();
+        let r: f64 = rng.random::<f64>() * sum;
+        let mut acc = 0.0;
+        for (c, w) in children.iter().zip(weights.iter()) {
+            acc += *w;
+            if r <= acc {
+                return Some(c.mv);
+            }
+        }
+        children.last().map(|c| c.mv)
     }
 
     fn playout(&mut self, board: &mut Board) {

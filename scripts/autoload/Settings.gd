@@ -17,8 +17,11 @@ const SAVE_PATH := "user://saved_game.cfg"
 const PREFS_PATH := "user://prefs.cfg"
 
 # User preferences that outlive a single game. Loaded once in _ready
-# and written back via set_teacher_side().
+# and written back via setter methods.
 var teacher_side: String = "right"  # "left" or "right"
+var selected_character_id: String = ""  # empty = use Settings.ai_playouts default
+
+const CHARACTERS_DIR := "res://assets/characters"
 
 func _ready() -> void:
 	_load_prefs()
@@ -31,6 +34,43 @@ func set_teacher_side(side: String) -> void:
 	teacher_side = side
 	_save_prefs()
 
+func set_selected_character_id(cid: String) -> void:
+	if cid == selected_character_id:
+		return
+	selected_character_id = cid
+	_save_prefs()
+
+# Walk CHARACTERS_DIR for every .tres and return a typed list.
+# Missing dir / corrupt files are skipped silently (no characters yet
+# on a fresh checkout is a valid state).
+func list_characters() -> Array[CharacterProfile]:
+	var out: Array[CharacterProfile] = []
+	var roots := ["teachers", "students"]
+	for sub in roots:
+		var dir := "%s/%s" % [CHARACTERS_DIR, sub]
+		if not DirAccess.dir_exists_absolute(ProjectSettings.globalize_path(dir)):
+			continue
+		var d := DirAccess.open(dir)
+		if d == null:
+			continue
+		d.list_dir_begin()
+		var name := d.get_next()
+		while name != "":
+			if name.ends_with(".tres") and not d.current_is_dir():
+				var res = load("%s/%s" % [dir, name])
+				if res is CharacterProfile:
+					out.append(res)
+			name = d.get_next()
+	return out
+
+func load_character(cid: String) -> CharacterProfile:
+	if cid == "":
+		return null
+	for c in list_characters():
+		if c.id == cid:
+			return c
+	return null
+
 func _load_prefs() -> void:
 	var cfg := ConfigFile.new()
 	if cfg.load(PREFS_PATH) != OK:
@@ -38,10 +78,12 @@ func _load_prefs() -> void:
 	var side := str(cfg.get_value("ui", "teacher_side", "right"))
 	if side == "left" or side == "right":
 		teacher_side = side
+	selected_character_id = str(cfg.get_value("ai", "character_id", ""))
 
 func _save_prefs() -> void:
 	var cfg := ConfigFile.new()
 	cfg.set_value("ui", "teacher_side", teacher_side)
+	cfg.set_value("ai", "character_id", selected_character_id)
 	var err: int = cfg.save(PREFS_PATH)
 	if err != OK:
 		push_warning("save_prefs: ConfigFile.save returned %d" % err)

@@ -288,14 +288,23 @@ impl ShogiCore {
 
     #[func]
     fn think_best_move(&mut self, playouts: i64) -> Variant {
+        self.think_sampled(playouts, 0.0)
+    }
+
+    /// MCTS with visit-count sampling. `temperature == 0.0` is greedy
+    /// (most-visited root move); larger values flatten the
+    /// distribution for weaker / more varied play. Blocks for the duration
+    /// of the search — call from a Godot `Thread`.
+    #[func]
+    fn think_sampled(&mut self, playouts: i64, temperature: f64) -> Variant {
         let Some(nn) = self.nn.as_ref() else {
-            godot_warn!("think_best_move called before load_model");
+            godot_warn!("think_sampled called before load_model");
             return Variant::nil();
         };
         let n = playouts.max(1) as u32;
+        let t = temperature.max(0.0) as f32;
         let mut searcher = Searcher::new(nn);
-        let mv = searcher.best_move(&mut self.board, n);
-        match mv {
+        match searcher.sample_move(&mut self.board, n, t) {
             Some(m) => move_to_dict(m).to_variant(),
             None => Variant::nil(),
         }
