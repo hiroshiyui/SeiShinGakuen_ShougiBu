@@ -114,6 +114,33 @@ impl<'a> Searcher<'a> {
         children.last().map(|c| c.mv)
     }
 
+    /// After a search, return up to `k` root children sorted by visit count
+    /// (descending). Each entry is `(move, visits, q_from_root_pov)` where
+    /// `q ∈ [-1, 1]` is the search-backed value from the root player's
+    /// perspective (+1 = winning, -1 = losing). Unvisited children get `q = 0`.
+    pub fn top_k_root_children(&self, k: usize) -> Vec<(Move, u32, f32)> {
+        let Some(children) = self.nodes[0].children.as_ref() else { return Vec::new() };
+        let mut scored: Vec<(Move, u32, f32)> = children
+            .iter()
+            .map(|c| {
+                let (n, q) = match c.node {
+                    Some(idx) => {
+                        let ch = &self.nodes[idx];
+                        // Child's w is from the child's STM (opponent of root).
+                        // Negate to express from the root player's perspective.
+                        let q = if ch.n == 0 { 0.0 } else { -ch.w / ch.n as f32 };
+                        (ch.n, q)
+                    }
+                    None => (0, 0.0),
+                };
+                (c.mv, n, q)
+            })
+            .collect();
+        scored.sort_by(|a, b| b.1.cmp(&a.1));
+        scored.truncate(k);
+        scored
+    }
+
     fn playout(&mut self, board: &mut Board) {
         // Descent.
         let mut path: Vec<usize> = vec![0];

@@ -286,6 +286,35 @@ impl ShogiCore {
         out
     }
 
+    /// MCTS-backed move suggestions for 先生 (teacher) mode. Runs a full
+    /// search for `playouts` iterations, then returns the top `top_k` root
+    /// moves sorted by visit count. Each dict has the same fields as
+    /// `legal_moves_from` plus `visits` (i64) and `win_rate` (f64, 0..1 from
+    /// the current player's perspective — search-backed, not policy-only).
+    /// Blocks for the duration of the search — call from a Godot `Thread`.
+    #[func]
+    fn suggest_moves_mcts(&mut self, top_k: i64, playouts: i64) -> Array<Dictionary> {
+        let Some(nn) = self.nn.as_ref() else {
+            godot_warn!("suggest_moves_mcts called before load_model");
+            return Array::new();
+        };
+        let n = playouts.max(1) as u32;
+        let k = top_k.max(1) as usize;
+        let mut searcher = Searcher::new(nn);
+        // Temperature is irrelevant for suggestions — we only consume the
+        // populated tree, not the sampled move.
+        let _ = searcher.sample_move(&mut self.board, n, 0.0);
+        let mut out = Array::new();
+        for (mv, visits, q) in searcher.top_k_root_children(k) {
+            let mut d = move_to_dict(mv);
+            d.set("visits", visits as i64);
+            let win_rate = ((q + 1.0) / 2.0).clamp(0.0, 1.0) as f64;
+            d.set("win_rate", win_rate);
+            out.push(&d);
+        }
+        out
+    }
+
     #[func]
     fn think_best_move(&mut self, playouts: i64) -> Variant {
         self.think_sampled(playouts, 0.0)

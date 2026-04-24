@@ -26,7 +26,9 @@ const HandViewScript := preload("res://scripts/game/HandView.gd")
 @onready var _close_suggestions_btn: Button = %CloseSuggestionsButton
 
 var _think_thread: Thread
+var _teacher_thread: Thread
 var _thinking: bool = false
+var _teacher_thinking: bool = false
 var _ai_enabled: bool = false
 
 const _RANK_KANJI := ["", "一", "二", "三", "四", "五", "六", "七", "八", "九"]
@@ -169,6 +171,9 @@ func _run_ai_think(playouts: int, temperature: float) -> Variant:
 	return _core.think_sampled(playouts, temperature)
 
 func _process(_delta: float) -> void:
+	if _teacher_thinking and _teacher_thread != null and not _teacher_thread.is_alive():
+		_finish_teacher_think()
+		return
 	if _thinking and _think_thread != null and not _think_thread.is_alive():
 		var mv: Variant = _think_thread.wait_to_finish()
 		_thinking = false
@@ -469,15 +474,41 @@ func _apply_teacher_side() -> void:
 	_teacher_right_spacer.size_flags_horizontal = 0 if right else Control.SIZE_EXPAND_FILL
 
 func _on_teacher_pressed() -> void:
-	if _game_over or _thinking or not _ai_enabled:
+	if _game_over or _thinking or _teacher_thinking or not _ai_enabled:
 		return
 	if Settings.side_is_ai(_core.side_to_move_gote()):
 		return
-	var suggestions: Array = _core.suggest_moves(3)
+	_clear_selection()
+	_clear_suggestion_preview()
+	# Reuse _thinking to block board/hand input while the search runs —
+	# both threads mutate the shared _core board state (apply/undo during
+	# playouts) so the main thread must not touch it concurrently.
+	_thinking = true
+	_teacher_thinking = true
+	_thinking_label.text = "先生が考え中..."
+	_thinking_label.visible = true
+	_undo_btn.disabled = true
+	_teacher_btn.disabled = true
+	var playouts: int = _character.playouts if _character != null else Settings.ai_playouts
+	_teacher_thread = Thread.new()
+	_teacher_thread.start(_run_teacher_think.bind(playouts))
+
+func _run_teacher_think(playouts: int) -> Variant:
+	return _core.suggest_moves_mcts(3, playouts)
+
+func _finish_teacher_think() -> void:
+	var result: Variant = _teacher_thread.wait_to_finish()
+	_teacher_thread = null
+	_teacher_thinking = false
+	_thinking = false
+	_thinking_label.visible = false
+	_thinking_label.text = "思考中…"
+	_undo_btn.disabled = int(_core.move_log_size()) == 0 or _game_over
+	_teacher_btn.disabled = false
+	var suggestions: Array = result if result is Array else []
 	if suggestions.is_empty():
 		_status.text = "先生: 有効な手が見つかりません"
 		return
-	_clear_selection()
 	_populate_suggestions(suggestions)
 
 func _populate_suggestions(suggestions: Array) -> void:
@@ -495,8 +526,8 @@ func _populate_suggestions(suggestions: Array) -> void:
 	_refit_board.call_deferred()
 
 func _format_suggestion(m: Dictionary) -> String:
-	var score: float = float(m.get("score", 0.0))
-	var pct := int(round(score * 100.0))
+	var win_rate: float = float(m.get("win_rate", m.get("score", 0.0)))
+	var pct := int(round(win_rate * 100.0))
 	var notation: String
 	var to: Vector2i = Vector2i(m["to"])
 	if m.has("drop_kind"):
@@ -509,7 +540,7 @@ func _format_suggestion(m: Dictionary) -> String:
 			kanji = PieceScript.kanji_for(int(piece["kind"]), bool(piece["is_gote"]))
 		var suffix := "成" if bool(m.get("promote", false)) else ""
 		notation = "%s%s → %s%s" % [_square_str(from), kanji, _square_str(to), suffix]
-	return "%s  (%d%%)" % [notation, pct]
+	return "%s  勝率%d%%" % [notation, pct]
 
 func _on_suggestion_tapped(m: Dictionary) -> void:
 	# Preview only — highlight from/to on the board without committing.
