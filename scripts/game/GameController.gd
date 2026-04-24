@@ -503,8 +503,12 @@ func _finish_teacher_think() -> void:
 	_thinking = false
 	_thinking_label.visible = false
 	_thinking_label.text = "思考中…"
-	_undo_btn.disabled = int(_core.move_log_size()) == 0 or _game_over
-	_teacher_btn.disabled = false
+	# Resync the UI with the authoritative Rust state. If the main thread
+	# ever touched `_core` while the worker held `&mut self` (a deferred
+	# signal, a resize callback, etc.), godot-rust may have returned default
+	# values that left HandView / BoardView stale — forcing a render now
+	# guarantees we match the real board.
+	_refresh_all()
 	var suggestions: Array = result if result is Array else []
 	if suggestions.is_empty():
 		_status.text = "先生: 有効な手が見つかりません"
