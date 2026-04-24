@@ -2,6 +2,26 @@ extends Node
 
 var _sound_cache := {}
 
+func _ready() -> void:
+	# Auto-wire a click SFX on every BaseButton (Button, CheckButton,
+	# OptionButton, the 投了/待った/閉じる buttons, suggestion rows, etc.)
+	# so we don't have to touch each call site. `node_added` only fires for
+	# future additions, so we also sweep the already-live tree once.
+	get_tree().node_added.connect(_on_node_added)
+	_hook_subtree(get_tree().root)
+
+func _hook_subtree(node: Node) -> void:
+	_on_node_added(node)
+	for child in node.get_children():
+		_hook_subtree(child)
+
+func _on_node_added(node: Node) -> void:
+	if node is BaseButton and not node.pressed.is_connected(_play_click):
+		node.pressed.connect(_play_click)
+
+func _play_click() -> void:
+	play("click")
+
 func play(sound_name: String) -> void:
 	var stream = _get_sound(sound_name)
 	if stream == null:
