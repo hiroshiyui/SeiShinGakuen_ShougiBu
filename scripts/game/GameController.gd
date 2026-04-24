@@ -176,11 +176,22 @@ func _process(_delta: float) -> void:
 		return
 	if _thinking and _think_thread != null and not _think_thread.is_alive():
 		var mv: Variant = _think_thread.wait_to_finish()
+		# Clear _thinking immediately so _process won't re-enter this branch
+		# while we await the natural-pause timer below. Input is still gated
+		# by side-to-move (it's the AI's turn until _commit_move flips it).
 		_thinking = false
-		_thinking_label.visible = false
+		_think_thread = null
 		if mv == null:
+			_thinking_label.visible = false
 			push_warning("AI returned no move")
 			_refresh_all()
+			return
+		# Natural pause — avoid the AI snapping a move instantly after a
+		# fast search. Keep the 思考中 label up during the delay so the
+		# transition reads as continuous deliberation.
+		await get_tree().create_timer(randf_range(1.0, 2.0)).timeout
+		_thinking_label.visible = false
+		if _game_over:
 			return
 		_commit_move(mv)
 
@@ -365,6 +376,15 @@ func _commit_move(m: Dictionary) -> void:
 		_close_suggestions()
 	_refresh_all()
 	_refresh_last_move_hint()
+	# Slide the piece from its origin square to the destination. Drops come
+	# from the hand, not a board square, so we skip the animation there.
+	if not m.has("drop_kind"):
+		var from_key: Vector2i = Vector2i(m["from"])
+		var to_key: Vector2i = Vector2i(m["to"])
+		var landed = _core.piece_at(to_key.x, to_key.y)
+		if landed != null:
+			var text := PieceScript.kanji_for(int(landed["kind"]), bool(landed["is_gote"]))
+			_board_view.animate_move(from_key, to_key, text, bool(landed["is_gote"]))
 	if OS.has_feature("mobile"):
 		Input.vibrate_handheld(50)
 	_check_end_state()

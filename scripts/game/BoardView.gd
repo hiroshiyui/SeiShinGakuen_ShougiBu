@@ -6,6 +6,7 @@ signal square_tapped(file: int, rank: int)
 const SquareScene := preload("res://scenes/game/Square.tscn")
 const SquareScript := preload("res://scripts/game/Square.gd")
 const PieceScript := preload("res://scripts/game/Piece.gd")
+const PieceViewScene := preload("res://scenes/game/PieceView.tscn")
 
 @onready var _grid: GridContainer = %GridMargin/Grid
 @onready var _margin_container: MarginContainer = %GridMargin
@@ -97,3 +98,30 @@ func clear_last_move() -> void:
 
 func _on_square_tapped(file: int, rank: int) -> void:
 	square_tapped.emit(file, rank)
+
+# Slide the piece across the board from `from` to `to`. Caller invokes this
+# AFTER _core.apply_move + render(), so `to` already shows the landed piece;
+# we hide it for the duration of the tween, float a ghost copy from `from`
+# to `to`, then restore the square. Fire-and-forget — the short duration is
+# well under the AI's own 1–2 s natural-pause delay, so animations don't
+# stack across turns.
+func animate_move(from: Vector2i, to: Vector2i, text: String, is_gote: bool, duration: float = 0.22) -> void:
+	if not _squares.has(from) or not _squares.has(to):
+		return
+	var from_sq: SquareScript = _squares[from]
+	var to_sq: SquareScript = _squares[to]
+	to_sq.clear_piece()
+	var ghost: Control = PieceViewScene.instantiate()
+	add_child(ghost)
+	ghost.top_level = true
+	ghost.size = to_sq.size
+	ghost.global_position = from_sq.global_position
+	ghost.text = text
+	ghost.is_gote = is_gote
+	var tween := create_tween()
+	tween.set_trans(Tween.TRANS_SINE)
+	tween.set_ease(Tween.EASE_OUT)
+	tween.tween_property(ghost, "global_position", to_sq.global_position, duration)
+	await tween.finished
+	ghost.queue_free()
+	to_sq.set_piece(text, is_gote)
