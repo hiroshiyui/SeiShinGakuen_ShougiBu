@@ -17,14 +17,20 @@ func _get_sound(sound_name: String) -> AudioStream:
 	if _sound_cache.has(sound_name):
 		return _sound_cache[sound_name]
 	
-	var path := "res://assets/sounds/%s.wav" % sound_name
-	# FileAccess.file_exists() is false on Android for .wav paths — the
-	# APK only carries the imported .sample. ResourceLoader.exists()
-	# works on both platforms (same gotcha as PieceView's texture load).
-	if not ResourceLoader.exists(path):
-		push_error("Sound file does not exist: " + path)
+	# FileAccess.file_exists() is false on Android for sound-file paths —
+	# the APK only carries the imported .sample / .oggvorbisstr.
+	# ResourceLoader.exists() works on both platforms (same gotcha as
+	# PieceView's texture load).
+	var path := ""
+	for ext in [".ogg", ".wav"]:
+		var candidate := "res://assets/sounds/%s%s" % [sound_name, ext]
+		if ResourceLoader.exists(candidate):
+			path = candidate
+			break
+	if path == "":
+		push_error("Sound file does not exist: assets/sounds/%s.{ogg,wav}" % sound_name)
 		return null
-	
+
 	var stream = load(path)
 	if stream == null:
 		# If load fails, it might be because the .import file isn't ready.
