@@ -10,10 +10,10 @@ config_version=5
 
 [application]
 
-config/name="seishingakuen_shougibu"
+config/name="清正学園将棋部"
 run/main_scene="res://scenes/MainMenu.tscn"
 config/features=PackedStringArray("4.6", "Mobile")
-config/icon="res://icon.svg"
+config/icon="res://icon.png"
 
 [autoload]
 
