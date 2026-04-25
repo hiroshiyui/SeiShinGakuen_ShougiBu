@@ -1,159 +1,147 @@
 ---
 name: docs-engineering
-description: Write, review, or revise technical documentation (README, architecture notes, ADRs, guides, doc comments) with engineering rigor — accuracy, structure, and no drift from code. Use when the user asks to "write docs", "improve the README", "document this module", "add an ADR", or to review existing docs for staleness. Not for code comments on a single function (just edit the code).
+description: Writing/updating project documentation (README, ROADMAP, CLAUDE.md, docs/architecture.md, ADRs, asset-folder READMEs) for SeiShinGakuen_ShougiBu. Use when the user asks to update docs, draft an ADR, write a changelog, or update a Play Store / GitHub Release listing.
+argument-hint: task description
 ---
 
-# docs-engineering
+# Documentation Engineering
 
-Treat documentation as code: precise, reviewed, kept in sync with what it describes.
+You are performing documentation tasks for **清正学園将棋部** (SeiShinGakuen_ShougiBu) — a single-player Android Shogi (本将棋) game built with Godot 4.6.2 (Mobile renderer) and a Rust GDExtension (`shogi_core`) for rules + AI.
 
-## When to use
+## Current state of project documentation
 
-- Writing or rewriting a README, CONTRIBUTING, architecture overview, or module guide.
-- Authoring an ADR (Architecture Decision Record).
-- Reviewing existing docs for accuracy after code changes.
-- Structuring a `docs/` tree from scratch.
-- Not for a one-line comment fix — just edit the file.
+Read this before assuming files exist. The repo has solid technical documentation; user-facing / store-listing material is lighter.
 
-## Core principles
+**Currently exists:**
 
-1. **Accuracy beats completeness.** A short doc that's right is more valuable than a long one that's half-stale. If you can't verify a claim, don't make it.
-2. **Write for the reader, not the author.** Name the audience (new contributor? operator? API consumer?) and answer *their* questions. Cut anything written only to flatter the author or the project.
-3. **Don't duplicate what code already says.** Identifiers, types, and signatures belong in code. Docs explain the *why*, constraints, trade-offs, and non-obvious invariants.
-4. **Every example must be runnable.** If you show a command, it should work as written. If you show code, it should compile (or be clearly marked as pseudocode).
-5. **Link, don't retype.** Reference code with path and line (`src/foo.rs:42`) instead of pasting it — the paste will rot.
-6. **Prune aggressively.** Outdated docs are worse than missing docs because they mislead. When in doubt, delete.
+| File | Status | Purpose |
+|---|---|---|
+| [README.md](../../README.md) | ✅ exists (English) | Project overview, screenshot, build instructions, tech stack |
+| [CLAUDE.md](../../CLAUDE.md) | ✅ exists | Project context for Claude Code; what to read before planning |
+| [ROADMAP.md](../../ROADMAP.md) | ✅ exists | Phased plan + "shipped differently" notes per completed phase |
+| [docs/architecture.md](../../docs/architecture.md) | ✅ exists | Two-layer architecture walkthrough (GDScript ↔ Rust GDExtension) |
+| [docs/adr/](../../docs/adr/) | ✅ has entries | Architecture Decision Records, e.g. `0005-font-subset-pipeline.md` |
+| [docs/android-build.md](../../docs/android-build.md) | ✅ exists | APK export pipeline notes |
+| [docs/android-gotchas.md](../../docs/android-gotchas.md) | ✅ exists | Android-only behaviour notes (orientation int, touch double-fire, …) |
+| Per-asset READMEs | ✅ partial | `assets/fonts/{fude-goshirae,noto-serif-jp}/README.md` |
 
-## Document types and shapes
+**Does not yet exist** (don't pretend they do; ask before creating):
 
-### README
+- `CHANGELOG.md`
+- `LICENSE` — *no license file in the repo today*; copyright is implicit. Don't fabricate one. If the user wants to add a license, that's a deliberate decision worth a separate conversation.
+- `PRIVACY-POLICY.md` (Play Store will require a URL once the app goes live)
+- `NOTICES.md` / third-party attribution document
+- `fastlane/` directory (no Play Store / F-Droid metadata tree yet)
 
-Answers "what is this, why should I care, how do I get started?" — in that order. Aim for one screen before the first heading jump.
+When the user asks about one of the missing files, confirm whether to create it before writing — do not silently scaffold a tree of new docs.
 
-Structure:
-1. **One-sentence pitch** — what the project *is*, not what it aspires to be.
-2. **Status** — alpha / beta / production, supported platforms. Honest.
-3. **Quickstart** — shortest path to a working result. Copy-pasteable.
-4. **Pointers** — links to deeper docs (architecture, contributing, reference). README is a table of contents, not a manual.
+## Tone and writing style
 
-Avoid: marketing adjectives, feature lists that duplicate the code, changelogs (use `CHANGELOG.md`), roadmaps (use `ROADMAP.md`).
+- README is clear English technical prose with a few opinionated turns of phrase. Match it.
+- ROADMAP is structured by phase, with "shipped differently" callouts under completed phases that note what changed from the original plan. Maintain that pattern.
+- ADRs are short — context, decision, consequences — not essays. Number sequentially.
+- **Bilingual content is welcome.** Game UI and character names are Japanese; documentation can mix English prose with Japanese terms (`先生モード`, `加藤先生`, etc.) where they're the natural label. The user is comfortable in both.
+- **Traditional Chinese (zh-TW)** is occasionally used in the user's other projects. This repo doesn't have zh-TW docs yet; only add them if explicitly asked. If asked, use **Traditional Chinese characters only** (no Simplified) — the user is Taiwanese.
+- **Do not add emojis** unless the user explicitly asks. Existing docs have none.
 
-### ROADMAP
+## Project facts to keep accurate
 
-Answers "what order are we building this in, and what's the current phase?" — for contributors and stakeholders who want to know what comes next without reading the issue tracker.
+When writing or editing docs, double-check these from the source rather than copying from another project. They've gone stale before.
 
-Structure (phase-with-checkboxes shape):
+- **App name**: 清正学園将棋部 (SeiShinGakuen_ShougiBu in roman). Use the kanji form in user-facing copy; either is fine in technical prose.
+- **Package id (Android)**: `org.seishingakuen.shougibu` — set in [`export_presets.cfg`](../../export_presets.cfg) `package/unique_name`. **Immutable** for Play Store continuity.
+- **Display name (Android launcher)**: 清正学園将棋部, set in `package/name`.
+- **Version**: read [`export_presets.cfg`](../../export_presets.cfg) `version/name` and `version/code` — single source of truth.
+- **Engine**: Godot 4.6.2 (Mobile renderer, Vulkan backend on Android), `~/.local/bin/Godot_v4.6.2-stable_linux.x86_64`.
+- **Native layer**: Rust GDExtension at [`native/shogi_core/`](../../native/shogi_core/), shipped as a cdylib loaded via [`addons/shogi_core.gdextension`](../../addons/shogi_core.gdextension). Same `.so` serves desktop (`x86_64-unknown-linux-gnu`) and Android (`aarch64-linux-android`).
+- **Inference**: AlphaZero-style policy + value network, Bonanza-trained, 1.3 MB ONNX at [`models/bonanza.onnx`](../../models/bonanza.onnx). Runs via the `tract` crate in Rust; on Android the model is extracted from the APK to `user://` on first launch.
+- **Encoder invariant**: 45-plane position + 139-plane move index, byte-parity-tested against ShogiDojo's Python implementation via `tools/gen_fixtures.py` → `native/shogi_core/src/parity_tests.rs`. Don't describe the encoder casually — the project's defense against silent AI breakage is "the bytes are identical."
+- **Search**: single-threaded PUCT MCTS (no virtual loss, no transposition table) with Dirichlet noise at the root. Temperature-sampled — `tools/build_all.sh` and the Lv 1–8 strength presets in `Settings.gd` drive the playouts/τ pair.
+- **Rules**: full board + hand handling, check, 二歩, 打ち歩詰め, 千日手 (incl. perpetual-check variant), 入玉 detection. SFEN parse + serialize.
+- **Distribution**: Google Play (AAB). F-Droid is **not** currently set up.
+- **License**: not yet declared. The repo has no `LICENSE` file. Don't quote a license unless one lands.
+- **Author**: `Hui-Hong You` per `git log`.
+- **GitHub remote**: `git@github.com:hiroshiyui/SeiShinGakuen_ShougiBu.git`.
 
-1. **Goals & Non-Goals** — bullet list of what v1 includes and explicitly excludes.
-2. **Target stack / architecture** — tech choices table or short prose, so phases can reference them by name.
-3. **Repository layout (target)** — tree diagram of where code will live once the project matures, even if directories don't exist yet.
-4. **Phase plan** — numbered `### Phase N — Title` sections, in dependency order. Each phase contains:
-   - **Deliverable:** one sentence stating observable behavior at the end of the phase.
-   - A `- [ ]` GitHub-flavored checkbox list of the sub-tasks.
-   - **Done when:** one sentence defining the exit criterion (how you know the phase is shipped).
-5. **Key technical decisions & risks** — each with a short mitigation. Anything load-bearing across phases belongs here, not buried in a phase.
-6. **Testing strategy** — one paragraph per test layer.
-7. **Milestones table** — `| tag | content |` mapping git tags (e.g. `v0.3-rust-core`) to the phase whose completion they mark.
-8. **Open Questions** — `- [ ]` list of decisions deferred until they're needed. Don't invent answers; surface them.
+When updating any "Third-party" / dependency content, verify against [`native/shogi_core/Cargo.toml`](../../native/shogi_core/Cargo.toml) and the Godot export — don't trust this skill or the README to be in sync indefinitely.
 
-Rules:
-- One roadmap per repo. Don't fork it into `docs/roadmap-v2.md` — edit in place.
-- Phases are ordered by dependency, not priority. If phase 5 depends on phase 3, it must come after.
-- Don't put dates on phases unless there's a real external deadline.
-- A single `*Last updated: YYYY-MM-DD*` line at the bottom is fine and useful; per-phase dates are not.
-- Decisions that affect *every* phase (determinism, licensing, target platform) belong in "Key technical decisions" or the architecture section, not scattered into phases.
+## Specific document guidance
 
-**When a sub-task inside a phase is done:** tick its checkbox (`- [x]`) in the same change that delivers the work. Don't defer — the roadmap drifts out of sync within days.
+### README.md
 
-**When an entire phase is done:** append ` ✅` to the phase heading (pick one convention — ✅ or `[done]` — and keep it consistent across the file). Do not renumber or move the phase; the numbering is a stable reference used by the milestones table and by git tags.
+The existing README covers: tagline → screenshots → features → tech stack → build → deploy → tests. When updating it:
 
-Optional, when it adds value: under a completed phase heading, add a one-line note if the phase shipped *differently* than planned (scope changed, approach pivoted). Silent rewrites hide useful history. Don't rewrite the checkbox list into prose — leave the ticked boxes as the log.
+- Preserve that structure.
+- Update the "Features" section in lockstep with code changes — it's currently the project's most authoritative description of behaviour for a casual reader.
+- The "Tech Stack" section names Godot 4.6.2 + Rust GDExtension + tract + bonanza.onnx. Keep the version numbers accurate.
+- Avoid over-promising AI strength. Lv 8 (2048 playouts) is strong for casual players but won't beat a kyu-ranked human — describe it honestly.
 
-Avoid: vague aspirations ("better performance"), marketing bullets, anything that belongs in an ADR (decisions) or CHANGELOG (what already shipped, with dates).
+### ROADMAP.md
 
-### Architecture doc
+Phased plan. Each completed phase has a "shipped differently" subsection capturing where the implementation diverged from the original plan. **That's the canonical log of what the code actually does** — keep it accurate when phases complete or pivot. Don't rewrite history; add notes.
 
-Answers "how is this system put together and why?" — for a reader who will modify it.
+### CLAUDE.md
 
-Structure:
-1. **Scope** — what this doc covers and what it doesn't.
-2. **Invariants** — the properties the system must preserve (e.g. "sim is bit-deterministic across platforms"). Lead with these; everything else is in service of them.
-3. **Layers / boundaries** — the hard lines, with one paragraph per layer on responsibility.
-4. **Data flow** — how a request / tick / frame moves through the system.
-5. **Extension points** — where contributors are expected to add code, and where they aren't.
+Project context for Claude Code itself. Keep it short and load-bearing: project layout, tech stack, what files are byte-parity-sensitive (encoder fixtures), what Godot path to use, where Android gotchas are documented. The current file is well-tuned — minor edits, not rewrites.
 
-ASCII diagrams are fine and survive version control. Binary-format diagrams (draw.io exports, PNGs) rot — avoid unless the source is checked in next to them.
+### docs/architecture.md
 
-### ADR (Architecture Decision Record)
+The walkthrough of the GDScript ↔ Rust split. Key sections to keep faithful:
 
-One decision per file. Numbered, immutable once accepted.
+- The FFI surface is in [`native/shogi_core/src/lib.rs`](../../native/shogi_core/src/lib.rs) — everything else (board, encoder, MCTS, NN, rules) is internal.
+- GDScript owns scenes, input, turn orchestration, the MCTS Thread; Rust owns rules, encoding, MCTS, ONNX inference.
+- The same compiled `.so` serves Linux desktop and Android (`aarch64-linux-android`) via `cargo-ndk`.
 
+### docs/adr/
+
+Numbered Architecture Decision Records, e.g. `0005-font-subset-pipeline.md`. New ADRs:
+
+1. Use the next sequential number (`ls docs/adr/` for the latest).
+2. Keep them short: **Context** (why we needed a decision), **Decision** (what we picked), **Consequences** (good and bad). One page is plenty.
+3. ADRs are not retroactive — record the decision when it's made; don't backfill old decisions unless the user wants a history pass.
+
+### Asset-folder READMEs
+
+`assets/fonts/{fude-goshirae,noto-serif-jp}/README.md` describe vendored fonts and how the subset pipeline ([`tools/build_font_subsets.py`](../../tools/build_font_subsets.py)) trims them. If the subset pipeline changes (e.g. another font lands), update both READMEs in lockstep.
+
+### CHANGELOG.md (if/when created)
+
+Project has no changelog yet. When the user asks for one:
+
+1. Ask whether they want Keep-a-Changelog at the repo root, Play Store "What's new" copy only, GitHub Release notes only, or some combination.
+2. Once they choose, stick with it.
+
+To gather material since the previous tag:
+
+```bash
+git log --oneline <previous-tag>..HEAD     # if a previous tag exists
+git log --oneline                          # for the very first version (currently true)
 ```
-# ADR-NNNN: <short title>
 
-## Status
-Proposed | Accepted | Superseded by ADR-MMMM
+Commit prefixes (`feat(scope):`, `fix(scope):`, `docs:`, `chore:`, `refactor:`, `build:`) map cleanly onto changelog sections.
 
-## Context
-What forces are at play? What constraints? What did we try?
+### PRIVACY-POLICY.md (if/when created)
 
-## Decision
-What we're doing. Present tense, active voice.
+Play Store will require a privacy policy URL before publication. The honest privacy story is short:
 
-## Consequences
-What this makes easy, what it makes hard, what we're giving up.
-```
+- The app **makes no network requests** — all inference is on-device via `tract` against `models/bonanza.onnx`.
+- The **only** writable persistence is `user://prefs.cfg` (UI prefs + AI level) and `user://saved_game.cfg` (current SFEN + mode + level). No analytics, no telemetry, no ads, no crash reporting.
+- The bundled ONNX model is extracted from the APK to `user://` on first launch (Android limitation: `tract` can't open files inside the PCK/APK). It is not modified after.
+- Permissions declared: none beyond what Godot's mobile template ships with — no INTERNET, no storage, no biometric.
 
-Never rewrite an accepted ADR — supersede it with a new one that links back.
+Verify each claim against the code before publishing — claims must be true.
 
-### Module / package docs
+### Play Store store listing (if/when uploading)
 
-Answers "what does this module do, what's the entry point, what are the gotchas?" — for someone about to import it.
+Required text fields:
 
-Keep it adjacent to the code (doc comment at the top of the module, or `README.md` in the folder). If it's more than a screen long, it probably belongs in `docs/`.
+- **App name**: 清正学園将棋部 (50 chars max). Already fits.
+- **Short description**: 80 chars max. Hand-written.
+- **Full description**: 4000 chars max. Mirror the README's "Features" plus a sentence on the AI character roster (Lv 1 佐藤竜太郎 … Lv 8 加藤よしこ).
+- **Screenshots**: at least 2, ideally 4–8. Use Godot debug builds, hide the FPS counter.
+- **Feature graphic**: 1024×500.
+- **What's new**: per-version, max 500 chars per language.
 
-### Doc comments (rustdoc, GDScript docstrings, etc.)
+If the user wants Japanese + English store listings, mirror the text fields under both locales in Play Console.
 
-- Public API: explain intent, invariants, panics/errors, and at least one example.
-- Internal: only when behavior is non-obvious. A good name beats a comment.
-- Never restate the signature.
-
-## Writing mechanics
-
-- **Voice:** active, present tense, second person ("you") for instructions.
-- **Sentence length:** short. If a sentence has more than one clause, consider splitting.
-- **Headings:** imperative or noun phrases, not questions. Readers scan headings; make them informative.
-- **Lists:** parallel structure. If one bullet starts with a verb, all should.
-- **Code blocks:** always language-tagged (` ```rust `, ` ```bash `). Never tag as `text` when a real language applies.
-- **Links:** use relative paths within the repo, absolute URLs only for external.
-- **No emojis** unless the user explicitly wants them.
-- **No marketing language:** "blazingly fast," "robust," "powerful," "seamless." Say what it actually does.
-
-## Review checklist
-
-When reviewing or updating existing docs:
-
-- [ ] Every code reference (path, symbol, flag, command) still exists — grep to confirm.
-- [ ] Every example runs / compiles as written.
-- [ ] No dead links (internal or external).
-- [ ] Scope statement still matches what the system does.
-- [ ] Nothing contradicts CLAUDE.md, README, or ADRs.
-- [ ] Terminology matches the rest of the codebase (same concept → same word everywhere).
-- [ ] No duplicated content that would need to be updated in two places.
-
-If a doc fails more than two of these, consider rewriting rather than patching.
-
-## Anti-patterns to avoid
-
-- **Aspirational docs:** describing features that don't exist yet as if they did. If it's planned, say "planned" explicitly and link to the roadmap.
-- **Tutorials that drift:** step-by-step guides with version-specific commands and no verification. Prefer short quickstarts; defer long tutorials to CI-tested example projects.
-- **Docs-as-blog-post:** narrative voice, first-person anecdotes, "let's" phrasing. Readers want a reference, not a story.
-- **Copying code into prose:** any code pasted inline will diverge from source. Link instead.
-- **Comment graveyards:** `// TODO from 2021`, `// old impl kept for reference`. Delete or file an issue.
-- **Over-structuring:** a three-paragraph doc doesn't need six H2s.
-
-## Output
-
-When writing a new doc, produce the file and stop. Don't also write a summary blog post, a changelog entry, or an announcement — those are separate asks.
-
-When revising, show the diff via Edit; don't rewrite unchanged sections.
+## Task: $ARGUMENTS
