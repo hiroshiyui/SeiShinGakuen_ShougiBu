@@ -490,6 +490,30 @@ func _on_undo() -> void:
 func _on_exit_pressed() -> void:
 	_quit_dialog.popup_centered()
 
+# Esc on desktop / Android back button-or-swipe (both map to ui_cancel by
+# default) closes the suggestions panel if it's open, otherwise leaves
+# the game and returns to the main menu. The board is auto-saved after
+# every move so 続きから will pick up where the player left off.
+func _unhandled_input(event: InputEvent) -> void:
+	if not event.is_action_pressed("ui_cancel"):
+		return
+	if _suggestions_panel.visible:
+		_close_suggestions()
+	else:
+		_back_to_title()
+	get_viewport().set_input_as_handled()
+
+func _back_to_title() -> void:
+	# Drain any live worker threads so we don't leak join handles when the
+	# scene tears down (same rationale as _on_quit_confirmed).
+	if _thinking and _think_thread != null and _think_thread.is_alive():
+		_think_thread.wait_to_finish()
+	if _teacher_thinking and _teacher_thread != null and _teacher_thread.is_alive():
+		_teacher_thread.wait_to_finish()
+	_thinking = false
+	_teacher_thinking = false
+	get_tree().change_scene_to_file("res://scenes/MainMenu.tscn")
+
 func _on_quit_confirmed() -> void:
 	# Ensure any AI worker thread has finished before tearing down the
 	# scene — wait_to_finish on a live thread blocks, but abandoning a
