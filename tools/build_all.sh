@@ -96,11 +96,16 @@ fi
 # --- Android export (APK or AAB) ---
 if (( DO_APK )); then
     mkdir -p build
-    if (( AAB )); then
-        OUT="build/seishingakuen-release.aab"
-    else
-        OUT="build/seishingakuen-$([[ $RELEASE == 1 ]] && echo release || echo debug).apk"
-    fi
+    # Pull version/name straight out of export_presets.cfg (single source
+    # of truth for Play Store metadata) and tag every output filename
+    # with it. Empty version/name → no suffix, so debug builds during
+    # early development still produce predictable names.
+    VERSION_NAME=$(sed -nE 's|^version/name="(.*)"$|\1|p' "$REPO_ROOT/export_presets.cfg")
+    VSUFFIX=""
+    [[ -n "$VERSION_NAME" ]] && VSUFFIX="-v${VERSION_NAME}"
+    KIND=$([[ $RELEASE == 1 ]] && echo release || echo debug)
+    EXT=$([[ $AAB == 1 ]] && echo aab || echo apk)
+    OUT="build/seishingakuen-${KIND}${VSUFFIX}.${EXT}"
     EXPORT_FLAG=$([[ $RELEASE == 1 ]] && echo --export-release || echo --export-debug)
 
     # AAB needs Godot's Android Gradle build template + the preset
