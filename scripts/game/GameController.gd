@@ -48,9 +48,17 @@ var _suggestion_preview_to: Vector2i = Vector2i.ZERO
 var _character: CharacterProfile = null
 var _suggestions_tween: Tween = null
 var _board_resize_tween: Tween = null
+# Set when the player commits a move while the suggestions panel is open.
+# The panel fades out immediately but the board stays at its smaller size
+# through the AI's reply; once both sides have moved (= it's the player's
+# turn again, or the game is over), we tween back to full size.
+var _pending_zoom_back: bool = false
 
 const _SUGGESTIONS_FADE := 0.18
-const _BOARD_RESIZE_DURATION := 0.18
+# Slower than the panel fade so the shogi-ban zooms back smoothly after a
+# move (the player has just committed → suggestions auto-close, then the
+# board grows over ~0.8 s, drawing the eye back to the next position).
+const _BOARD_RESIZE_DURATION := 0.8
 
 func _ready() -> void:
 	if not ClassDB.class_exists("ShogiCore"):
@@ -415,7 +423,10 @@ func _commit_move(m: Dictionary) -> void:
 	_last_move = m.duplicate()
 	_clear_selection()
 	if _suggestions_panel.visible:
-		_close_suggestions()
+		# Defer the board zoom-back: panel fades out now, but the board
+		# stays at its smaller size until the opponent has also replied.
+		_close_suggestions(false)
+		_pending_zoom_back = true
 	_refresh_all()
 	_refresh_last_move_hint()
 	# Slide the piece from its origin square to the destination. Drops come
@@ -430,6 +441,12 @@ func _commit_move(m: Dictionary) -> void:
 	if OS.has_feature("mobile"):
 		Input.vibrate_handheld(50)
 	_check_end_state()
+	# If the player committed a move while suggestions were open, the
+	# board has been held small through this turn. Once it's the player's
+	# turn again (= AI has replied) — or the game ended — zoom back.
+	if _pending_zoom_back and (_game_over or not Settings.side_is_ai(_core.side_to_move_gote())):
+		_pending_zoom_back = false
+		_zoom_back_after_slide()
 	if not _game_over:
 		Settings.save_game(str(_core.to_sfen()))
 	_maybe_start_ai_turn()
@@ -670,22 +687,35 @@ func _clear_suggestion_preview() -> void:
 	_suggestion_preview_to = Vector2i.ZERO
 	_board_view.clear_move_hints()
 
-func _close_suggestions() -> void:
+func _close_suggestions(animate_board: bool = true) -> void:
 	_clear_suggestion_preview()
 	if not _suggestions_panel.visible:
 		return
 	if _suggestions_tween != null and _suggestions_tween.is_valid():
 		_suggestions_tween.kill()
-	# Start the board zoom-out NOW (in parallel with the alpha fade) using
-	# the post-close target — i.e. compute as if the panel were already
-	# hidden — so by the time the panel actually disappears, the board has
-	# already grown back to its full size.
-	_refit_board_smooth(false)
 	_suggestions_tween = create_tween()
 	_suggestions_tween.tween_property(
 		_suggestions_panel, "modulate:a", 0.0, _SUGGESTIONS_FADE)
 	_suggestions_tween.tween_callback(_finalize_close_suggestions)
+	# Run the board zoom AFTER the panel is fully hidden. Tweening the
+	# board's custom_minimum_size while the panel still occupies its VBox
+	# slot makes the layout reflow every frame — visually "clicky". Once
+	# the panel's `visible = false`, the slot is freed and the board can
+	# grow into it cleanly. Callers that follow with a real move (commit
+	# path) skip this and rely on the deferred zoom-back instead.
+	if animate_board:
+		_suggestions_tween.tween_callback(_refit_board_smooth)
 
 func _finalize_close_suggestions() -> void:
 	_suggestions_panel.visible = false
 	_suggestions_panel.modulate.a = 1.0
+
+# Wait for the piece-slide animation in BoardView.animate_move (~0.22 s)
+# to land before tweening the board size — otherwise the slide and the
+# zoom compete for attention. Called fire-and-forget from _commit_move;
+# the body resumes when the timer fires.
+func _zoom_back_after_slide() -> void:
+	await get_tree().create_timer(0.28).timeout
+	if not is_inside_tree():
+		return
+	_refit_board_smooth()
