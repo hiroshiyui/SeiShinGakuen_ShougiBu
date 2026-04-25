@@ -91,3 +91,10 @@ visible = false
 custom_minimum_size = Vector2(0, 56)
 text = "続きから"
 theme_override_font_sizes/font_size = 24
+
+[node name="QuitDialog" type="ConfirmationDialog" parent="."]
+unique_name_in_owner = true
+title = "終了"
+dialog_text = "アプリを終了しますか?"
+ok_button_text = "はい"
+cancel_button_text = "いいえ"

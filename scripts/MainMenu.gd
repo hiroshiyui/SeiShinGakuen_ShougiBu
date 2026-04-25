@@ -5,6 +5,7 @@ extends Control
 @onready var _start_btn: Button = %StartButton
 @onready var _resume_btn: Button = %ResumeButton
 @onready var _teacher_side: OptionButton = %TeacherSideSelect
+@onready var _quit_dialog: ConfirmationDialog = %QuitDialog
 
 const _TEACHER_RIGHT_ID := 0
 const _TEACHER_LEFT_ID := 1
@@ -29,6 +30,21 @@ func _ready() -> void:
 	_start_btn.pressed.connect(_on_start)
 	_resume_btn.pressed.connect(_on_resume)
 	_resume_btn.visible = Settings.has_saved_game()
+	_quit_dialog.confirmed.connect(_on_quit_confirmed)
+
+# Esc on desktop / back on Android pops a confirm dialog instead of
+# letting Godot fall through to the OS-level quit. Re-pressing while
+# the dialog is already open is ignored (popup_centered re-centers but
+# that's fine).
+func _unhandled_input(event: InputEvent) -> void:
+	if not event.is_action_pressed("ui_cancel"):
+		return
+	get_viewport().set_input_as_handled()
+	if not _quit_dialog.visible:
+		_quit_dialog.popup_centered()
+
+func _on_quit_confirmed() -> void:
+	get_tree().quit()
 
 func _on_teacher_side_changed(idx: int) -> void:
 	var id: int = _teacher_side.get_item_id(idx)
