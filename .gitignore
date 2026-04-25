@@ -10,3 +10,5 @@ native/bin/
 /build/
 *.keystore
 *.jks
+# Per-project release-signing password (read by tools/build_all.sh --release).
+.android-release-pass

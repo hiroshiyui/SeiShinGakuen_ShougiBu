@@ -91,8 +91,41 @@ if (( DO_APK )); then
     mkdir -p build
     APK="build/seishingakuen-$([[ $RELEASE == 1 ]] && echo release || echo debug).apk"
     EXPORT_FLAG=$([[ $RELEASE == 1 ]] && echo --export-release || echo --export-debug)
+
+    # Release builds need a release keystore. Godot's preset validator
+    # demands "all three or none" of the keystore path / user / password
+    # fields, so we leave all three empty in export_presets.cfg (so the
+    # repo carries no signing secrets) and pass them via env vars at
+    # build time. Godot 4.6 reads:
+    #   GODOT_ANDROID_KEYSTORE_RELEASE_PATH
+    #   GODOT_ANDROID_KEYSTORE_RELEASE_USER
+    #   GODOT_ANDROID_KEYSTORE_RELEASE_PASSWORD
+    # The path and alias are local config (different per project); the
+    # password lives in `.android-release-pass` at the repo root
+    # (gitignored).
+    if (( RELEASE )); then
+        PASS_FILE="$REPO_ROOT/.android-release-pass"
+        [[ -r "$PASS_FILE" ]] || {
+            echo "Release build needs $PASS_FILE (one line: keystore password)." >&2
+            exit 1; }
+        : "${GODOT_ANDROID_KEYSTORE_RELEASE_PATH:=$HOME/.local/share/godot/keystores/seishingakuen-release.keystore}"
+        : "${GODOT_ANDROID_KEYSTORE_RELEASE_USER:=seishingakuen}"
+        IFS= read -r GODOT_ANDROID_KEYSTORE_RELEASE_PASSWORD < "$PASS_FILE" || true
+        [[ -r "$GODOT_ANDROID_KEYSTORE_RELEASE_PATH" ]] || {
+            echo "Release keystore missing: $GODOT_ANDROID_KEYSTORE_RELEASE_PATH" >&2
+            exit 1; }
+        export GODOT_ANDROID_KEYSTORE_RELEASE_PATH
+        export GODOT_ANDROID_KEYSTORE_RELEASE_USER
+        export GODOT_ANDROID_KEYSTORE_RELEASE_PASSWORD
+    fi
+
     log "Exporting APK → $APK"
     "$GODOT" --headless --path . "$EXPORT_FLAG" "$EXPORT_PRESET" "$APK"
+
+    if (( RELEASE )); then
+        unset GODOT_ANDROID_KEYSTORE_RELEASE_PATH GODOT_ANDROID_KEYSTORE_RELEASE_USER GODOT_ANDROID_KEYSTORE_RELEASE_PASSWORD
+    fi
+
     log "Done: $APK ($(du -h "$APK" | cut -f1))"
 fi
 
