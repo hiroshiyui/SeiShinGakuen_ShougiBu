@@ -9,7 +9,7 @@
 
 | タイトル画面 | 初期局面 | 先生モードの提案 |
 |:---:|:---:|:---:|
-| <img src="docs/screenshots/20260425-184938.png" width="240" alt="タイトル画面 — 対局モード・AI 強さ（Lv 1〜8）・先生ボタンの位置を選択。"> | <img src="docs/screenshots/20260425-185025.png" width="240" alt="Lv 4（伊藤明）との対局開始時。上部バーに対局相手名、下部に「加藤先生！教えてください！」ボタンを配置。"> | <img src="docs/screenshots/20260425-185108.png" width="240" alt="先生モード — MCTS による上位 3 手の候補を勝率 % 付きで表示。"> |
+| <img src="docs/screenshots/20260425-213050.png" width="240" alt="タイトル画面 — 対局モード・AI 強さ（Lv 1〜8）・先生ボタンの位置を選択。"> | <img src="docs/screenshots/20260425-213122.png" width="240" alt="Lv 4（伊藤明）との対局開始時。上部バーに対局相手名、下部に「加藤先生！教えてください！」ボタンを配置。"> | <img src="docs/screenshots/20260425-213141.png" width="240" alt="先生モード — MCTS による上位 3 手の候補を勝率 % 付きで表示。"> |
 
 ## ステータス
 
