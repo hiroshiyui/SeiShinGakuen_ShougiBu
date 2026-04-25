@@ -17,6 +17,7 @@ const HandViewScript := preload("res://scripts/game/HandView.gd")
 @onready var _quit_dialog: ConfirmationDialog = %QuitDialog
 @onready var _thinking_label: Label = %ThinkingLabel
 @onready var _layout: VBoxContainer = $Layout
+@onready var _opponent_label: Label = %OpponentLabel
 @onready var _teacher_row: HBoxContainer = %TeacherRow
 @onready var _teacher_btn: Button = %TeacherButton
 @onready var _teacher_left_spacer: Control = %LeftSpacer
@@ -111,15 +112,19 @@ func _compute_board_side(panel_visible_override: Variant = null) -> float:
 		panel_visible = _suggestions_panel != null and _suggestions_panel.visible
 	else:
 		panel_visible = bool(panel_visible_override)
+	var opponent_visible := _opponent_label != null and _opponent_label.visible
 	var extras: float = 0.0
 	if teacher_visible:
 		extras += max(_teacher_row.size.y, _teacher_row.custom_minimum_size.y)
 	if panel_visible and _suggestions_panel != null:
 		extras += _suggestions_panel.size.y
+	if opponent_visible:
+		extras += max(_opponent_label.size.y, _opponent_label.custom_minimum_size.y)
 	# VBox separation (8) between every pair of visible children.
 	var visible_items := 4  # GoteHand, Board, SenteHand, StatusBar
 	if teacher_visible: visible_items += 1
 	if panel_visible: visible_items += 1
+	if opponent_visible: visible_items += 1
 	var separators: float = 8.0 * max(0, visible_items - 1)
 	var vp: Vector2 = get_viewport_rect().size
 	var side: float = min(vp.x - 2.0 * (GUTTER + LAYOUT_H), vp.y - base - extras - separators)
@@ -185,6 +190,8 @@ func _load_ai_if_needed() -> void:
 	if _character != null:
 		print("[game] AI character: %s (playouts=%d, τ=%.2f)" %
 			[_character.display_name, _character.playouts, _character.temperature])
+	_opponent_label.text = Settings.level_name(Settings.ai_level)
+	_opponent_label.visible = true
 
 func _maybe_start_ai_turn() -> void:
 	if _game_over or _thinking or not _ai_enabled:
@@ -196,8 +203,9 @@ func _maybe_start_ai_turn() -> void:
 	_thinking_label.visible = true
 	_undo_btn.disabled = true
 	_teacher_btn.disabled = true
-	var playouts: int = _character.playouts if _character != null else Settings.ai_playouts
-	var temperature: float = _character.temperature if _character != null else 0.0
+	var params: Dictionary = Settings.level_params(Settings.ai_level)
+	var playouts: int = int(params["playouts"])
+	var temperature: float = float(params["temperature"])
 	_think_thread = Thread.new()
 	_think_thread.start(_run_ai_think.bind(playouts, temperature))
 
@@ -543,7 +551,7 @@ func _on_teacher_pressed() -> void:
 	_thinking_label.visible = true
 	_undo_btn.disabled = true
 	_teacher_btn.disabled = true
-	var playouts: int = _character.playouts if _character != null else Settings.ai_playouts
+	var playouts: int = int(Settings.level_params(Settings.ai_level)["playouts"])
 	_teacher_thread = Thread.new()
 	_teacher_thread.start(_run_teacher_think.bind(playouts))
 

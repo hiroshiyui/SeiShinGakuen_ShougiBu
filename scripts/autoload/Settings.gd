@@ -6,8 +6,57 @@ extends Node
 enum Mode { H_VS_H, H_VS_AI_SENTE, H_VS_AI_GOTE }
 
 var mode: int = Mode.H_VS_AI_GOTE
-var ai_playouts: int = 128
+var ai_level: int = 4  # 1..8, see LEVEL_PARAMS
 var model_res_path: String = "res://models/bonanza.onnx"
+
+const MIN_LEVEL := 1
+const MAX_LEVEL := 8
+
+# Strength presets for the menu's Lv1–Lv8 selector. Visit count grows
+# geometrically (deeper search = stronger play); temperature decays from
+# very-random at Lv1 to greedy at Lv8 so weaker levels actually make
+# plausible-looking mistakes instead of just playing slower.
+const LEVEL_PARAMS := [
+	{},                                              # 0 unused (1-indexed)
+	{playouts = 16,   temperature = 2.0},  # Lv 1
+	{playouts = 32,   temperature = 1.5},  # Lv 2
+	{playouts = 64,   temperature = 1.2},  # Lv 3
+	{playouts = 128,  temperature = 0.8},  # Lv 4
+	{playouts = 256,  temperature = 0.5},  # Lv 5
+	{playouts = 512,  temperature = 0.3},  # Lv 6
+	{playouts = 1024, temperature = 0.1},  # Lv 7
+	{playouts = 2048, temperature = 0.0},  # Lv 8
+]
+
+# Display names for each strength tier, shown on the main-title level
+# picker and (future) in-game opponent labels. Aligned 1:1 with LEVEL_PARAMS.
+const LEVEL_NAMES := [
+	"",                    # 0 unused
+	"佐藤竜太郎",           # Lv 1
+	"鈴木すず",             # Lv 2
+	"高橋ゆり子",           # Lv 3
+	"伊藤明",               # Lv 4
+	"中村アリス",           # Lv 5
+	"テリー・クラーク",     # Lv 6
+	"吉田なな",             # Lv 7
+	"加藤よしこ",           # Lv 8
+]
+
+func clamp_level(lvl: int) -> int:
+	return clampi(lvl, MIN_LEVEL, MAX_LEVEL)
+
+func level_params(lvl: int) -> Dictionary:
+	return LEVEL_PARAMS[clamp_level(lvl)]
+
+func level_name(lvl: int) -> String:
+	return LEVEL_NAMES[clamp_level(lvl)]
+
+func set_ai_level(lvl: int) -> void:
+	var l := clamp_level(lvl)
+	if l == ai_level:
+		return
+	ai_level = l
+	_save_prefs()
 
 # Populated by MainMenu when the user picks 続きから; consumed once by
 # GameController._ready. Empty string = start from the standard position.
@@ -79,11 +128,13 @@ func _load_prefs() -> void:
 	if side == "left" or side == "right":
 		teacher_side = side
 	selected_character_id = str(cfg.get_value("ai", "character_id", ""))
+	ai_level = clamp_level(int(cfg.get_value("ai", "level", ai_level)))
 
 func _save_prefs() -> void:
 	var cfg := ConfigFile.new()
 	cfg.set_value("ui", "teacher_side", teacher_side)
 	cfg.set_value("ai", "character_id", selected_character_id)
+	cfg.set_value("ai", "level", ai_level)
 	var err: int = cfg.save(PREFS_PATH)
 	if err != OK:
 		push_warning("save_prefs: ConfigFile.save returned %d" % err)
@@ -106,13 +157,14 @@ func save_game(sfen: String) -> void:
 	var cfg := ConfigFile.new()
 	cfg.set_value("game", "sfen", sfen)
 	cfg.set_value("game", "mode", mode)
-	cfg.set_value("game", "playouts", ai_playouts)
+	cfg.set_value("game", "level", ai_level)
 	var err: int = cfg.save(SAVE_PATH)
 	if err != OK:
 		push_warning("save_game: ConfigFile.save returned %d" % err)
 
-# Returns {sfen, mode, playouts} on success, or an empty Dictionary on
-# failure (corrupt / missing file).
+# Returns {sfen, mode, level} on success, or an empty Dictionary on
+# failure (corrupt / missing file). Older saves only carried `playouts` —
+# fall back to the current setting in that case.
 func load_saved_game() -> Dictionary:
 	var cfg := ConfigFile.new()
 	if cfg.load(SAVE_PATH) != OK:
@@ -120,7 +172,7 @@ func load_saved_game() -> Dictionary:
 	return {
 		sfen = str(cfg.get_value("game", "sfen", "")),
 		mode = int(cfg.get_value("game", "mode", Mode.H_VS_AI_GOTE)),
-		playouts = int(cfg.get_value("game", "playouts", 128)),
+		level = clamp_level(int(cfg.get_value("game", "level", ai_level))),
 	}
 
 func clear_saved_game() -> void:

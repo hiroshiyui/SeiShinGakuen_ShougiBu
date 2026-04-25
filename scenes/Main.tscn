@@ -29,6 +29,17 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 theme_override_constants/separation = 8
 
+[node name="OpponentLabel" type="Label" parent="Layout"]
+unique_name_in_owner = true
+visible = false
+custom_minimum_size = Vector2(0, 44)
+text = ""
+horizontal_alignment = 1
+theme_override_font_sizes/font_size = 28
+theme_override_colors/font_color = Color(0.98, 0.98, 0.98, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 6
+
 [node name="GoteHand" parent="Layout" instance=ExtResource("3_hand")]
 unique_name_in_owner = true
 is_gote = true
