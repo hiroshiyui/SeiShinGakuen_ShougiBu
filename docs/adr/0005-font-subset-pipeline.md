@@ -40,7 +40,7 @@ Option 3. Repo carries both files per font; the export excludes
 - Fude Goshirae has no public canonical URL (it was purchased from
   booth.pm); losing the local cache would lose the source. Vendoring
   protects against that.
-- `tools/build_font_subsets.sh` is a pure file-in / file-out
+- `tools/build_font_subsets.py` is a pure file-in / file-out
   transform — auditable, no network fallback paths.
 
 **Makes harder / accepts:**
@@ -60,6 +60,6 @@ Option 3. Repo carries both files per font; the export excludes
 
 ## See also
 
-- `tools/build_font_subsets.sh`.
+- `tools/build_font_subsets.py`.
 - `export_presets.cfg` — `exclude_filter="*-full.otf"`.
 - `assets/fonts/*/README.md` per-font.

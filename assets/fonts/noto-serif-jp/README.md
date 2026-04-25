@@ -15,7 +15,7 @@ Japanese serif webfont used as the game's primary UI typeface.
 
 Subsets are re-derived by scanning `scripts/` and `scenes/` for
 Japanese characters + an ASCII safety range + a punctuation / digits
-safety set — see `tools/build_font_subsets.sh`.
+safety set — see `tools/build_font_subsets.py`.
 
 ## Source
 
@@ -35,5 +35,5 @@ subsets are Modified Versions under the OFL and inherit the license;
 Re-generate the subsets with:
 
 ```bash
-./tools/build_font_subsets.sh
+./tools/build_font_subsets.py
 ```

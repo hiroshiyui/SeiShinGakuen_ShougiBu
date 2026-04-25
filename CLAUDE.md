@@ -86,7 +86,7 @@ cargo test --manifest-path native/shogi_core/Cargo.toml
 Font subsets (re-run after touching UI strings):
 
 ```bash
-./tools/build_font_subsets.sh
+./tools/build_font_subsets.py
 ```
 
 APK export: [`docs/android-build.md`](./docs/android-build.md).
@@ -128,6 +128,6 @@ APK export: [`docs/android-build.md`](./docs/android-build.md).
   made (千日手 variant, sprite atlas, Play Store distribution, etc.).
   Don't invent answers — surface the question.
 - **New UI strings must round-trip through the font subset script.**
-  `tools/build_font_subsets.sh` greps `scripts/` and `scenes/` for
+  `tools/build_font_subsets.py` greps `scripts/` and `scenes/` for
   Japanese characters. If you add text via code composition (`"... %s"
   % x`) make sure the injected characters are in its safety-list.

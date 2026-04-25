@@ -8,7 +8,7 @@ Japanese brush-style display font used to render kanji shogi pieces.
   in the repo as the source of truth; excluded from the APK via
   `export_presets.cfg`'s `exclude_filter="*-full.otf"`.
 - `fude-goshirae.otf` — subset derived from the full font
-  (`tools/build_font_subsets.sh`). Contains only the 15 glyphs actually
+  (`tools/build_font_subsets.py`). Contains only the 15 glyphs actually
   rendered on `Square` labels (`歩香桂銀金角飛王玉と杏圭全馬龍`) plus
   the ASCII printable range as a safety net. Shipped in the APK.
 
@@ -26,5 +26,5 @@ redistribution-with-license clause.
 Re-generate the subset with:
 
 ```bash
-./tools/build_font_subsets.sh
+./tools/build_font_subsets.py
 ```

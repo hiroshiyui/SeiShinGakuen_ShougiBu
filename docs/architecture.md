@@ -120,7 +120,7 @@ Square._gui_input(touch)                                  — UI tap
 - **Tuning MCTS** — `C_PUCT`, `DIRICHLET_ALPHA`, `DIRICHLET_WEIGHT` in
   [`mcts.rs`](../native/shogi_core/src/mcts.rs).
 - **New UI font** — subset pipeline in
-  [`tools/build_font_subsets.sh`](../tools/build_font_subsets.sh); add
+  [`tools/build_font_subsets.py`](../tools/build_font_subsets.py); add
   the `-full.otf` original under `assets/fonts/`, keep the subset under
   the canonical filename. The script re-scans strings automatically.
 - **New visual asset (ComfyUI output, illustrations, icons)** — drop

@@ -210,7 +210,7 @@ Shipped differently:
 - **Signing:** debug keystore only; release signing deferred to Phase 7 polish alongside the Play Store story.
 
 ### Phase 7 — Polish
-- [x] **Subset Fude Goshirae piece font + scan-driven subsetting for the UI font.** Both done in `tools/build_font_subsets.sh`. Piece font is subset to 15 fixed glyphs; Noto Serif JP Medium + Bold are subset against all Japanese characters grep'd from `scripts/` + `scenes/` plus an always-include ASCII range (`0020-007E`) and a safety set for runtime-injected glyphs (digits, `→`, `×`, Japanese punctuation). Re-run after editing UI strings.
+- [x] **Subset Fude Goshirae piece font + scan-driven subsetting for the UI font.** Both done in `tools/build_font_subsets.py`. Piece font is subset to 15 fixed glyphs; Noto Serif JP Medium + Bold are subset against all Japanese characters grep'd from `scripts/` + `scenes/` plus an always-include ASCII range (`0020-007E`) and a safety set for runtime-injected glyphs (digits, `→`, `×`, Japanese punctuation). Re-run after editing UI strings.
 
     Results: Fude Goshirae 39 MB → 175 KB; Noto Medium 24 MB → 79 KB; Noto Bold 25 MB → 79 KB. APK dropped from 103 MB to **42 MB** (the other fat items are `libgodot_android.so` and `libshogi_core.so` which are already at release/strip settings).
 

@@ -83,7 +83,7 @@ fi
 # --- Font subsets ---
 if (( DO_FONTS )); then
     log "Rebuilding font subsets"
-    ./tools/build_font_subsets.sh
+    ./tools/build_font_subsets.py
 fi
 
 # --- APK export ---
