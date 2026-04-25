@@ -45,6 +45,11 @@ var _game_over: bool = false
 var _suggestion_preview_from: Vector2i = Vector2i.ZERO
 var _suggestion_preview_to: Vector2i = Vector2i.ZERO
 var _character: CharacterProfile = null
+var _suggestions_tween: Tween = null
+var _board_resize_tween: Tween = null
+
+const _SUGGESTIONS_FADE := 0.18
+const _BOARD_RESIZE_DURATION := 0.18
 
 func _ready() -> void:
 	if not ClassDB.class_exists("ShogiCore"):
@@ -84,25 +89,54 @@ func _ready() -> void:
 # side must be ≤ Layout width or the CenterContainer overflows to the right,
 # causing an off-centre shift. Recomputed on every viewport size change.
 func _refit_board() -> void:
+	_apply_board_side(_compute_board_side(), false)
+
+# Animated variant — tweens custom_minimum_size from current to target so
+# the shogi-ban zooms instead of snapping. Used when the suggestions panel
+# toggles. `panel_visible_override` lets callers compute the target as if
+# the panel had already toggled (the close path needs this since the
+# panel is still visible during its fade-out).
+func _refit_board_smooth(panel_visible_override: Variant = null) -> void:
+	_apply_board_side(_compute_board_side(panel_visible_override), true)
+
+func _compute_board_side(panel_visible_override: Variant = null) -> float:
 	const GUTTER := 4.0        # breathing room inside BoardHolder
 	const LAYOUT_H := 12.0     # must match EXTRA_H in _apply_safe_area
 	# Hands (2×72) + status bar (40) + fixed breathing pad (16). TeacherRow
 	# and SuggestionsPanel are measured live since they toggle visibility.
 	var base: float = 72.0 + 72.0 + 56.0 + 16.0
+	var teacher_visible := _teacher_row != null and _teacher_row.visible
+	var panel_visible: bool
+	if panel_visible_override == null:
+		panel_visible = _suggestions_panel != null and _suggestions_panel.visible
+	else:
+		panel_visible = bool(panel_visible_override)
 	var extras: float = 0.0
-	if _teacher_row != null and _teacher_row.visible:
+	if teacher_visible:
 		extras += max(_teacher_row.size.y, _teacher_row.custom_minimum_size.y)
-	if _suggestions_panel != null and _suggestions_panel.visible:
+	if panel_visible and _suggestions_panel != null:
 		extras += _suggestions_panel.size.y
 	# VBox separation (8) between every pair of visible children.
 	var visible_items := 4  # GoteHand, Board, SenteHand, StatusBar
-	if _teacher_row != null and _teacher_row.visible: visible_items += 1
-	if _suggestions_panel != null and _suggestions_panel.visible: visible_items += 1
+	if teacher_visible: visible_items += 1
+	if panel_visible: visible_items += 1
 	var separators: float = 8.0 * max(0, visible_items - 1)
 	var vp: Vector2 = get_viewport_rect().size
 	var side: float = min(vp.x - 2.0 * (GUTTER + LAYOUT_H), vp.y - base - extras - separators)
-	side = clamp(side, 240.0, 1600.0)
-	_board_view.custom_minimum_size = Vector2(side, side)
+	return clamp(side, 240.0, 1600.0)
+
+func _apply_board_side(side: float, animate: bool) -> void:
+	if _board_resize_tween != null and _board_resize_tween.is_valid():
+		_board_resize_tween.kill()
+	var target := Vector2(side, side)
+	if not animate:
+		_board_view.custom_minimum_size = target
+		return
+	_board_resize_tween = create_tween()
+	_board_resize_tween.set_trans(Tween.TRANS_SINE)
+	_board_resize_tween.set_ease(Tween.EASE_OUT)
+	_board_resize_tween.tween_property(
+		_board_view, "custom_minimum_size", target, _BOARD_RESIZE_DURATION)
 
 # Inset Layout so GoteHand / StatusBar don't sit under the Android status
 # bar, gesture-nav bar, or rounded-corner cutouts. DisplayServer
@@ -546,8 +580,22 @@ func _populate_suggestions(suggestions: Array) -> void:
 		btn.text = _format_suggestion(m)
 		btn.pressed.connect(_on_suggestion_tapped.bind(m))
 		_suggestions_list.add_child(btn)
+	_show_suggestions_panel()
+
+# Fade the panel in and zoom the board to its smaller size in parallel.
+# The panel is flipped to visible at alpha=0 so the VBox reserves space
+# for it before we start the alpha tween. The board-resize tween is
+# deferred so the panel has a frame to lay out — only then is its real
+# size.y available for the target calculation.
+func _show_suggestions_panel() -> void:
+	if _suggestions_tween != null and _suggestions_tween.is_valid():
+		_suggestions_tween.kill()
+	_suggestions_panel.modulate.a = 0.0
 	_suggestions_panel.visible = true
-	_refit_board.call_deferred()
+	_refit_board_smooth.bind(true).call_deferred()
+	_suggestions_tween = create_tween()
+	_suggestions_tween.tween_property(
+		_suggestions_panel, "modulate:a", 1.0, _SUGGESTIONS_FADE)
 
 func _format_suggestion(m: Dictionary) -> String:
 	var win_rate: float = float(m.get("win_rate", m.get("score", 0.0)))
@@ -591,6 +639,21 @@ func _clear_suggestion_preview() -> void:
 	_board_view.clear_move_hints()
 
 func _close_suggestions() -> void:
-	_suggestions_panel.visible = false
 	_clear_suggestion_preview()
-	_refit_board.call_deferred()
+	if not _suggestions_panel.visible:
+		return
+	if _suggestions_tween != null and _suggestions_tween.is_valid():
+		_suggestions_tween.kill()
+	# Start the board zoom-out NOW (in parallel with the alpha fade) using
+	# the post-close target — i.e. compute as if the panel were already
+	# hidden — so by the time the panel actually disappears, the board has
+	# already grown back to its full size.
+	_refit_board_smooth(false)
+	_suggestions_tween = create_tween()
+	_suggestions_tween.tween_property(
+		_suggestions_panel, "modulate:a", 0.0, _SUGGESTIONS_FADE)
+	_suggestions_tween.tween_callback(_finalize_close_suggestions)
+
+func _finalize_close_suggestions() -> void:
+	_suggestions_panel.visible = false
+	_suggestions_panel.modulate.a = 1.0
