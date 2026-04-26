@@ -11,6 +11,8 @@ alternative was rejected for non-obvious reasons.
 | [0003](./0003-mailbox-board-representation.md) | Mailbox board representation, defer bitboards | Accepted |
 | [0004](./0004-model-and-fonts-via-user-copy.md) | Extract runtime-opened blobs from res:// to user:// on Android | Accepted |
 | [0005](./0005-font-subset-pipeline.md) | Keep full upstream fonts in-repo, subset at build time | Accepted |
+| [0006](./0006-character-driven-difficulty.md) | AI strength is chosen by picking a character, not a level | Accepted |
+| [0007](./0007-font-subsetter-scans-tres.md) | Font subsetter scans `assets/**/*.tres`, not just code/scenes | Accepted |
 
 ## Authoring a new ADR
 

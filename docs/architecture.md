@@ -37,10 +37,14 @@ is in service of them.
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │ UI  — GDScript                                              │
-│      scenes/MainMenu.tscn, scenes/Main.tscn                 │
-│      scripts/MainMenu.gd, scripts/game/GameController.gd    │
+│      scenes/MainMenu.tscn, scenes/CharacterPicker.tscn,     │
+│      scenes/Main.tscn                                       │
+│      scripts/MainMenu.gd, scripts/CharacterPicker.gd,       │
+│      scripts/game/GameController.gd                         │
 │      scripts/game/{BoardView,HandView,Square}.gd            │
 │      scripts/autoload/Settings.gd (session + save/resume)   │
+│      scripts/CharacterProfile.gd + .tres data under         │
+│      assets/characters/{teachers,students}/                 │
 └────────────────────────┬────────────────────────────────────┘
                          │  FFI: #[godot_api] methods on
                          │  ShogiCore (RefCounted). Moves are
@@ -117,6 +121,14 @@ Square._gui_input(touch)                                  — UI tap
 - **Persistent session state** — add to
   [`scripts/autoload/Settings.gd`](../scripts/autoload/Settings.gd) and
   serialise alongside `save_game` / `load_saved_game`.
+- **New AI opponent character** — author a `.tres` under
+  `assets/characters/{teachers,students}/<id>.tres` instantiating
+  [`CharacterProfile`](../scripts/CharacterProfile.gd) (`level: 1..8`
+  maps to `Settings.LEVEL_PARAMS`'s playouts/temperature pair).
+  Drop portraits in the character's `portrait_dir` keyed by expression
+  name (`neutral.webp` is required, others fall back to neutral). The
+  picker scans the directory at startup via
+  `Settings.list_characters()` — no scene edits needed.
 - **Tuning MCTS** — `C_PUCT`, `DIRICHLET_ALPHA`, `DIRICHLET_WEIGHT` in
   [`mcts.rs`](../native/shogi_core/src/mcts.rs).
 - **New UI font** — subset pipeline in
@@ -128,11 +140,14 @@ Square._gui_input(touch)                                  — UI tap
   gutter / full-screen decoration, `assets/ui/` for button/icon art,
   `assets/branding/` for title/splash/logo, `assets/textures/` for
   board or piece surfaces, `assets/characters/{teachers,students}/`
-  for 将棋部 character portraits. Name characters kebab-case with
-  role-first (`sensei-tanaka.webp`, `student-akira.webp`) so they sort
-  naturally. For multi-expression characters, promote to a
-  per-character folder (`characters/students/akira/{neutral,thinking,
-  happy}.webp`). Prefer `.webp` for AI-generated imagery
+  for 将棋部 character portraits. Each character is a `.tres`
+  ([`CharacterProfile`](../scripts/CharacterProfile.gd)) named
+  kebab-case after its `id`
+  (`assets/characters/teachers/katou-sensei.tres`,
+  `assets/characters/students/nakamura-alice.tres`) plus a sibling
+  directory of the same name holding portraits keyed by expression
+  (`katou-sensei/neutral.webp`, optionally `thinking.webp`,
+  `happy.webp`, etc. — missing files fall back to neutral). Prefer `.webp` for AI-generated imagery
   (smaller APK at equivalent quality) — reserve `.png` for pixel-art
   UI with hard edges. Keep source resolution reasonable (≤1024 px long
   edge for UI, ≤2048 px for full-screen backgrounds) since APK size
