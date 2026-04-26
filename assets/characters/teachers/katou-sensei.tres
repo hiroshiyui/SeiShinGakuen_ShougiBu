@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="CharacterProfile" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/CharacterProfile.gd" id="1_profile"]
+
+[resource]
+script = ExtResource("1_profile")
+id = "katou-sensei"
+display_name = "加藤よしこ"
+portrait_dir = "res://assets/characters/teachers/katou-sensei/"
+playouts = 2048
+temperature = 0.0
+strength_label = "未知"
+tagline = "将棋部の師範"
+introduction = "元プロ棋士。引退後はラーメン店の店主兼料理長として腕を振るうかたわら、将棋部の師範を務めている。"

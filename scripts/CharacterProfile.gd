@@ -25,3 +25,7 @@ extends Resource
 
 # Optional one-line tagline for the picker card.
 @export var tagline: String = ""
+
+# Longer-form character background, shown on a profile / detail view.
+# Free-form Japanese prose — line breaks with \n are honoured.
+@export_multiline var introduction: String = ""
