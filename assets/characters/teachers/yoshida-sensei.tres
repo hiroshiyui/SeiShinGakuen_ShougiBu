@@ -7,6 +7,7 @@ script = ExtResource("1_profile")
 id = "yoshida-sensei"
 display_name = "吉田なな"
 portrait_dir = "res://assets/characters/teachers/yoshida-sensei/"
+level = 7
 playouts = 1024
 temperature = 0.1
 strength_label = "顧問"

@@ -97,20 +97,38 @@ func list_characters() -> Array[CharacterProfile]:
 	var roots := ["teachers", "students"]
 	for sub in roots:
 		var dir := "%s/%s" % [CHARACTERS_DIR, sub]
-		if not DirAccess.dir_exists_absolute(ProjectSettings.globalize_path(dir)):
-			continue
+		# Both checks (dir_exists_absolute and DirAccess.open) operate
+		# on res:// directly so Android's PCK-backed virtual filesystem
+		# is queried instead of an OS path that doesn't exist on device.
 		var d := DirAccess.open(dir)
 		if d == null:
+			push_warning("list_characters: cannot open %s" % dir)
 			continue
 		d.list_dir_begin()
 		var name := d.get_next()
 		while name != "":
-			if name.ends_with(".tres") and not d.current_is_dir():
-				var res = load("%s/%s" % [dir, name])
+			# On Android the on-disk file is `<name>.tres.remap` (Godot
+			# rewrites resource paths during export); the load() call
+			# still uses the original .tres path. Match either suffix.
+			if (name.ends_with(".tres") or name.ends_with(".tres.remap")) \
+					and not d.current_is_dir():
+				var base := name.trim_suffix(".remap")
+				var res = load("%s/%s" % [dir, base])
 				if res is CharacterProfile:
 					out.append(res)
 			name = d.get_next()
+		print("[characters] %s: found %d after scan" % [dir, out.size()])
+	# Picker shows weakest → strongest (Lv 1 left-top, Lv 8 right-bottom).
+	out.sort_custom(func(a, b): return a.level < b.level)
 	return out
+
+# Pick a character: persist the id and snap ai_level to the character's
+# tier so the MCTS strength matches the avatar the player sees.
+func select_character(profile: CharacterProfile) -> void:
+	if profile == null:
+		return
+	set_selected_character_id(profile.id)
+	set_ai_level(profile.level)
 
 func load_character(cid: String) -> CharacterProfile:
 	if cid == "":

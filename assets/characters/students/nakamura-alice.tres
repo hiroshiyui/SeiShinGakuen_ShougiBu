@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="CharacterProfile" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/CharacterProfile.gd" id="1_profile"]
+
+[resource]
+script = ExtResource("1_profile")
+id = "nakamura-alice"
+display_name = "中村アリス"
+portrait_dir = "res://assets/characters/students/nakamura-alice/"
+level = 5
+playouts = 256
+temperature = 0.5
+strength_label = "強豪"
+tagline = "(プロフィール準備中)"
+introduction = ""

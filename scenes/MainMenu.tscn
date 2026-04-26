@@ -60,13 +60,14 @@ theme_override_colors/font_color = Color(0.85, 0.85, 0.85, 1)
 unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 48)
 
-[node name="LevelLabel" type="Label" parent="Center/Panel/Box"]
-text = "強さ"
+[node name="OpponentLabel" type="Label" parent="Center/Panel/Box"]
+text = "対戦相手"
 theme_override_colors/font_color = Color(0.85, 0.85, 0.85, 1)
 
-[node name="LevelSelect" type="OptionButton" parent="Center/Panel/Box"]
+[node name="OpponentButton" type="Button" parent="Center/Panel/Box"]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 48)
+text = "選んでください"
 
 [node name="TeacherSideLabel" type="Label" parent="Center/Panel/Box"]
 text = "先生ボタンの位置"

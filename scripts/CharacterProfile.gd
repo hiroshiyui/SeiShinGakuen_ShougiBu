@@ -14,6 +14,12 @@ extends Resource
 # `defeat.webp`, `victory.webp`). Missing files fall back to `neutral`.
 @export_dir var portrait_dir: String = ""
 
+# Strength tier 1..8, mirrors Settings.LEVEL_PARAMS / LEVEL_NAMES.
+# Picking a character also sets Settings.ai_level to this value, so the
+# player chooses *who* they want to play and the strength comes with
+# them (rather than picking strength and getting an opaque tier name).
+@export_range(1, 8) var level: int = 1
+
 # MCTS strength dials.
 #   playouts    — search budget per move. 16=学習中, 128=部員, 512=主将, 2048=師範.
 #   temperature — 0.0 greedy (strongest), 0.5 occasional 緩手, 1.0 frequent mistakes.

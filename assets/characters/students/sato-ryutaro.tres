@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="CharacterProfile" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/CharacterProfile.gd" id="1_profile"]
+
+[resource]
+script = ExtResource("1_profile")
+id = "sato-ryutaro"
+display_name = "佐藤竜太郎"
+portrait_dir = "res://assets/characters/students/sato-ryutaro/"
+level = 1
+playouts = 16
+temperature = 2.0
+strength_label = "入門"
+tagline = "(プロフィール準備中)"
+introduction = ""

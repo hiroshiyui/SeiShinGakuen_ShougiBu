@@ -1,7 +1,7 @@
 extends Control
 
 @onready var _mode: OptionButton = %ModeSelect
-@onready var _level: OptionButton = %LevelSelect
+@onready var _opponent_btn: Button = %OpponentButton
 @onready var _start_btn: Button = %StartButton
 @onready var _resume_btn: Button = %ResumeButton
 @onready var _teacher_side: OptionButton = %TeacherSideSelect
@@ -16,11 +16,8 @@ func _ready() -> void:
 	_mode.add_item("先手(人) 対 後手(AI)", Settings.Mode.H_VS_AI_GOTE)
 	_mode.add_item("先手(AI) 対 後手(人)", Settings.Mode.H_VS_AI_SENTE)
 	_mode.select(_mode.get_item_index(Settings.mode))
-	_level.clear()
-	for lvl in range(Settings.MIN_LEVEL, Settings.MAX_LEVEL + 1):
-		_level.add_item("Lv %d - %s" % [lvl, Settings.level_name(lvl)], lvl)
-	_level.select(_level.get_item_index(Settings.ai_level))
-	_level.item_selected.connect(_on_level_changed)
+	_opponent_btn.pressed.connect(_on_opponent_pressed)
+	_refresh_opponent_label()
 	_teacher_side.clear()
 	_teacher_side.add_item("右側", _TEACHER_RIGHT_ID)
 	_teacher_side.add_item("左側", _TEACHER_LEFT_ID)
@@ -50,12 +47,21 @@ func _on_teacher_side_changed(idx: int) -> void:
 	var id: int = _teacher_side.get_item_id(idx)
 	Settings.set_teacher_side("left" if id == _TEACHER_LEFT_ID else "right")
 
-func _on_level_changed(idx: int) -> void:
-	Settings.set_ai_level(_level.get_item_id(idx))
+func _refresh_opponent_label() -> void:
+	var profile := Settings.load_character(Settings.selected_character_id)
+	if profile == null:
+		_opponent_btn.text = "選んでください"
+	else:
+		_opponent_btn.text = "%s (Lv.%d %s)" % [
+			profile.display_name, profile.level, profile.strength_label]
+
+func _on_opponent_pressed() -> void:
+	get_tree().change_scene_to_file("res://scenes/CharacterPicker.tscn")
 
 func _on_start() -> void:
 	Settings.mode = _mode.get_selected_id()
-	Settings.set_ai_level(_level.get_selected_id())
+	# ai_level is set by the character picker (Settings.select_character)
+	# so we don't touch it here.
 	Settings.resume_sfen = ""
 	Settings.clear_saved_game()
 	_go_to("res://scenes/Main.tscn")
