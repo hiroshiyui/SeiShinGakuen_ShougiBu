@@ -198,10 +198,11 @@ func _load_ai_if_needed() -> void:
 		return
 	_ai_enabled = true
 	_character = Settings.load_character(Settings.selected_character_id)
-	if _character != null:
-		print("[game] AI character: %s (playouts=%d, τ=%.2f)" %
-			[_character.display_name, _character.playouts, _character.temperature])
-	_opponent_label.text = Settings.level_name(Settings.ai_level)
+	# Prefer the selected character's display name over LEVEL_NAMES so
+	# the strip stays in sync with the picker — LEVEL_NAMES is a fallback
+	# table for cases where no character was ever picked.
+	_opponent_label.text = (_character.display_name if _character != null
+		else Settings.level_name(Settings.ai_level))
 	_set_opponent_portrait(_character)
 	_opponent_strip.visible = true
 
@@ -221,7 +222,11 @@ func _set_opponent_portrait(profile: CharacterProfile) -> void:
 	# image, not the on-screen rect.
 	if tex != null and not _opponent_portrait.resized.is_connected(_sync_portrait_shader_size):
 		_opponent_portrait.resized.connect(_sync_portrait_shader_size)
-	_sync_portrait_shader_size()
+	# Defer the first sync — _set_opponent_portrait runs in _ready,
+	# before layout has assigned the rect a size. Calling now would
+	# push (0, 0) into the shader and discard every fragment until
+	# the first `resized` signal lands. Deferring lets layout settle.
+	_sync_portrait_shader_size.call_deferred()
 
 func _sync_portrait_shader_size() -> void:
 	var mat := _opponent_portrait.material as ShaderMaterial

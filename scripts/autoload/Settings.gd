@@ -68,7 +68,7 @@ const PREFS_PATH := "user://prefs.cfg"
 # User preferences that outlive a single game. Loaded once in _ready
 # and written back via setter methods.
 var teacher_side: String = "right"  # "left" or "right"
-var selected_character_id: String = ""  # empty = use Settings.ai_playouts default
+var selected_character_id: String = ""  # empty = no character picked yet (first launch)
 
 const CHARACTERS_DIR := "res://assets/characters"
 
@@ -89,17 +89,27 @@ func set_selected_character_id(cid: String) -> void:
 	selected_character_id = cid
 	_save_prefs()
 
+# Cached at first scan — character .tres files are bundled in the APK
+# and don't change at runtime, so re-walking the dir on every lookup is
+# wasted work (matters more once load_character is on hot paths like
+# scene change or label refresh).
+var _characters_cache: Array[CharacterProfile] = []
+var _characters_loaded: bool = false
+
 # Walk CHARACTERS_DIR for every .tres and return a typed list.
 # Missing dir / corrupt files are skipped silently (no characters yet
 # on a fresh checkout is a valid state).
 func list_characters() -> Array[CharacterProfile]:
+	if _characters_loaded:
+		return _characters_cache
 	var out: Array[CharacterProfile] = []
 	var roots := ["teachers", "students"]
 	for sub in roots:
 		var dir := "%s/%s" % [CHARACTERS_DIR, sub]
-		# Both checks (dir_exists_absolute and DirAccess.open) operate
-		# on res:// directly so Android's PCK-backed virtual filesystem
-		# is queried instead of an OS path that doesn't exist on device.
+		# Operate on the res:// path directly. globalize_path returns a
+		# non-existent OS path on Android because res:// lives inside the
+		# PCK; DirAccess.open is the call that knows how to talk to the
+		# virtual filesystem.
 		var d := DirAccess.open(dir)
 		if d == null:
 			push_warning("list_characters: cannot open %s" % dir)
@@ -117,18 +127,24 @@ func list_characters() -> Array[CharacterProfile]:
 				if res is CharacterProfile:
 					out.append(res)
 			name = d.get_next()
-		print("[characters] %s: found %d after scan" % [dir, out.size()])
 	# Picker shows weakest → strongest (Lv 1 left-top, Lv 8 right-bottom).
 	out.sort_custom(func(a, b): return a.level < b.level)
-	return out
+	_characters_cache = out
+	_characters_loaded = true
+	return _characters_cache
 
 # Pick a character: persist the id and snap ai_level to the character's
-# tier so the MCTS strength matches the avatar the player sees.
+# tier so the MCTS strength matches the avatar the player sees. Bypasses
+# the per-field setters so prefs.cfg is rewritten once, not twice.
 func select_character(profile: CharacterProfile) -> void:
 	if profile == null:
 		return
-	set_selected_character_id(profile.id)
-	set_ai_level(profile.level)
+	var new_level := clamp_level(profile.level)
+	if profile.id == selected_character_id and new_level == ai_level:
+		return
+	selected_character_id = profile.id
+	ai_level = new_level
+	_save_prefs()
 
 func load_character(cid: String) -> CharacterProfile:
 	if cid == "":
@@ -176,13 +192,15 @@ func save_game(sfen: String) -> void:
 	cfg.set_value("game", "sfen", sfen)
 	cfg.set_value("game", "mode", mode)
 	cfg.set_value("game", "level", ai_level)
+	cfg.set_value("game", "character_id", selected_character_id)
 	var err: int = cfg.save(SAVE_PATH)
 	if err != OK:
 		push_warning("save_game: ConfigFile.save returned %d" % err)
 
-# Returns {sfen, mode, level} on success, or an empty Dictionary on
-# failure (corrupt / missing file). Older saves only carried `playouts` —
-# fall back to the current setting in that case.
+# Returns {sfen, mode, level, character_id} on success, or an empty
+# Dictionary on failure (corrupt / missing file). Older saves omit
+# `character_id` (added 2026-04-27); the loader returns "" so the
+# caller can fall back to the current pref.
 func load_saved_game() -> Dictionary:
 	var cfg := ConfigFile.new()
 	if cfg.load(SAVE_PATH) != OK:
@@ -191,11 +209,16 @@ func load_saved_game() -> Dictionary:
 		sfen = str(cfg.get_value("game", "sfen", "")),
 		mode = int(cfg.get_value("game", "mode", Mode.H_VS_AI_GOTE)),
 		level = clamp_level(int(cfg.get_value("game", "level", ai_level))),
+		character_id = str(cfg.get_value("game", "character_id", "")),
 	}
 
 func clear_saved_game() -> void:
+	# user:// is a real OS path on Android, but DirAccess accepts the
+	# virtual URL directly — keeps the call symmetric with file_exists
+	# above and avoids the trap of copying this pattern onto a res://
+	# path (which would fail silently on device).
 	if has_saved_game():
-		DirAccess.remove_absolute(ProjectSettings.globalize_path(SAVE_PATH))
+		DirAccess.remove_absolute(SAVE_PATH)
 
 # Return an absolute OS path to the ONNX model that `tract` can mmap.
 #
@@ -209,16 +232,28 @@ func model_absolute_path() -> String:
 		return ProjectSettings.globalize_path(res_path)
 	var user_path: String = "user://%s" % res_path.get_file()
 	if not FileAccess.file_exists(user_path):
+		# Atomic-ish copy: write to .tmp first, then rename. If the
+		# process is killed mid-copy (Android can do this freely),
+		# next launch still sees no model file at the canonical path
+		# and re-extracts from res:// instead of mmap'ing a partial
+		# file (tract would error, no recovery without app-data wipe).
+		var tmp_path: String = user_path + ".tmp"
 		var src: FileAccess = FileAccess.open(res_path, FileAccess.READ)
 		if src == null:
 			push_error("model: cannot open %s" % res_path)
 			return ""
 		var bytes: PackedByteArray = src.get_buffer(src.get_length())
 		src.close()
-		var dst: FileAccess = FileAccess.open(user_path, FileAccess.WRITE)
+		var dst: FileAccess = FileAccess.open(tmp_path, FileAccess.WRITE)
 		if dst == null:
-			push_error("model: cannot write %s" % user_path)
+			push_error("model: cannot write %s" % tmp_path)
 			return ""
 		dst.store_buffer(bytes)
 		dst.close()
+		var rename_err: int = DirAccess.rename_absolute(tmp_path, user_path)
+		if rename_err != OK:
+			push_error("model: rename %s -> %s failed (%d)" %
+				[tmp_path, user_path, rename_err])
+			DirAccess.remove_absolute(tmp_path)
+			return ""
 	return ProjectSettings.globalize_path(user_path)

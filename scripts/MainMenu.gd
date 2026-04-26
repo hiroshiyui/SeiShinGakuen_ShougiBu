@@ -17,7 +17,6 @@ func _ready() -> void:
 	_mode.add_item("先手(AI) 対 後手(人)", Settings.Mode.H_VS_AI_SENTE)
 	_mode.select(_mode.get_item_index(Settings.mode))
 	_opponent_btn.pressed.connect(_on_opponent_pressed)
-	_refresh_opponent_label()
 	_teacher_side.clear()
 	_teacher_side.add_item("右側", _TEACHER_RIGHT_ID)
 	_teacher_side.add_item("左側", _TEACHER_LEFT_ID)
@@ -28,6 +27,24 @@ func _ready() -> void:
 	_resume_btn.pressed.connect(_on_resume)
 	_resume_btn.visible = Settings.has_saved_game()
 	_quit_dialog.confirmed.connect(_on_quit_confirmed)
+	_ensure_default_character()
+	_refresh_opponent_label()
+
+# First-run convenience: if nothing is selected yet, pick the character
+# whose level matches Settings.ai_level (default Lv 4 = 伊藤明) so an AI
+# game started from the title screen always has a real opponent on
+# screen, not just the LEVEL_NAMES fallback.
+func _ensure_default_character() -> void:
+	if Settings.selected_character_id != "":
+		return
+	var chars := Settings.list_characters()
+	if chars.is_empty():
+		return
+	for c in chars:
+		if c.level == Settings.ai_level:
+			Settings.select_character(c)
+			return
+	Settings.select_character(chars[0])
 
 # Esc on desktop / back on Android pops a confirm dialog instead of
 # letting Godot fall through to the OS-level quit. Re-pressing while
@@ -74,7 +91,18 @@ func _on_resume() -> void:
 		_resume_btn.visible = false
 		return
 	Settings.mode = int(saved["mode"])
-	Settings.set_ai_level(int(saved.get("level", Settings.ai_level)))
+	# Prefer the character recorded in the save (added 2026-04-27); fall
+	# back to syncing ai_level alone for older save files that don't
+	# carry character_id.
+	var saved_cid := str(saved.get("character_id", ""))
+	if saved_cid != "":
+		var profile := Settings.load_character(saved_cid)
+		if profile != null:
+			Settings.select_character(profile)
+		else:
+			Settings.set_ai_level(int(saved.get("level", Settings.ai_level)))
+	else:
+		Settings.set_ai_level(int(saved.get("level", Settings.ai_level)))
 	Settings.resume_sfen = str(saved["sfen"])
 	_go_to("res://scenes/Main.tscn")
 
