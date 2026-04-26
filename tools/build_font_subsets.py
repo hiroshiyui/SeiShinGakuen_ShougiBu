@@ -37,11 +37,6 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 # Piece kanji rendered on Square labels (Piece.kanji_for).
 PIECE_TEXT = "歩香桂銀金角飛王玉と杏圭全馬龍"
 
-# Main-menu title — rendered in Fude Goshirae for thematic consistency
-# with the piece glyphs. Subset alongside PIECE_TEXT so the brush font
-# stays tiny but covers the title characters.
-TITLE_TEXT = "清正学園将棋部"
-
 # Always-include safety set for runtime-injected glyphs (digits,
 # format-string filler, common punctuation). Mirrors UI_SAFETY in the
 # old shell version.
@@ -161,7 +156,7 @@ def main() -> int:
     subset(
         REPO_ROOT / "assets/fonts/fude-goshirae/fude-goshirae-full.otf",
         REPO_ROOT / "assets/fonts/fude-goshirae/fude-goshirae.otf",
-        PIECE_TEXT + TITLE_TEXT,
+        PIECE_TEXT,
         pyftsubset,
     )
     subset(
