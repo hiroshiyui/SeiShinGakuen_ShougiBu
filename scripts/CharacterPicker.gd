@@ -62,7 +62,7 @@ func _populate_grid() -> void:
 
 func _make_card(profile: CharacterProfile, idx: int) -> Button:
 	var btn := Button.new()
-	btn.custom_minimum_size = Vector2(0, 180)
+	btn.custom_minimum_size = Vector2(0, 210)
 	btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	btn.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	btn.text = ""
@@ -89,6 +89,18 @@ func _make_card(profile: CharacterProfile, idx: int) -> Button:
 	v.add_theme_constant_override("separation", 4)
 	v.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	holder.add_child(v)
+
+	# Level label sits above the portrait so the row stays scannable
+	# even when the name wraps to two lines underneath.
+	var lvl_label := Label.new()
+	lvl_label.text = "Lv.%d" % profile.level
+	lvl_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	lvl_label.add_theme_font_size_override("font_size", 18)
+	lvl_label.add_theme_color_override("font_color", Color(0.95, 0.82, 0.45))
+	lvl_label.add_theme_color_override("font_outline_color", Color(0, 0, 0))
+	lvl_label.add_theme_constant_override("outline_size", 4)
+	lvl_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	v.add_child(lvl_label)
 
 	# Portrait area — fills available vertical space above the label.
 	var portrait_holder := Control.new()
@@ -131,15 +143,18 @@ func _make_card(profile: CharacterProfile, idx: int) -> Button:
 	placeholder_rect.visible = tex == null
 	placeholder_q.visible = tex == null
 
-	var label := Label.new()
-	label.text = "Lv.%d %s" % [profile.level, profile.display_name]
-	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	label.add_theme_font_size_override("font_size", 20)
-	label.add_theme_color_override("font_color", Color(0.98, 0.98, 0.98))
-	label.add_theme_color_override("font_outline_color", Color(0, 0, 0))
-	label.add_theme_constant_override("outline_size", 4)
-	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	v.add_child(label)
+	var name_label := Label.new()
+	name_label.text = profile.display_name
+	name_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	# ARBITRARY because Japanese has no spaces; WORD modes leave long
+	# katakana names like テリー・クラーク unbroken and clip them.
+	name_label.autowrap_mode = TextServer.AUTOWRAP_ARBITRARY
+	name_label.add_theme_font_size_override("font_size", 18)
+	name_label.add_theme_color_override("font_color", Color(0.98, 0.98, 0.98))
+	name_label.add_theme_color_override("font_outline_color", Color(0, 0, 0))
+	name_label.add_theme_constant_override("outline_size", 4)
+	name_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	v.add_child(name_label)
 
 	btn.pressed.connect(_on_card_pressed.bind(idx))
 	return btn
