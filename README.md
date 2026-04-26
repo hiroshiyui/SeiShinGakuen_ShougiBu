@@ -25,7 +25,8 @@
 1.0 リリース前のプレイ可能段階。Linux デスクトップでの開発実行と、
 Android arm64-v8a 向け APK のビルド・インストールに対応している。
 合法手判定（王手・二歩・打ち歩詰め・千日手）と AI 対局は動作中。
-Play ストア公開に向けた仕上げ作業は継続中で、詳細は
+配布は GitHub Releases に署名付き APK を置くサイドロード方式。
+Google Play ストアは方針として対象外。詳細は
 [`ROADMAP.md`](./ROADMAP.md) のフェーズ 7 を参照。
 
 ## クイックスタート
@@ -76,9 +77,8 @@ cargo test --manifest-path native/shogi_core/Cargo.toml
 
 ローカルではビルドパイプライン全体（Rust デスクトップ + Android クロス
 コンパイル + フォントサブセット + Godot エクスポート）をまとめて回す
-[`tools/build_all.sh`](./tools/build_all.sh) も用意している。署名付き
-リリース APK は `--release`、Play ストア用 AAB は `--aab` で生成
-できる。
+[`tools/build_all.sh`](./tools/build_all.sh) も用意している。GitHub
+Releases に上げる署名付きリリース APK は `--release` で生成できる。
 
 ## ドキュメント
 

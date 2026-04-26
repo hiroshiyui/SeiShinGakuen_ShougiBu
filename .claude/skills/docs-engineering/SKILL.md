@@ -1,6 +1,6 @@
 ---
 name: docs-engineering
-description: Writing/updating project documentation (README, ROADMAP, CLAUDE.md, docs/architecture.md, ADRs, asset-folder READMEs) for SeiShinGakuen_ShougiBu. Use when the user asks to update docs, draft an ADR, write a changelog, or update a Play Store / GitHub Release listing.
+description: Writing/updating project documentation (README, ROADMAP, CLAUDE.md, docs/architecture.md, ADRs, asset-folder READMEs) for SeiShinGakuen_ShougiBu. Use when the user asks to update docs, draft an ADR, write a changelog, or update GitHub Release notes.
 argument-hint: task description
 ---
 
@@ -29,9 +29,8 @@ Read this before assuming files exist. The repo has solid technical documentatio
 
 - `CHANGELOG.md`
 - `LICENSE` — *no license file in the repo today*; copyright is implicit. Don't fabricate one. If the user wants to add a license, that's a deliberate decision worth a separate conversation.
-- `PRIVACY-POLICY.md` (Play Store will require a URL once the app goes live)
 - `NOTICES.md` / third-party attribution document
-- `fastlane/` directory (no Play Store / F-Droid metadata tree yet)
+- `PRIVACY-POLICY.md` and `fastlane/` are intentionally absent — distribution is GitHub Releases sideload only, no Play Store / F-Droid (see ROADMAP Open Questions). Don't propose creating either unless the user reopens that decision.
 
 When the user asks about one of the missing files, confirm whether to create it before writing — do not silently scaffold a tree of new docs.
 
@@ -49,7 +48,7 @@ When the user asks about one of the missing files, confirm whether to create it 
 When writing or editing docs, double-check these from the source rather than copying from another project. They've gone stale before.
 
 - **App name**: 清正学園将棋部 (SeiShinGakuen_ShougiBu in roman). Use the kanji form in user-facing copy; either is fine in technical prose.
-- **Package id (Android)**: `org.seishingakuen.shougibu` — set in [`export_presets.cfg`](../../export_presets.cfg) `package/unique_name`. **Immutable** for Play Store continuity.
+- **Package id (Android)**: `org.seishingakuen.shougibu` — set in [`export_presets.cfg`](../../export_presets.cfg) `package/unique_name`. Effectively **immutable**: changing it makes Android treat any new install as an unrelated app, breaks "update existing install" for sideloaders, and orphans every saved game in `user://`.
 - **Display name (Android launcher)**: 清正学園将棋部, set in `package/name`.
 - **Version**: read [`export_presets.cfg`](../../export_presets.cfg) `version/name` and `version/code` — single source of truth.
 - **Engine**: Godot 4.6.2 (Mobile renderer, Vulkan backend on Android), `~/.local/bin/Godot_v4.6.2-stable_linux.x86_64`.
@@ -58,7 +57,7 @@ When writing or editing docs, double-check these from the source rather than cop
 - **Encoder invariant**: 45-plane position + 139-plane move index, byte-parity-tested against ShogiDojo's Python implementation via `tools/gen_fixtures.py` → `native/shogi_core/src/parity_tests.rs`. Don't describe the encoder casually — the project's defense against silent AI breakage is "the bytes are identical."
 - **Search**: single-threaded PUCT MCTS (no virtual loss, no transposition table) with Dirichlet noise at the root. Temperature-sampled — `tools/build_all.sh` and the Lv 1–8 strength presets in `Settings.gd` drive the playouts/τ pair.
 - **Rules**: full board + hand handling, check, 二歩, 打ち歩詰め, 千日手 (incl. perpetual-check variant), 入玉 detection. SFEN parse + serialize.
-- **Distribution**: Google Play (AAB). F-Droid is **not** currently set up.
+- **Distribution**: GitHub Releases (signed APK + `.idsig` sidecar). Sideload only — Google Play and F-Droid are explicitly out of scope (see ROADMAP Open Questions).
 - **License**: not yet declared. The repo has no `LICENSE` file. Don't quote a license unless one lands.
 - **Author**: `Hui-Hong You` per `git log`.
 - **GitHub remote**: `git@github.com:hiroshiyui/SeiShinGakuen_ShougiBu.git`.
@@ -106,42 +105,36 @@ Numbered Architecture Decision Records, e.g. `0005-font-subset-pipeline.md`. New
 
 ### CHANGELOG.md (if/when created)
 
-Project has no changelog yet. When the user asks for one:
+Project has no changelog file yet — release notes live in GitHub
+Releases (see release-engineering skill). When the user asks for a
+proper `CHANGELOG.md`:
 
-1. Ask whether they want Keep-a-Changelog at the repo root, Play Store "What's new" copy only, GitHub Release notes only, or some combination.
+1. Ask whether they want Keep-a-Changelog at the repo root in addition
+   to the GitHub Release notes, or as a replacement for them.
 2. Once they choose, stick with it.
 
 To gather material since the previous tag:
 
 ```bash
-git log --oneline <previous-tag>..HEAD     # if a previous tag exists
-git log --oneline                          # for the very first version (currently true)
+git log --oneline <previous-tag>..HEAD     # since the previous tag
+git log --oneline                          # before the first tag
 ```
 
-Commit prefixes (`feat(scope):`, `fix(scope):`, `docs:`, `chore:`, `refactor:`, `build:`) map cleanly onto changelog sections.
+Commit prefixes (`feat(scope):`, `fix(scope):`, `docs:`, `chore:`, `refactor:`, `build:`, `test:`) map cleanly onto changelog sections.
 
-### PRIVACY-POLICY.md (if/when created)
+### GitHub Release notes
 
-Play Store will require a privacy policy URL before publication. The honest privacy story is short:
+The shipping changelog channel today. The release-engineering skill
+owns the `gh release create` invocation; this skill is responsible for
+the prose. Structure used by 0.2.0:
 
-- The app **makes no network requests** — all inference is on-device via `tract` against `models/bonanza.onnx`.
-- The **only** writable persistence is `user://prefs.cfg` (UI prefs + AI level) and `user://saved_game.cfg` (current SFEN + mode + level). No analytics, no telemetry, no ads, no crash reporting.
-- The bundled ONNX model is extracted from the APK to `user://` on first launch (Android limitation: `tract` can't open files inside the PCK/APK). It is not modified after.
-- Permissions declared: none beyond what Godot's mobile template ships with — no INTERNET, no storage, no biometric.
-
-Verify each claim against the code before publishing — claims must be true.
-
-### Play Store store listing (if/when uploading)
-
-Required text fields:
-
-- **App name**: 清正学園将棋部 (50 chars max). Already fits.
-- **Short description**: 80 chars max. Hand-written.
-- **Full description**: 4000 chars max. Mirror the README's "Features" plus a sentence on the AI character roster (Lv 1 佐藤竜太郎 … Lv 8 加藤よしこ).
-- **Screenshots**: at least 2, ideally 4–8. Use Godot debug builds, hide the FPS counter.
-- **Feature graphic**: 1024×500.
-- **What's new**: per-version, max 500 chars per language.
-
-If the user wants Japanese + English store listings, mirror the text fields under both locales in Play Console.
+- `## Highlights` — 1–3 user-visible bullets, in Japanese (the audience
+  for this app reads Japanese; technical commit-level details are not
+  the headline).
+- `## Changes` grouped by Conventional Commit type (Features /
+  Fixes & refactors / Tooling & docs / Tests).
+- `**Full Changelog**: https://github.com/hiroshiyui/SeiShinGakuen_ShougiBu/compare/<prev>...<X.Y.Z>`
+  — auto-link to the GitHub compare view; omit on the first release
+  and use `commits/<X.Y.Z>` instead.
 
 ## Task: $ARGUMENTS

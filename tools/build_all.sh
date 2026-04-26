@@ -11,8 +11,11 @@
 #   --skip-fonts     don't regenerate font subsets
 #   --skip-apk       don't export the Android package
 #   --release        export a signed release APK (default: debug)
-#   --aab            export a signed release AAB for Play Store
-#                    (implies --release, requires android/build/ template)
+#   --aab            export a signed release AAB (implies --release,
+#                    requires android/build/ template). Distribution is
+#                    GitHub Releases sideload only — Play Store is out
+#                    of scope — so this flag is rarely used; left in for
+#                    completeness.
 #   --test           run `cargo test` (unit + parity + perft) after Rust build
 
 set -euo pipefail
@@ -39,9 +42,12 @@ for arg in "$@"; do
         --skip-fonts)   DO_FONTS=0 ;;
         --skip-apk)     DO_APK=0 ;;
         --release)      RELEASE=1 ;;
-        # AAB is for Play Store distribution; always signed, so implies
-        # --release. Reuses the same preset but flips it into Gradle
-        # build + AAB format for one export, then restores.
+        # AAB is the Android App Bundle format (Play-Store-only in
+        # practice); always signed, so implies --release. Reuses the
+        # same preset but flips it into Gradle build + AAB format for
+        # one export, then restores. Distribution targets GitHub
+        # Releases sideload (.apk), not Play Store, so this flag is
+        # rarely needed.
         --aab)          AAB=1; RELEASE=1 ;;
         --test)         DO_TEST=1 ;;
         -h|--help)
@@ -97,7 +103,7 @@ fi
 if (( DO_APK )); then
     mkdir -p build
     # Pull version/name straight out of export_presets.cfg (single source
-    # of truth for Play Store metadata) and tag every output filename
+    # of truth for Android version metadata) and tag every output filename
     # with it. Empty version/name → no suffix, so debug builds during
     # early development still produce predictable names.
     VERSION_NAME=$(sed -nE 's|^version/name="(.*)"$|\1|p' "$REPO_ROOT/export_presets.cfg")

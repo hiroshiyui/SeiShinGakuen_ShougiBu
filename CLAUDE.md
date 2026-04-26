@@ -133,9 +133,12 @@ APK export: [`docs/android-build.md`](./docs/android-build.md).
   `move_index.rs`) without regenerating fixtures and running parity
   tests. The model silently plays garbage if the encoding drifts.
 - **The ROADMAP's "Open Questions"** section flags decisions not yet
-  made (千日手 variant, sprite atlas, Play Store distribution, etc.).
-  Don't invent answers — surface the question.
+  made (in-game 入玉 claim button, telemetry, UI string centralisation,
+  etc.). Distribution is settled: GitHub Releases sideload only, no
+  Play Store. Don't invent answers — surface the question.
 - **New UI strings must round-trip through the font subset script.**
-  `tools/build_font_subsets.py` greps `scripts/` and `scenes/` for
-  Japanese characters. If you add text via code composition (`"... %s"
-  % x`) make sure the injected characters are in its safety-list.
+  `tools/build_font_subsets.py` walks `scripts/`, `scenes/`, and
+  `assets/` (filtered to text suffixes — `.gd`, `.tscn`, `.tres`, etc.)
+  for Japanese characters. If you add text via code composition
+  (`"... %s" % x`) make sure the injected characters are in its
+  safety-list.

@@ -1,38 +1,38 @@
 ---
 name: release-engineering
-description: Release engineering tasks including version bumping, building signed release APKs / AABs, creating git tags, and preparing Google Play / GitHub Release artefacts. Use when the user asks to prepare a release, bump the version, tag a release, or build for distribution.
+description: Release engineering tasks including version bumping, building signed release APKs, creating git tags, and preparing GitHub Release artefacts. Use when the user asks to prepare a release, bump the version, tag a release, or build for distribution.
 argument-hint: task description
 ---
 
 # Release Engineering
 
-You are performing release engineering tasks for **清正学園将棋部** (SeiShinGakuen_ShougiBu) — a single-player Android Shogi game built with Godot 4.6.2 (Mobile renderer) and a Rust GDExtension. Distribution target is **Google Play** (AAB).
+You are performing release engineering tasks for **清正学園将棋部** (SeiShinGakuen_ShougiBu) — a single-player Android Shogi game built with Godot 4.6.2 (Mobile renderer) and a Rust GDExtension. Distribution target is **GitHub Releases** (signed APK, sideload). **Google Play is explicitly out of scope** — see ROADMAP Open Questions for the rationale (avoiding Play developer-account dependencies, mandatory privacy-policy URLs, upload-key custody, and the policy-compliance ratchet for a single-player offline game). Don't suggest Play Store steps unless the user reopens that decision.
 
 ## Current state of the project
 
 Read this before assuming anything. The repo's release infrastructure is real and tested — confirm anything that looks ambiguous against the actual files rather than this skill.
 
-- **Build pipeline.** [`tools/build_all.sh`](../../tools/build_all.sh) drives the whole pipeline (Rust desktop + Android cross-compile, font subsets, Godot export). Flags: `--release` for a signed APK, `--aab` for a signed AAB (implies `--release`), `--skip-{desktop,android,fonts,apk}`, `--test` for `cargo test`.
+- **Build pipeline.** [`tools/build_all.sh`](../../tools/build_all.sh) drives the whole pipeline (Rust desktop + Android cross-compile, font subsets, Godot export). Flags: `--release` for a signed APK, `--skip-{desktop,android,fonts,apk}`, `--test` for `cargo test`. (`--aab` exists for completeness but produces a Play-Store-only artefact we don't ship — leave it alone unless the user reopens the Play Store decision.)
 - **Versioning.** `version/code` and `version/name` live in [`export_presets.cfg`](../../export_presets.cfg) under `[preset.0.options]`. They are the single source of truth — the script reads `version/name` to tag output filenames (`build/seishingakuen-release-v0.1.0.apk`).
 - **Signing — release.** Keystore lives outside the repo at `~/.local/share/godot/keystores/seishingakuen-release.keystore`, alias `seishingakuen`. The password sits in `.android-release-pass` at the repo root (gitignored). The script reads it and exports `GODOT_ANDROID_KEYSTORE_RELEASE_{PATH,USER,PASSWORD}` for the duration of one export — **no signing secrets in `export_presets.cfg`**, **no patches to Godot's global `editor_settings-4.6.tres`**.
 - **Signing — debug.** Standard Android debug keystore, configured globally in `editor_settings-4.6.tres`. No password file required.
-- **Tags.** Zero tags exist in the repo today. The convention below is a *proposal* — confirm with the user before the first one.
-- **Distribution.** Google Play is the primary target. F-Droid is **not** currently set up (no `fastlane/`); only mention it if the user explicitly asks.
+- **Tags.** Annotated, no `v` prefix (e.g. `0.2.0`); each release tag points at the same commit as its `chore(release):` commit. Established convention — keep it.
+- **Distribution.** GitHub Releases (signed APK + `.idsig`) for sideloading. No Play Store, no F-Droid (no `fastlane/`). Don't mention either unless the user reopens the decision.
 - **Tests.** Rust core has unit + parity + perft tests in `native/shogi_core/src/{tests.rs,parity_tests.rs}`. GDScript headless test suites live under `scripts/tests/`: `rules_tests.gd` (FFI rules), `characters_tests.gd` (character roster + `.tres` validity), `persistence_tests.gd` (save/resume + atomic model copy), plus the older `core_smoke.gd` and `ai_smoke.gd`. **Every release must pass all four real test suites** — see "Test Gate" below.
 
 Current version (verify in [`export_presets.cfg`](../../export_presets.cfg) before acting — these go stale):
 
 ```
-version/code=1
-version/name="0.1.0"
+version/code=4
+version/name="0.2.0"
 ```
 
-`package/unique_name="org.seishingakuen.shougibu"` — this is the **immutable** Play Store package id. Never change it.
+`package/unique_name="org.seishingakuen.shougibu"` — Android package id. Effectively immutable: changing it makes Android treat any new install as an unrelated app, breaks "update existing install" for sideloading users, and orphans every saved game in `user://`. Don't change it.
 
 ## Version Scheme
 
 - **`version/name`**: SemVer `MAJOR.MINOR.PATCH` (e.g. `0.1.0`, `0.1.1`, `0.2.0`). Cosmetic; shown to users.
-- **`version/code`**: monotonically increasing positive 32-bit integer, **+1 per Play Store upload**. Once a `code` is uploaded to a track, you can never reuse it or anything lower. Bumping `name` without bumping `code` will be rejected.
+- **`version/code`**: monotonically increasing positive 32-bit integer, **+1 per release**. Android refuses to install a build whose `versionCode` is ≤ the currently-installed one (treats it as a downgrade), so an APK published to GitHub Releases without bumping `code` won't update existing sideloaders.
 - Both live in [`export_presets.cfg`](../../export_presets.cfg) and nowhere else.
 
 To bump:
@@ -45,7 +45,7 @@ To bump:
 
 The general shape, in order. Confirm at each step that's user-visible.
 
-1. **Confirm intent.** Ask the user what version they're cutting (patch / minor / major) and which artefacts they need (APK for sideloading, AAB for Play Store, both).
+1. **Confirm intent.** Ask the user what version they're cutting (patch / minor / major). The artefact is always a signed APK (no AAB unless they explicitly reopen the Play Store decision).
 2. **Working tree clean** on `main`. `git status` must be empty before bumping.
 3. **Run all test suites — hard gate.** See "Test Gate" below for the
    full command list. Every suite must pass. The parity tests in
@@ -53,20 +53,17 @@ The general shape, in order. Confirm at each step that's user-visible.
    encoder produces an AI that plays garbage. **Stop and report if
    anything fails — never bypass with `--no-verify`-style shortcuts.**
 4. **Bump version** in [`export_presets.cfg`](../../export_presets.cfg).
-5. **Build the artefacts.** Always uses the user's keystore — confirm `.android-release-pass` exists.
-   - APK: `./tools/build_all.sh --release` → `build/seishingakuen-release-v<X.Y.Z>.apk`
-   - AAB: `./tools/build_all.sh --aab` → `build/seishingakuen-release-v<X.Y.Z>.aab`
-   - Both: run them sequentially.
+5. **Build the APK.** `./tools/build_all.sh --release` → `build/seishingakuen-release-v<X.Y.Z>.apk` (+ `.idsig` sidecar). Confirm `.android-release-pass` exists before invoking — the script reads it for the keystore password.
 6. **Verify the signature** matches the user's release certificate (not the global Android debug cert — that would mean signing fell back to debug):
    ```bash
    ~/Android/Sdk/build-tools/35.0.0/apksigner verify --print-certs build/seishingakuen-release-v<X.Y.Z>.apk \
      | grep -E 'Signer #1 (certificate DN|certificate SHA-256)'
    ```
    The CN should be the user's, not `Android Debug`. The SHA-256 should match `keytool -list -keystore ~/.local/share/godot/keystores/seishingakuen-release.keystore -alias seishingakuen`.
-7. **Smoke-install** (if a device is connected): `adb install -r build/seishingakuen-release-v<X.Y.Z>.apk`. Launch, play one move, confirm the AI replies — proves the bundled `libshogi_core.so` and `models/bonanza.onnx` are intact in the signed bundle.
+7. **Smoke-install** (if a device is connected): `adb install -r build/seishingakuen-release-v<X.Y.Z>.apk`. Launch, play one move, confirm the AI replies — proves the bundled `libshogi_core.so` and `models/bonanza.onnx` are intact in the signed bundle. If the device has a debug-signed copy installed, the install will fail with a signature mismatch — uninstall first (`adb uninstall org.seishingakuen.shougibu`), warning the user this wipes saved game + prefs.
 8. **Release commit + tag** — see below.
-9. **Push** only after the user explicitly confirms.
-10. **Upload** to Play Console (AAB) and/or **GitHub Release** (APK + signature) per the user's choice.
+9. **Push** only after the user explicitly confirms (`git push origin main && git push origin <X.Y.Z>`).
+10. **Publish a GitHub Release** with the APK + `.idsig` attached — see "GitHub Release" below.
 
 ### Git Conventions
 
@@ -75,12 +72,11 @@ The general shape, in order. Confirm at each step that's user-visible.
 
 ### Tag Convention
 
-Zero tags exist today, so there is **no precedent**. Propose this and let the user confirm:
+Established by 0.1.1 / 0.1.2 / 0.2.0:
 
-- Annotated tag, no `v` prefix: `git tag -a 0.1.0 -m "0.1.0"` on the release commit.
-- Tag points at the same commit as the release commit, *not* a separate commit.
-
-Once the user picks, stick with it for future releases.
+- Annotated tag, no `v` prefix: `git tag -a 0.X.Y -m "0.X.Y"` on the release commit.
+- Tag points at the same commit as the `chore(release):` commit, *not* a separate commit.
+- Push with `git push origin <X.Y.Z>` after pushing `main`.
 
 ## Test Gate
 
@@ -130,17 +126,16 @@ encompass. Skip them unless investigating something specific.
 # Skip what you don't need to rebuild
 ./tools/build_all.sh --skip-desktop --skip-android --skip-fonts
 
-# Signed release APK (sideloading / GitHub Release)
+# Signed release APK (the only artefact we ship)
 ./tools/build_all.sh --release
-
-# Signed AAB (Play Store)
-./tools/build_all.sh --aab
 
 # Run cargo tests as part of the build
 ./tools/build_all.sh --test
 ```
 
-Outputs land in `build/seishingakuen-{debug,release}[-vX.Y.Z].{apk,aab}`. The `-vX.Y.Z` suffix is auto-derived from `version/name` — empty `version/name` skips the suffix.
+Outputs land in `build/seishingakuen-{debug,release}[-vX.Y.Z].apk`. The `-vX.Y.Z` suffix is auto-derived from `version/name` — empty `version/name` skips the suffix.
+
+The `--aab` flag exists in `build_all.sh` but produces a Play-Store-only bundle we don't distribute; ignore it unless the user reopens that decision.
 
 ## Signature & Keystore Verification
 
@@ -153,22 +148,16 @@ keytool -list -v -keystore ~/.local/share/godot/keystores/seishingakuen-release.
 # Verify a signed APK
 ~/Android/Sdk/build-tools/35.0.0/apksigner verify --print-certs build/seishingakuen-release-v<X.Y.Z>.apk
 
-# Confirm the AAB is a valid bundle (it's a zip)
-unzip -l build/seishingakuen-release-v<X.Y.Z>.aab | head
+# Confirm the APK contains the native lib + ONNX model
+unzip -l build/seishingakuen-release-v<X.Y.Z>.apk | grep -E 'libshogi_core|bonanza'
 ```
 
-For Play App Signing, record the **upload key** SHA-256 (what `apksigner verify --print-certs` shows on a self-signed AAB) — Google Play stores this and rejects future uploads signed with anything else. The keystore at `~/.local/share/godot/keystores/seishingakuen-release.keystore` is therefore irreplaceable; back it up offline.
-
-## Google Play Upload
-
-1. Open Play Console → Internal testing (or Production) → Create new release.
-2. Upload `build/seishingakuen-release-v<X.Y.Z>.aab`.
-3. Add release notes (see "Changelogs" below).
-4. Roll out per the user's policy. The first upload to a track defines the upload signing key; every subsequent upload to that app must be signed with the same key.
+The keystore at `~/.local/share/godot/keystores/seishingakuen-release.keystore` is irreplaceable: every release of this `package/unique_name` must be signed with the same cert, otherwise existing sideloaders can't update without uninstalling first (which wipes their saved game). Back it up offline.
 
 ## GitHub Release
 
-For users who want a sideloadable APK alongside the Play Store release:
+The shipping channel. Always upload both the APK and its `.idsig`
+sidecar so users can verify the signature independently:
 
 ```bash
 gh release create <X.Y.Z> \
@@ -177,7 +166,8 @@ gh release create <X.Y.Z> \
 <release notes body>
 EOF
 )" \
-  build/seishingakuen-release-v<X.Y.Z>.apk
+  build/seishingakuen-release-v<X.Y.Z>.apk \
+  build/seishingakuen-release-v<X.Y.Z>.apk.idsig
 ```
 
 For release notes, prefer a hand-written summary over `--generate-notes` alone. A good structure:
@@ -201,8 +191,7 @@ For the **first** release, omit the `compare` link and use `https://github.com/h
 The project has **no `CHANGELOG.md`** yet. When the user asks for one, ask whether they want:
 
 - A `CHANGELOG.md` at the repo root (Keep-a-Changelog style — works well with this repo's Conventional Commits).
-- Per-release Play Console "What's new" copy (max 500 chars per language).
-- GitHub Release notes only.
+- GitHub Release notes only (the current practice — see "GitHub Release" above).
 
 To gather material since the previous tag:
 
@@ -215,11 +204,12 @@ The project's `<type>(<scope>):` prefixes map cleanly to changelog sections.
 
 ## Important Reminders
 
-- **Confirm before any push, tag-push, Play Store upload, or GitHub Release publish.** All four are visible to others and hard to undo.
-- **Never bypass signing.** A debug-signed APK shipped as "release" will be rejected by Play Store *and* lose the upload-key invariant. If `apksigner verify --print-certs` shows `CN=Android Debug`, stop.
-- **`version/code` is sticky.** Once you upload `code=N`, you can never re-use `N` or anything lower for this `package/unique_name`. Bump it on every Play Store upload, even for re-uploads of "the same" build.
+- **Confirm before any push, tag-push, or GitHub Release publish.** All three are visible to others and hard to undo.
+- **Never bypass signing.** A debug-signed APK shipped as "release" breaks the "update existing install" path for everyone who installed an earlier release (different cert → Android refuses the upgrade, user must uninstall + lose saved game). If `apksigner verify --print-certs` shows `CN=Android Debug`, stop.
+- **`version/code` only goes up.** Android refuses installs whose `versionCode` is ≤ the currently installed one. Bump on every release, never reuse, never decrement.
+- **Distribution is GitHub Releases sideload only.** Don't propose Play Store / Play Console / AAB upload steps unless the user explicitly reopens that decision (see ROADMAP). The `--aab` flag in `build_all.sh` is preserved but unused.
 - **All four test suites must pass before tagging** — see "Test Gate". A red suite blocks the release; do not work around it. Encoder byte-parity is the most consequential failure (a broken encoder ships an AI that plays garbage), but the GDScript suites cover behaviour the user-facing app actually depends on (rules legality, character roster integrity, save/resume round-trip, atomic model copy) and a regression in any of them is a shipping bug.
-- **Keystore loss = app death.** `~/.local/share/godot/keystores/seishingakuen-release.keystore` cannot be regenerated; backups are the user's responsibility.
-- **Native `.so` size**: Confirm `lib/arm64-v8a/libshogi_core.so` and the bundled `models/bonanza.onnx` are present in the AAB before upload (`unzip -l build/seishingakuen-release-v<X.Y.Z>.aab | grep -E 'libshogi_core|bonanza'`). A missing `.so` produces a launch crash on real devices.
+- **Keystore loss = sideload-update death.** `~/.local/share/godot/keystores/seishingakuen-release.keystore` cannot be regenerated; backups are the user's responsibility. Without it, every existing sideloader has to uninstall + lose data to install any future build.
+- **Native `.so` + model present**: Confirm `lib/arm64-v8a/libshogi_core.so` and the bundled `models/bonanza.onnx` are inside the APK before publishing (`unzip -l build/seishingakuen-release-v<X.Y.Z>.apk | grep -E 'libshogi_core|bonanza'`). A missing `.so` produces a launch crash on real devices.
 
 ## Task: $ARGUMENTS

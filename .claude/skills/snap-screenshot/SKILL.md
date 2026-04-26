@@ -1,6 +1,6 @@
 ---
 name: snap-screenshot
-description: Capture a screenshot from the connected Android device via adb and save it under docs/screenshots/. Trigger on "snap", "take a screenshot", "screenshot via adb", or any request to capture the device's screen — typical use is grabbing app screens for the README, Play Store listing, or bug reports.
+description: Capture a screenshot from the connected Android device via adb and save it under docs/screenshots/. Trigger on "snap", "take a screenshot", "screenshot via adb", or any request to capture the device's screen — typical use is grabbing app screens for the README, GitHub Release notes, or bug reports.
 argument-hint: optional output filename (defaults to docs/screenshots/<timestamp>.png)
 ---
 
@@ -11,7 +11,7 @@ Capture the current screen of the connected Android device via `adb` and save th
 ## When to use
 
 - User says "snap", "snap a screenshot", "screenshot", "take a screenshot via adb".
-- User is preparing Play Store screenshots, README imagery, or bug-report attachments and wants captures from the device they're holding.
+- User is preparing GitHub Release imagery, README screenshots, or bug-report attachments and wants captures from the device they're holding.
 - **Skip** if the user wants desktop screenshots (Spectacle / grim / scrot territory) — this skill is adb-only.
 
 ## Steps

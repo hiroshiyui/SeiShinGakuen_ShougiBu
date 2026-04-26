@@ -207,7 +207,7 @@ Shipped differently:
 - **Portrait lock:** Godot 4.6's Android export reads `display/window/handheld/orientation` as an `int`, not a string — leaving it as `"portrait"` silently falls back to `0` (landscape). Must be `1`.
 - **Touch input:** `emulate_mouse_from_touch` (default `true`) fires both an `InputEventScreenTouch` and an `InputEventMouseButton` per tap, so naive `_gui_input` handlers fire twice and the second tap deselects the first. Square now dispatches on `OS.has_feature("mobile")` — mobile listens to touch only, desktop to mouse only.
 - **Layout auto-fit:** board side is computed at runtime from the viewport (`min(vw - 40, vh - reserved)`), clamped `[240, 1600]`, and re-fit on every `size_changed`. Status label was slimmed to `(N手目)` to kill the text-width feedback loop that was nudging the board off-centre each move.
-- **Signing:** debug keystore only; release signing deferred to Phase 7 polish alongside the Play Store story.
+- **Signing:** debug keystore only; release signing deferred to Phase 7 polish alongside the GitHub Releases / sideload story.
 
 ### Phase 7 — Polish
 - [x] **Subset Fude Goshirae piece font + scan-driven subsetting for the UI font.** Both done in `tools/build_font_subsets.py`. Piece font is subset to 15 fixed glyphs; Noto Serif JP Medium + Bold are subset against all Japanese characters grep'd from `scripts/` + `scenes/` plus an always-include ASCII range (`0020-007E`) and a safety set for runtime-injected glyphs (digits, `→`, `×`, Japanese punctuation). Re-run after editing UI strings.
@@ -305,7 +305,7 @@ bump. `.gdextension` manifest declares `compatibility_minimum = 4.3`.
 - [ ] In-game 入玉 claim button (currently detection-only).
 - [x] ~~App icon + main-menu art — source or commission?~~ — AI-generated in-house, both icon (`assets/branding/`) and backgrounds (`assets/backgrounds/`) plus the 8 character portraits (`assets/characters/**/neutral.webp`). 2026-04-27.
 - [x] ~~Cloud save / cross-device persistence?~~ — explicitly skipped to stay free of Google Play services dependencies. Players who uninstall lose `user://prefs.cfg` + `user://saved_game.cfg`; that's the trade-off. 2026-04-27.
-- [ ] Play Store distribution or sideload only? Affects signing / policy.
+- [x] ~~Play Store distribution or sideload only?~~ — sideload only via signed APK on GitHub Releases. Play Store is explicitly out of scope; we don't want the Google Play ecosystem dependencies (developer account, policy compliance, mandatory privacy URL, upload-key custody) for a single-player offline game. AAB target left in `tools/build_all.sh --aab` for completeness but unused. 2026-04-27.
 - [ ] Any telemetry (crash reporting)? Default: none.
 - [ ] UI string centralisation (e.g. `Strings.gd`) — currently strings live inline. Deferred until we internationalise or until the font subsetter's grep becomes unwieldy.
 
