@@ -6,6 +6,13 @@ extends Control
 @onready var _resume_btn: Button = %ResumeButton
 @onready var _teacher_side: OptionButton = %TeacherSideSelect
 @onready var _quit_dialog: ConfirmationDialog = %QuitDialog
+@onready var _title: Label = %Title
+@onready var _panel: PanelContainer = %Panel
+
+# Title sits above the menu panel by this much extra (px), on top of the
+# natural gap between them. Tweak in the editor by adjusting this constant.
+const _TITLE_LIFT_PX := 24.0
+const _TITLE_GAP_PX := 16.0
 
 const _TEACHER_RIGHT_ID := 0
 const _TEACHER_LEFT_ID := 1
@@ -31,6 +38,15 @@ func _ready() -> void:
 	_resume_btn.pressed.connect(_on_resume)
 	_resume_btn.visible = Settings.has_saved_game()
 	_quit_dialog.confirmed.connect(_on_quit_confirmed)
+	_panel.resized.connect(_reposition_title)
+	resized.connect(_reposition_title)
+	_reposition_title()
+
+func _reposition_title() -> void:
+	# Title is anchored at vertical center, growing upward (grow_vertical=BEGIN).
+	# Place its bottom edge above the Panel's top by gap + lift.
+	var panel_half: float = _panel.size.y * 0.5
+	_title.offset_bottom = -panel_half - _TITLE_GAP_PX - _TITLE_LIFT_PX
 
 # Esc on desktop / back on Android pops a confirm dialog instead of
 # letting Godot fall through to the OS-level quit. Re-pressing while

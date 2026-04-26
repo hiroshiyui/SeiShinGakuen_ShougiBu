@@ -1,7 +1,8 @@
-[gd_scene load_steps=4 format=3]
+[gd_scene load_steps=5 format=3]
 
 [ext_resource type="Script" path="res://scripts/MainMenu.gd" id="1_mm"]
 [ext_resource type="Texture2D" path="res://assets/backgrounds/main_title_bg.webp" id="2_bg"]
+[ext_resource type="FontFile" path="res://assets/fonts/fude-goshirae/fude-goshirae.otf" id="3_title"]
 
 [sub_resource type="StyleBoxFlat" id="1_panel"]
 bg_color = Color(0, 0, 0, 0.5)
@@ -38,19 +39,12 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 
 [node name="Panel" type="PanelContainer" parent="Center"]
+unique_name_in_owner = true
 theme_override_styles/panel = SubResource("1_panel")
 
 [node name="Box" type="VBoxContainer" parent="Center/Panel"]
 custom_minimum_size = Vector2(480, 0)
 theme_override_constants/separation = 20
-
-[node name="Title" type="Label" parent="Center/Panel/Box"]
-text = "清正学園将棋部"
-horizontal_alignment = 1
-theme_override_font_sizes/font_size = 48
-theme_override_colors/font_color = Color(0.98, 0.98, 0.98, 1)
-theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
-theme_override_constants/outline_size = 10
 
 [node name="ModeLabel" type="Label" parent="Center/Panel/Box"]
 text = "対局モード"
@@ -91,6 +85,26 @@ visible = false
 custom_minimum_size = Vector2(0, 56)
 text = "続きから"
 theme_override_font_sizes/font_size = 24
+
+[node name="Title" type="Label" parent="."]
+unique_name_in_owner = true
+anchor_left = 0.0
+anchor_top = 0.5
+anchor_right = 1.0
+anchor_bottom = 0.5
+grow_vertical = 0
+mouse_filter = 2
+text = "清正学園将棋部"
+horizontal_alignment = 1
+theme_override_fonts/font = ExtResource("3_title")
+theme_override_font_sizes/font_size = 68
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+theme_override_colors/font_outline_color = Color(0.98, 0.98, 0.98, 1)
+theme_override_colors/font_shadow_color = Color(0.25, 0.25, 0.25, 0.5)
+theme_override_constants/outline_size = 30
+theme_override_constants/shadow_offset_x = 0
+theme_override_constants/shadow_offset_y = 12
+theme_override_constants/shadow_outline_size = 5
 
 [node name="QuitDialog" type="ConfirmationDialog" parent="."]
 unique_name_in_owner = true
