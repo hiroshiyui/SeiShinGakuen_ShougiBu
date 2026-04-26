@@ -59,20 +59,35 @@ JAPANESE_CHARS_RE = re.compile(
 # so any English / numeric Label text doesn't render as .notdef boxes.
 ASCII_UNICODES = "0020-007E"
 
+# Trees we walk for Japanese-bearing source. assets/ holds the
+# CharacterProfile .tres files whose `tagline` / `introduction` strings
+# are user-visible at runtime — without scanning them, a kanji that
+# only appears in a character bio would silently render as tofu on
+# device.
+SCAN_DIRS = ("scripts", "scenes", "assets")
+
+# Only text-shaped extensions are scanned. assets/ contains lots of
+# binary (.webp, .otf, .png, .ogg) which would either be skipped here
+# or — worse — accidentally yield spurious matches when their bytes
+# happen to look like valid UTF-8 Japanese.
+TEXT_SUFFIXES = {".gd", ".tscn", ".tres", ".cfg", ".json", ".md"}
+
 
 # --- helpers ---------------------------------------------------------------
 
 
 def scan_ui_glyphs() -> str:
-    """Walk scripts/ and scenes/, return a stable-ordered string of
-    every Japanese codepoint referenced in either tree."""
+    """Walk SCAN_DIRS, return a stable-ordered string of every
+    Japanese codepoint referenced in any TEXT_SUFFIXES file."""
     glyphs: set[str] = set()
-    for sub in ("scripts", "scenes"):
+    for sub in SCAN_DIRS:
         root = REPO_ROOT / sub
         if not root.is_dir():
             continue
         for path in root.rglob("*"):
             if not path.is_file():
+                continue
+            if path.suffix.lower() not in TEXT_SUFFIXES:
                 continue
             try:
                 text = path.read_text(encoding="utf-8", errors="ignore")
