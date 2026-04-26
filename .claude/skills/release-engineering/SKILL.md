@@ -18,7 +18,7 @@ Read this before assuming anything. The repo's release infrastructure is real an
 - **Signing — debug.** Standard Android debug keystore, configured globally in `editor_settings-4.6.tres`. No password file required.
 - **Tags.** Zero tags exist in the repo today. The convention below is a *proposal* — confirm with the user before the first one.
 - **Distribution.** Google Play is the primary target. F-Droid is **not** currently set up (no `fastlane/`); only mention it if the user explicitly asks.
-- **Tests.** Rust core has a real test suite (unit + parity + perft); GDScript rules tests live at `scripts/tests/rules_tests.gd`.
+- **Tests.** Rust core has unit + parity + perft tests in `native/shogi_core/src/{tests.rs,parity_tests.rs}`. GDScript headless test suites live under `scripts/tests/`: `rules_tests.gd` (FFI rules), `characters_tests.gd` (character roster + `.tres` validity), `persistence_tests.gd` (save/resume + atomic model copy), plus the older `core_smoke.gd` and `ai_smoke.gd`. **Every release must pass all four real test suites** — see "Test Gate" below.
 
 Current version (verify in [`export_presets.cfg`](../../export_presets.cfg) before acting — these go stale):
 
@@ -47,10 +47,11 @@ The general shape, in order. Confirm at each step that's user-visible.
 
 1. **Confirm intent.** Ask the user what version they're cutting (patch / minor / major) and which artefacts they need (APK for sideloading, AAB for Play Store, both).
 2. **Working tree clean** on `main`. `git status` must be empty before bumping.
-3. **Run the test suites.**
-   - `cargo test --manifest-path native/shogi_core/Cargo.toml` — unit + parity + perft. The parity tests guard against silent encoder drift; if they fail, **stop**: shipping a broken encoder produces an AI that plays garbage.
-   - `~/.local/bin/Godot_v4.6.2-stable_linux.x86_64 --headless -s res://scripts/tests/rules_tests.gd` — GDScript rules tests via the FFI.
-   - Stop and report if anything fails.
+3. **Run all test suites — hard gate.** See "Test Gate" below for the
+   full command list. Every suite must pass. The parity tests in
+   particular guard against silent encoder drift; shipping a broken
+   encoder produces an AI that plays garbage. **Stop and report if
+   anything fails — never bypass with `--no-verify`-style shortcuts.**
 4. **Bump version** in [`export_presets.cfg`](../../export_presets.cfg).
 5. **Build the artefacts.** Always uses the user's keystore — confirm `.android-release-pass` exists.
    - APK: `./tools/build_all.sh --release` → `build/seishingakuen-release-v<X.Y.Z>.apk`
@@ -80,6 +81,45 @@ Zero tags exist today, so there is **no precedent**. Propose this and let the us
 - Tag points at the same commit as the release commit, *not* a separate commit.
 
 Once the user picks, stick with it for future releases.
+
+## Test Gate
+
+Before any release tag, all four real test suites must pass. Run them
+exactly in this order — Rust first because parity failures invalidate
+everything downstream:
+
+```bash
+# 1. Rust: unit + parity (encoder ↔ ShogiDojo) + perft
+cargo test --manifest-path native/shogi_core/Cargo.toml --release
+
+# 2. GDScript: rules via FFI (check, pin, 二歩, 打ち歩詰め, undo, ...)
+~/.local/bin/Godot_v4.6.2-stable_linux.x86_64 \
+  --headless -s res://scripts/tests/rules_tests.gd --path .
+
+# 3. GDScript: character roster + .tres validity
+~/.local/bin/Godot_v4.6.2-stable_linux.x86_64 \
+  --headless -s res://scripts/tests/characters_tests.gd --path .
+
+# 4. GDScript: save/resume + prefs + atomic model copy
+~/.local/bin/Godot_v4.6.2-stable_linux.x86_64 \
+  --headless -s res://scripts/tests/persistence_tests.gd --path .
+```
+
+Each GDScript suite prints `All <name> tests passed.` on success and
+exits 0; on failure it `push_error`s the failing case names and exits
+1, so a wrapping `&&` chain is enough to gate the rest of the release.
+
+If any suite fails:
+
+- **Stop.** Do not bump version, do not build artefacts, do not tag.
+- Report the failing case to the user verbatim — don't paraphrase.
+- Diagnose and fix on a separate commit (or revert the change that
+  introduced the failure). Re-run the gate from the top before
+  resuming the release flow.
+
+The two smoke files (`core_smoke.gd`, `ai_smoke.gd`) are not part of
+the gate — they cover boot-up sanity that the four real suites already
+encompass. Skip them unless investigating something specific.
 
 ## Build Commands Reference
 
@@ -178,7 +218,7 @@ The project's `<type>(<scope>):` prefixes map cleanly to changelog sections.
 - **Confirm before any push, tag-push, Play Store upload, or GitHub Release publish.** All four are visible to others and hard to undo.
 - **Never bypass signing.** A debug-signed APK shipped as "release" will be rejected by Play Store *and* lose the upload-key invariant. If `apksigner verify --print-certs` shows `CN=Android Debug`, stop.
 - **`version/code` is sticky.** Once you upload `code=N`, you can never re-use `N` or anything lower for this `package/unique_name`. Bump it on every Play Store upload, even for re-uploads of "the same" build.
-- **Encoder byte-parity** must pass before tagging. Skipping `cargo test` to ship faster has shipped a broken AI in the past.
+- **All four test suites must pass before tagging** — see "Test Gate". A red suite blocks the release; do not work around it. Encoder byte-parity is the most consequential failure (a broken encoder ships an AI that plays garbage), but the GDScript suites cover behaviour the user-facing app actually depends on (rules legality, character roster integrity, save/resume round-trip, atomic model copy) and a regression in any of them is a shipping bug.
 - **Keystore loss = app death.** `~/.local/share/godot/keystores/seishingakuen-release.keystore` cannot be regenerated; backups are the user's responsibility.
 - **Native `.so` size**: Confirm `lib/arm64-v8a/libshogi_core.so` and the bundled `models/bonanza.onnx` are present in the AAB before upload (`unzip -l build/seishingakuen-release-v<X.Y.Z>.aab | grep -E 'libshogi_core|bonanza'`). A missing `.so` produces a launch crash on real devices.
 
