@@ -12,14 +12,15 @@ extends Control
 @onready var _confirm_btn: Button = %ConfirmButton
 @onready var _root: VBoxContainer = %Root
 
+const _CARD_SCENE: PackedScene = preload(
+	"res://scenes/components/CharacterCard.tscn")
+
 var _chars: Array[CharacterProfile] = []
 var _highlighted: int = -1
-var _card_buttons: Array[Button] = []
+var _card_buttons: Array[CharacterCard] = []
 var _card_group: ButtonGroup = ButtonGroup.new()
-var _selected_style: StyleBoxFlat
 
 func _ready() -> void:
-	_selected_style = _make_selected_stylebox()
 	_chars = Settings.list_characters()
 	_populate_grid()
 	_back_btn.pressed.connect(_on_back)
@@ -37,127 +38,17 @@ func _ready() -> void:
 	if initial >= 0:
 		_highlight(initial)
 
-func _make_selected_stylebox() -> StyleBoxFlat:
-	var s := StyleBoxFlat.new()
-	s.bg_color = Color(0.55, 0.42, 0.12, 0.85)
-	s.border_color = Color(1.0, 0.85, 0.3, 1)
-	s.border_width_top = 4
-	s.border_width_bottom = 4
-	s.border_width_left = 4
-	s.border_width_right = 4
-	s.corner_radius_top_left = 8
-	s.corner_radius_top_right = 8
-	s.corner_radius_bottom_left = 8
-	s.corner_radius_bottom_right = 8
-	return s
-
 func _populate_grid() -> void:
 	for c in _grid.get_children():
 		c.queue_free()
 	_card_buttons.clear()
 	for i in _chars.size():
-		var btn := _make_card(_chars[i], i)
-		_grid.add_child(btn)
-		_card_buttons.append(btn)
-
-func _make_card(profile: CharacterProfile, idx: int) -> Button:
-	var btn := Button.new()
-	btn.custom_minimum_size = Vector2(0, 210)
-	btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	btn.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	btn.text = ""
-	btn.toggle_mode = true
-	btn.button_group = _card_group
-	btn.add_theme_stylebox_override("pressed", _selected_style)
-	btn.add_theme_stylebox_override("hover_pressed", _selected_style)
-
-	# All children render on top of the Button. mouse_filter=IGNORE on
-	# every one so the click reaches the Button itself.
-	var holder := Control.new()
-	holder.anchor_right = 1.0
-	holder.anchor_bottom = 1.0
-	holder.offset_left = 4
-	holder.offset_top = 4
-	holder.offset_right = -4
-	holder.offset_bottom = -4
-	holder.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	btn.add_child(holder)
-
-	var v := VBoxContainer.new()
-	v.anchor_right = 1.0
-	v.anchor_bottom = 1.0
-	v.add_theme_constant_override("separation", 4)
-	v.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	holder.add_child(v)
-
-	# Level label sits above the portrait so the row stays scannable
-	# even when the name wraps to two lines underneath.
-	var lvl_label := Label.new()
-	lvl_label.text = "Lv.%d" % profile.level
-	lvl_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	lvl_label.add_theme_font_size_override("font_size", 18)
-	lvl_label.add_theme_color_override("font_color", Color(0.95, 0.82, 0.45))
-	lvl_label.add_theme_color_override("font_outline_color", Color(0, 0, 0))
-	lvl_label.add_theme_constant_override("outline_size", 4)
-	lvl_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	v.add_child(lvl_label)
-
-	# Portrait area — fills available vertical space above the label.
-	var portrait_holder := Control.new()
-	portrait_holder.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	portrait_holder.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	portrait_holder.clip_contents = true
-	portrait_holder.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	v.add_child(portrait_holder)
-
-	var placeholder_rect := ColorRect.new()
-	placeholder_rect.anchor_right = 1.0
-	placeholder_rect.anchor_bottom = 1.0
-	placeholder_rect.color = Color(0.15, 0.15, 0.18, 0.75)
-	placeholder_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	portrait_holder.add_child(placeholder_rect)
-
-	var placeholder_q := Label.new()
-	placeholder_q.anchor_right = 1.0
-	placeholder_q.anchor_bottom = 1.0
-	placeholder_q.text = "?"
-	placeholder_q.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	placeholder_q.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	placeholder_q.add_theme_font_size_override("font_size", 56)
-	placeholder_q.add_theme_color_override(
-		"font_color", Color(0.45, 0.45, 0.50))
-	placeholder_q.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	portrait_holder.add_child(placeholder_q)
-
-	var portrait_tex := TextureRect.new()
-	portrait_tex.anchor_right = 1.0
-	portrait_tex.anchor_bottom = 1.0
-	portrait_tex.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	# COVERED so the head fills the cell; clip_contents on the holder
-	# trims overflow. KEEP_ASPECT_CENTERED would leave dead space.
-	portrait_tex.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
-	portrait_tex.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	var tex := _try_load_portrait(profile)
-	portrait_tex.texture = tex
-	portrait_holder.add_child(portrait_tex)
-	placeholder_rect.visible = tex == null
-	placeholder_q.visible = tex == null
-
-	var name_label := Label.new()
-	name_label.text = profile.display_name
-	name_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	# ARBITRARY because Japanese has no spaces; WORD modes leave long
-	# katakana names like テリー・クラーク unbroken and clip them.
-	name_label.autowrap_mode = TextServer.AUTOWRAP_ARBITRARY
-	name_label.add_theme_font_size_override("font_size", 18)
-	name_label.add_theme_color_override("font_color", Color(0.98, 0.98, 0.98))
-	name_label.add_theme_color_override("font_outline_color", Color(0, 0, 0))
-	name_label.add_theme_constant_override("outline_size", 4)
-	name_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	v.add_child(name_label)
-
-	btn.pressed.connect(_on_card_pressed.bind(idx))
-	return btn
+		var card: CharacterCard = _CARD_SCENE.instantiate()
+		card.button_group = _card_group
+		card.setup(_chars[i])
+		card.pressed.connect(_on_card_pressed.bind(i))
+		_grid.add_child(card)
+		_card_buttons.append(card)
 
 func _try_load_portrait(profile: CharacterProfile) -> Texture2D:
 	if profile.portrait_dir == "":
