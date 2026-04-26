@@ -1,9 +1,14 @@
-[gd_scene load_steps=5 format=3]
+[gd_scene load_steps=7 format=3]
 
 [ext_resource type="Script" path="res://scripts/game/GameController.gd" id="1_gc"]
 [ext_resource type="PackedScene" path="res://scenes/game/Board.tscn" id="2_board"]
 [ext_resource type="PackedScene" path="res://scenes/game/Hand.tscn" id="3_hand"]
 [ext_resource type="Texture2D" path="res://assets/backgrounds/in_game_bg.webp" id="4_bg"]
+[ext_resource type="Shader" path="res://assets/shaders/rounded_corners.gdshader" id="5_round"]
+
+[sub_resource type="ShaderMaterial" id="1_round_mat"]
+shader = ExtResource("5_round")
+shader_parameter/radius = 4.0
 
 [node name="Main" type="Control"]
 anchor_right = 1.0
@@ -29,12 +34,34 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 theme_override_constants/separation = 8
 
-[node name="OpponentLabel" type="Label" parent="Layout"]
+[node name="OpponentStrip" type="HBoxContainer" parent="Layout"]
 unique_name_in_owner = true
 visible = false
-custom_minimum_size = Vector2(0, 44)
+custom_minimum_size = Vector2(0, 64)
+alignment = 1
+theme_override_constants/separation = 12
+
+[node name="OpponentPortraitFrame" type="Control" parent="Layout/OpponentStrip"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(64, 64)
+clip_contents = true
+mouse_filter = 2
+
+[node name="OpponentPortrait" type="TextureRect" parent="Layout/OpponentStrip/OpponentPortraitFrame"]
+unique_name_in_owner = true
+material = SubResource("1_round_mat")
+anchor_right = 1.0
+anchor_bottom = 1.0
+expand_mode = 1
+stretch_mode = 6
+mouse_filter = 2
+
+[node name="OpponentLabel" type="Label" parent="Layout/OpponentStrip"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 64)
 text = ""
 horizontal_alignment = 1
+vertical_alignment = 1
 theme_override_font_sizes/font_size = 28
 theme_override_colors/font_color = Color(0.98, 0.98, 0.98, 1)
 theme_override_colors/font_outline_color = Color(0, 0, 0, 1)

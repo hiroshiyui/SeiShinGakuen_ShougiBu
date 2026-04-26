@@ -18,6 +18,9 @@ const HandViewScript := preload("res://scripts/game/HandView.gd")
 @onready var _thinking_label: Label = %ThinkingLabel
 @onready var _layout: VBoxContainer = $Layout
 @onready var _opponent_label: Label = %OpponentLabel
+@onready var _opponent_strip: HBoxContainer = %OpponentStrip
+@onready var _opponent_portrait: TextureRect = %OpponentPortrait
+@onready var _opponent_portrait_frame: Control = %OpponentPortraitFrame
 @onready var _teacher_row: HBoxContainer = %TeacherRow
 @onready var _teacher_btn: Button = %TeacherButton
 @onready var _teacher_left_spacer: Control = %LeftSpacer
@@ -120,14 +123,14 @@ func _compute_board_side(panel_visible_override: Variant = null) -> float:
 		panel_visible = _suggestions_panel != null and _suggestions_panel.visible
 	else:
 		panel_visible = bool(panel_visible_override)
-	var opponent_visible := _opponent_label != null and _opponent_label.visible
+	var opponent_visible := _opponent_strip != null and _opponent_strip.visible
 	var extras: float = 0.0
 	if teacher_visible:
 		extras += max(_teacher_row.size.y, _teacher_row.custom_minimum_size.y)
 	if panel_visible and _suggestions_panel != null:
 		extras += _suggestions_panel.size.y
 	if opponent_visible:
-		extras += max(_opponent_label.size.y, _opponent_label.custom_minimum_size.y)
+		extras += max(_opponent_strip.size.y, _opponent_strip.custom_minimum_size.y)
 	# VBox separation (8) between every pair of visible children.
 	var visible_items := 4  # GoteHand, Board, SenteHand, StatusBar
 	if teacher_visible: visible_items += 1
@@ -199,7 +202,32 @@ func _load_ai_if_needed() -> void:
 		print("[game] AI character: %s (playouts=%d, τ=%.2f)" %
 			[_character.display_name, _character.playouts, _character.temperature])
 	_opponent_label.text = Settings.level_name(Settings.ai_level)
-	_opponent_label.visible = true
+	_set_opponent_portrait(_character)
+	_opponent_strip.visible = true
+
+func _set_opponent_portrait(profile: CharacterProfile) -> void:
+	# Hide the avatar slot entirely when there's no portrait — keeps the
+	# label centered in the strip instead of showing an empty 64×64 box.
+	var tex: Texture2D = null
+	if profile != null and profile.portrait_dir != "":
+		var path := profile.portrait_dir.path_join("neutral.webp")
+		if ResourceLoader.exists(path):
+			tex = load(path)
+	_opponent_portrait.texture = tex
+	_opponent_portrait_frame.visible = tex != null
+	# Sync the rounded-corner shader's `size` uniform whenever the rect
+	# is laid out — its value is the rendered size in pixels, which the
+	# shader needs because TEXTURE_PIXEL_SIZE only describes the source
+	# image, not the on-screen rect.
+	if tex != null and not _opponent_portrait.resized.is_connected(_sync_portrait_shader_size):
+		_opponent_portrait.resized.connect(_sync_portrait_shader_size)
+	_sync_portrait_shader_size()
+
+func _sync_portrait_shader_size() -> void:
+	var mat := _opponent_portrait.material as ShaderMaterial
+	if mat == null:
+		return
+	mat.set_shader_parameter("size", _opponent_portrait.size)
 
 func _maybe_start_ai_turn() -> void:
 	if _game_over or _thinking or not _ai_enabled:
