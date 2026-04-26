@@ -142,6 +142,16 @@ fn perft_starting_depth_2_is_900() {
     assert_eq!(perft(&mut b, 2), 30 * 30);
 }
 
+#[test]
+fn perft_starting_depth_3_is_25470() {
+    // Standard reference value for shogi initial-position perft(3).
+    // Catches regressions in move generation for the second-ply
+    // gote replies (the depth-2 test above only exercises sente's
+    // first 30 moves followed by a stub gote count).
+    let mut b = Board::default();
+    assert_eq!(perft(&mut b, 3), 25_470);
+}
+
 fn perft(board: &mut Board, depth: u32) -> u64 {
     if depth == 0 {
         return 1;

@@ -134,6 +134,10 @@ def collect_fixtures() -> list[str]:
     play_lines = [
         # Opening moves — exercise promotion zone, captures later
         ["2g2f", "3c3d", "7g7f", "4c4d", "2f2e", "8b4b", "3i4h", "3a3b"],
+        # Pawn-capture line — last move puts a pawn in sente's hand,
+        # which exercises the drop-piece + captured-piece encoding the
+        # opening line above never reaches.
+        ["2g2f", "3c3d", "2f2e", "2c2d", "2e2d"],
     ]
     for line in play_lines:
         board.reset()
