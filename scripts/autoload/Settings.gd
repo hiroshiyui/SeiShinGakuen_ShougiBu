@@ -62,8 +62,17 @@ func set_ai_level(lvl: int) -> void:
 # GameController._ready. Empty string = start from the standard position.
 var resume_sfen: String = ""
 
-const SAVE_PATH := "user://saved_game.cfg"
-const PREFS_PATH := "user://prefs.cfg"
+# Path defaults for production. Tests override these via the
+# `_set_storage_paths_for_test` seam below so they can round-trip
+# through a sandboxed user://test_*.cfg file without trampling the
+# real save / prefs.
+var SAVE_PATH := "user://saved_game.cfg"
+var PREFS_PATH := "user://prefs.cfg"
+
+# Test-only seam. Production code must never call this.
+func _set_storage_paths_for_test(save: String, prefs: String) -> void:
+	SAVE_PATH = save
+	PREFS_PATH = prefs
 
 # User preferences that outlive a single game. Loaded once in _ready
 # and written back via setter methods.
@@ -232,28 +241,39 @@ func model_absolute_path() -> String:
 		return ProjectSettings.globalize_path(res_path)
 	var user_path: String = "user://%s" % res_path.get_file()
 	if not FileAccess.file_exists(user_path):
-		# Atomic-ish copy: write to .tmp first, then rename. If the
-		# process is killed mid-copy (Android can do this freely),
-		# next launch still sees no model file at the canonical path
-		# and re-extracts from res:// instead of mmap'ing a partial
-		# file (tract would error, no recovery without app-data wipe).
-		var tmp_path: String = user_path + ".tmp"
-		var src: FileAccess = FileAccess.open(res_path, FileAccess.READ)
-		if src == null:
-			push_error("model: cannot open %s" % res_path)
-			return ""
-		var bytes: PackedByteArray = src.get_buffer(src.get_length())
-		src.close()
-		var dst: FileAccess = FileAccess.open(tmp_path, FileAccess.WRITE)
-		if dst == null:
-			push_error("model: cannot write %s" % tmp_path)
-			return ""
-		dst.store_buffer(bytes)
-		dst.close()
-		var rename_err: int = DirAccess.rename_absolute(tmp_path, user_path)
-		if rename_err != OK:
-			push_error("model: rename %s -> %s failed (%d)" %
-				[tmp_path, user_path, rename_err])
-			DirAccess.remove_absolute(tmp_path)
+		if not _atomic_copy_resource(res_path, user_path):
 			return ""
 	return ProjectSettings.globalize_path(user_path)
+
+# Atomic-ish copy of a res:// resource to a user:// destination.
+# Writes <dst>.tmp first, then renames. If the process is killed
+# mid-copy (Android can do this freely), the next launch sees no
+# file at the canonical path and re-extracts instead of mmap'ing a
+# partial blob — tract would error on a partial ONNX with no
+# recovery short of clearing app data.
+#
+# Exposed at module scope so tests can drive it directly with
+# arbitrary src/dst paths (model_absolute_path itself short-circuits
+# on `editor` builds and isn't exercisable from a desktop test).
+# Returns true on success.
+func _atomic_copy_resource(src_path: String, dst_path: String) -> bool:
+	var tmp_path: String = dst_path + ".tmp"
+	var src: FileAccess = FileAccess.open(src_path, FileAccess.READ)
+	if src == null:
+		push_error("atomic_copy: cannot open %s" % src_path)
+		return false
+	var bytes: PackedByteArray = src.get_buffer(src.get_length())
+	src.close()
+	var dst: FileAccess = FileAccess.open(tmp_path, FileAccess.WRITE)
+	if dst == null:
+		push_error("atomic_copy: cannot write %s" % tmp_path)
+		return false
+	dst.store_buffer(bytes)
+	dst.close()
+	var rename_err: int = DirAccess.rename_absolute(tmp_path, dst_path)
+	if rename_err != OK:
+		push_error("atomic_copy: rename %s -> %s failed (%d)" %
+			[tmp_path, dst_path, rename_err])
+		DirAccess.remove_absolute(tmp_path)
+		return false
+	return true
