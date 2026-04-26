@@ -227,9 +227,10 @@ Shipped differently:
 - [x] **Wooden board + pentagonal piece rendering.** Custom `_draw()`-based board background (grid, hoshi) in `BoardBackground.gd` and pentagonal shogi-piece shapes with thickness, bevel, top-left highlight and soft drop shadow in `PieceView.gd`. Hand area gets a Koma-dai panel and tile-style pieces via `HandPiece.gd`. Still uses Fude Goshirae for the kanji glyph.
 - [x] **Real wood textures + 4% traditional board margin.** PNG Kaya textures (`assets/textures/shogi-ban-wood-texture.png`, `shogi-piece-wood-texture.png`) replace the procedural grain. Board inset is 4% on every side, mirroring the physical 将棋盤's border; `BoardView` wraps its 9×9 `GridContainer` in a `MarginContainer` that tracks the same inset at runtime so squares align with the painted grid lines. Each piece samples a random sub-rect of the piece-wood texture and UV-maps it onto the pentagonal polygon, so no two pieces have the same grain. Procedural palette remains as a fallback if the texture files go missing.
 - [x] **Sound: move / capture / promote / check / checkmate.** Procedurally-generated WAVs in `assets/sounds/` (wood-impact synth for moves, Koto/Shamisen instrumental cues for the rest) played by `SoundManager` autoload. `GameController._commit_move` picks the highest-priority cue (checkmate > check > promote > capture > plain move). `tools/gen_sounds.py` regenerates them.
+- [x] **Character picker — fighter-game-style opponent gallery + in-game portrait strip.** `scenes/CharacterPicker.tscn` replaces the original Lv 1〜8 dropdown with a dedicated picker screen: top half shows the highlighted character's 肖像画 + 名前 + Lv + 強さラベル + 紹介, bottom half is a 4×2 grid of cards (portrait thumbnail + Lv + name) with a gold-bordered selection cue, a tap-to-confirm shortcut, and 戻る / 決定 buttons. Each character is a `CharacterProfile` `.tres` under `assets/characters/{teachers,students}/` with a `level: int` field that maps the choice to `Settings.ai_level`. The 8-character cast: 佐藤竜太郎 (Lv 1, 加藤師範の甥っ子) / 鈴木すず (Lv 2, 副部長) / 高橋ゆり子 (Lv 3, 1年生・呉服店の娘) / 伊藤明 (Lv 4, 元部長・自作 AI を夢見る) / 中村アリス (Lv 5, 部長・冷ややか) / テリー・クラーク (Lv 6, 主将・海外からの転入生) / 吉田なな (Lv 7, 顧問・元プロ志望) / 加藤よしこ (Lv 8, 師範・元プロ棋士). In-game, `Main.tscn::OpponentStrip` renders a 64×64 rounded-corner avatar (rounded via `assets/shaders/rounded_corners.gdshader`) next to the opponent name above the board. AI characters can later gain `thinking.webp / happy.webp / worried.webp` to react in-game — the schema already supports it.
+- [x] **App icon + main-menu art.** Adaptive Android launcher icons under `assets/branding/` (192px + 432px foreground, classroom shogi-board crop), wired through `export_presets.cfg`. Main menu uses `assets/backgrounds/main_title_bg.webp`; in-game uses `assets/backgrounds/in_game_bg.webp`. Both AI-generated, in-repo.
 - [ ] Move history panel + scrubbing
-- [ ] Settings screen (difficulty, sound, piece style)
-- [ ] Simple main-menu art & app icon
+- [ ] Settings screen — sound on/off, piece style. Difficulty is now shipped via the character picker above; the remaining sub-items are independent.
 - [ ] (Stretch) 棋譜 KIF export/share intent
 
 ---
@@ -302,11 +303,12 @@ bump. `.gdextension` manifest declares `compatibility_minimum = 4.3`.
 - [x] ~~千日手 perpetual-check rule variant — confirm Japanese professional rules~~ — implemented as "checker loses", 4-fold detection in `Rules::detect_sennichite`. 2026-04-22.
 - [x] ~~入玉 point rule — 24 or 27?~~ — 27. `Rules::jishogi_points`. 2026-04-22.
 - [ ] In-game 入玉 claim button (currently detection-only).
-- [ ] App icon + main-menu art — source or commission?
+- [x] ~~App icon + main-menu art — source or commission?~~ — AI-generated in-house, both icon (`assets/branding/`) and backgrounds (`assets/backgrounds/`) plus the 8 character portraits (`assets/characters/**/neutral.webp`). 2026-04-27.
+- [x] ~~Cloud save / cross-device persistence?~~ — explicitly skipped to stay free of Google Play services dependencies. Players who uninstall lose `user://prefs.cfg` + `user://saved_game.cfg`; that's the trade-off. 2026-04-27.
 - [ ] Play Store distribution or sideload only? Affects signing / policy.
 - [ ] Any telemetry (crash reporting)? Default: none.
 - [ ] UI string centralisation (e.g. `Strings.gd`) — currently strings live inline. Deferred until we internationalise or until the font subsetter's grep becomes unwieldy.
 
 ---
 
-*Last updated: 2026-04-23*
+*Last updated: 2026-04-27*
