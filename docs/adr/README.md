@@ -15,6 +15,7 @@ alternative was rejected for non-obvious reasons.
 | [0007](./0007-font-subsetter-scans-tres.md) | Font subsetter scans `assets/**/*.tres`, not just code/scenes | Accepted |
 | [0008](./0008-review-mode-scratch-core.md) | Review mode keeps a separate `_review_core` instead of rewinding the live core | Accepted |
 | [0009](./0009-kif-library-app-private-storage.md) | KIF library writes to app-private external Documents, not shared storage | Accepted |
+| [0010](./0010-gpl-3-or-later.md) | License the project under GPL-3.0-or-later | Accepted |
 
 ## Authoring a new ADR
 

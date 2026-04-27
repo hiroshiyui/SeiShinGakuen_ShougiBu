@@ -11,6 +11,10 @@ All notable changes to this project. Format follows
 ## [0.3.0] — 2026-04-28
 
 ### Added
+- License: project is now released under **GPL-3.0-or-later**. See
+  [`LICENSE`](./LICENSE) and [ADR-0010](./docs/adr/0010-gpl-3-or-later.md).
+  Prior releases (0.1.x, 0.2.0) shipped without a declared license;
+  0.3.0 is the first GPL release.
 - 棋譜検討 — saved-game library + KIF reviewer with first/prev/next/last
   navigation. 「解析」runs MCTS on every ply, classifies each played move
   as 好手 / 疑問手 / 悪手 by the win-rate delta against the engine's pick,
