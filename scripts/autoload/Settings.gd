@@ -93,6 +93,19 @@ const CHARACTERS_DIR := "res://assets/characters"
 func _ready() -> void:
 	_load_prefs()
 
+# Bridge Android's hardware/gesture back into the same `ui_cancel` action
+# scenes already listen to via _unhandled_input. Without this, Godot 4's
+# default `quit_on_go_back=true` would short-circuit straight to
+# get_tree().quit(); we set quit_on_go_back=false in project.godot and
+# synthesize the event here so MainMenu / GameController / KifuLibrary /
+# etc. don't each need their own _notification handler.
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_WM_GO_BACK_REQUEST:
+		var ev := InputEventAction.new()
+		ev.action = "ui_cancel"
+		ev.pressed = true
+		Input.parse_input_event(ev)
+
 func set_teacher_side(side: String) -> void:
 	if side != "left" and side != "right":
 		return
