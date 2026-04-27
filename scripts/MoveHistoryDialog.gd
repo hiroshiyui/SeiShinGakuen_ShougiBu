@@ -8,12 +8,18 @@ extends Control
 signal ply_selected(ply: int)
 signal return_to_live
 signal closed
+signal share_requested
 
 @onready var _list: VBoxContainer = %RowList
 @onready var _scroll: ScrollContainer = %ScrollContainer
+@onready var _share_btn: Button = %ShareButton
 @onready var _back_to_live_btn: Button = %BackToLiveButton
 @onready var _close_btn: Button = %CloseButton
 @onready var _empty_hint: Label = %EmptyHint
+@onready var _save_status: Label = %SaveStatus
+
+const _SHARE_LABEL := "保存"
+const _SHARE_DONE := "保存しました"
 
 var _live_ply: int = 0  # which ply is "current" — bolded in the list
 
@@ -24,6 +30,7 @@ func _ready() -> void:
 	# panel both stretch as intended.
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	visible = false
+	_share_btn.pressed.connect(_on_share_pressed)
 	_back_to_live_btn.pressed.connect(_on_back_to_live)
 	_close_btn.pressed.connect(_on_close)
 
@@ -32,6 +39,9 @@ func _ready() -> void:
 # row to highlight — usually the latest played ply.
 func show_with(lines: PackedStringArray, live_ply: int) -> void:
 	_live_ply = live_ply
+	# Reset any leftover save status from the previous open.
+	_save_status.visible = false
+	_share_btn.text = _SHARE_LABEL
 	for child in _list.get_children():
 		child.queue_free()
 	if lines.is_empty():
@@ -70,6 +80,26 @@ func _on_back_to_live() -> void:
 func _on_close() -> void:
 	hide()
 	closed.emit()
+
+func _on_share_pressed() -> void:
+	# Disable so a double-tap doesn't trigger two writes.
+	_share_btn.disabled = true
+	share_requested.emit()
+	# GameController calls show_save_result() synchronously from within
+	# the signal handler, so by the time we re-enable the button the
+	# label already reflects the save outcome.
+	_share_btn.disabled = false
+
+# Called by GameController after attempting the file write. `success`
+# false displays the message in a muted red so the user notices it
+# wasn't a path they should look for.
+func show_save_result(success: bool, message: String) -> void:
+	_save_status.text = message
+	_save_status.add_theme_color_override(
+		"font_color",
+		Color(0.98, 0.85, 0.45, 1) if success else Color(1, 0.55, 0.45, 1))
+	_save_status.visible = true
+	_share_btn.text = _SHARE_DONE if success else _SHARE_LABEL
 
 func _unhandled_input(event: InputEvent) -> void:
 	if not visible:

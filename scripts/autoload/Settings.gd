@@ -65,6 +65,10 @@ var resume_sfen: String = ""
 # games rebuild their full 棋譜 history. Empty = legacy save / no log;
 # GameController falls back to load_sfen and the kifu panel starts blank.
 var resume_packed: PackedInt32Array = PackedInt32Array()
+# Set by KifuLibrary when the player opens a saved game; consumed once
+# by KifuReviewer._ready. Empty = no file selected (shouldn't happen in
+# the supported flows but the reviewer will pop back to the library).
+var review_kif_path: String = ""
 
 # Path defaults for production. Tests override these via the
 # `_set_storage_paths_for_test` seam below so they can round-trip

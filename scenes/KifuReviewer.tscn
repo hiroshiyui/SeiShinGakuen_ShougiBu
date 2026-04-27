@@ -1,0 +1,96 @@
+[gd_scene load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://scripts/KifuReviewer.gd" id="1_rev"]
+[ext_resource type="PackedScene" path="res://scenes/game/Board.tscn" id="2_board"]
+[ext_resource type="PackedScene" path="res://scenes/game/Hand.tscn" id="3_hand"]
+
+[node name="KifuReviewer" type="Control"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+script = ExtResource("1_rev")
+
+[node name="Background" type="ColorRect" parent="."]
+anchor_right = 1.0
+anchor_bottom = 1.0
+color = Color(0.08, 0.08, 0.1, 1)
+mouse_filter = 2
+
+[node name="Layout" type="VBoxContainer" parent="."]
+anchor_right = 1.0
+anchor_bottom = 1.0
+theme_override_constants/separation = 8
+
+[node name="HeaderRow" type="HBoxContainer" parent="Layout"]
+custom_minimum_size = Vector2(0, 56)
+theme_override_constants/separation = 12
+
+[node name="FilenameLabel" type="Label" parent="Layout/HeaderRow"]
+unique_name_in_owner = true
+size_flags_horizontal = 3
+text = ""
+clip_text = true
+text_overrun_behavior = 2
+vertical_alignment = 1
+theme_override_colors/font_color = Color(0.98, 0.98, 0.98, 1)
+theme_override_font_sizes/font_size = 22
+
+[node name="BackButton" type="Button" parent="Layout/HeaderRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(120, 48)
+text = "戻る"
+theme_override_font_sizes/font_size = 22
+
+[node name="GoteHand" parent="Layout" instance=ExtResource("3_hand")]
+unique_name_in_owner = true
+is_gote = true
+
+[node name="BoardHolder" type="CenterContainer" parent="Layout"]
+size_flags_horizontal = 3
+size_flags_vertical = 3
+mouse_filter = 1
+
+[node name="BoardView" parent="Layout/BoardHolder" instance=ExtResource("2_board")]
+unique_name_in_owner = true
+
+[node name="SenteHand" parent="Layout" instance=ExtResource("3_hand")]
+unique_name_in_owner = true
+
+[node name="PlyRow" type="HBoxContainer" parent="Layout"]
+custom_minimum_size = Vector2(0, 40)
+alignment = 1
+
+[node name="PlyLabel" type="Label" parent="Layout/PlyRow"]
+unique_name_in_owner = true
+text = "0 / 0 手目"
+horizontal_alignment = 1
+theme_override_colors/font_color = Color(0.98, 0.85, 0.45, 1)
+theme_override_font_sizes/font_size = 22
+
+[node name="NavRow" type="HBoxContainer" parent="Layout"]
+custom_minimum_size = Vector2(0, 64)
+alignment = 1
+theme_override_constants/separation = 8
+
+[node name="FirstButton" type="Button" parent="Layout/NavRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(72, 56)
+text = "<<"
+theme_override_font_sizes/font_size = 22
+
+[node name="PrevButton" type="Button" parent="Layout/NavRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(72, 56)
+text = "<"
+theme_override_font_sizes/font_size = 22
+
+[node name="NextButton" type="Button" parent="Layout/NavRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(72, 56)
+text = ">"
+theme_override_font_sizes/font_size = 22
+
+[node name="LastButton" type="Button" parent="Layout/NavRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(72, 56)
+text = ">>"
+theme_override_font_sizes/font_size = 22

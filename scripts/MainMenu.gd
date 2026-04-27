@@ -5,6 +5,7 @@ extends Control
 @onready var _start_btn: Button = %StartButton
 @onready var _resume_btn: Button = %ResumeButton
 @onready var _settings_btn: Button = %SettingsButton
+@onready var _kifu_library_btn: Button = %KifuLibraryButton
 @onready var _quit_dialog: ConfirmationDialog = %QuitDialog
 
 func _ready() -> void:
@@ -18,6 +19,7 @@ func _ready() -> void:
 	_resume_btn.pressed.connect(_on_resume)
 	_resume_btn.visible = Settings.has_saved_game()
 	_settings_btn.pressed.connect(_on_settings_pressed)
+	_kifu_library_btn.pressed.connect(_on_kifu_library_pressed)
 	_quit_dialog.confirmed.connect(_on_quit_confirmed)
 	_ensure_default_character()
 	_refresh_opponent_label()
@@ -54,6 +56,9 @@ func _on_quit_confirmed() -> void:
 
 func _on_settings_pressed() -> void:
 	get_tree().change_scene_to_file("res://scenes/SettingsScreen.tscn")
+
+func _on_kifu_library_pressed() -> void:
+	get_tree().change_scene_to_file("res://scenes/KifuLibrary.tscn")
 
 func _refresh_opponent_label() -> void:
 	var profile := Settings.load_character(Settings.selected_character_id)

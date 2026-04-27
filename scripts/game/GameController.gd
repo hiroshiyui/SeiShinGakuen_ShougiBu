@@ -105,6 +105,7 @@ func _ready() -> void:
 	_history_dialog.ply_selected.connect(_on_history_ply_selected)
 	_history_dialog.return_to_live.connect(_on_history_back_to_live)
 	_history_dialog.closed.connect(_on_history_closed)
+	_history_dialog.share_requested.connect(_on_history_share_requested)
 	_review_banner.pressed.connect(_on_history_back_to_live)
 	_quit_dialog.confirmed.connect(_on_quit_confirmed)
 	_teacher_btn.pressed.connect(_on_teacher_pressed)
@@ -817,6 +818,62 @@ func _on_history_ply_selected(ply: int) -> void:
 
 func _on_history_back_to_live() -> void:
 	_exit_review()
+
+func _on_history_share_requested() -> void:
+	var sente_name := _player_name_for_side(false)
+	var gote_name := _player_name_for_side(true)
+	# Local time in KIF's canonical YYYY/MM/DD HH:MM:SS format. The export
+	# itself is offline so the timestamp is a wall-clock note for the
+	# human reader, not a synchronised game-clock entry.
+	var dt := Time.get_datetime_dict_from_system()
+	var started_at := "%04d/%02d/%02d %02d:%02d:%02d" % [
+		dt.year, dt.month, dt.day, dt.hour, dt.minute, dt.second]
+	var stamp := "%04d%02d%02d_%02d%02d%02d" % [
+		dt.year, dt.month, dt.day, dt.hour, dt.minute, dt.second]
+	var kif: String = String(_core.to_kif(sente_name, gote_name, started_at))
+	var filename := "kifu_%s.kif" % stamp
+	var saved_path := _save_kif(filename, kif)
+	if saved_path == "":
+		_history_dialog.show_save_result(false, "保存に失敗しました")
+	else:
+		_history_dialog.show_save_result(true, "保存先：%s" % saved_path)
+
+# Writes `body` into a file named `filename` and returns the on-disk
+# path the user can browse to (empty string on failure). Tries the
+# user-visible Documents dir first; on Android that's the app-private
+# external Documents (`Android/data/<pkg>/files/Documents/`) which is
+# accessible to file managers without requesting any permission. Falls
+# back to user:// (always writable, but not file-manager-visible on
+# Android without root) so a save never silently disappears.
+func _save_kif(filename: String, body: String) -> String:
+	var candidates: Array[String] = []
+	var docs_dir := OS.get_system_dir(OS.SYSTEM_DIR_DOCUMENTS, false)
+	if docs_dir != "":
+		candidates.append("%s/%s" % [docs_dir, filename])
+	candidates.append("user://%s" % filename)
+	for path in candidates:
+		var globalized: String = path
+		if path.begins_with("user://"):
+			globalized = ProjectSettings.globalize_path(path)
+		var dir_path := globalized.get_base_dir()
+		DirAccess.make_dir_recursive_absolute(dir_path)
+		var f := FileAccess.open(globalized, FileAccess.WRITE)
+		if f == null:
+			push_warning("save_kif: cannot open %s (err %d)" % [globalized, FileAccess.get_open_error()])
+			continue
+		f.store_string(body)
+		f.close()
+		return globalized
+	return ""
+
+# Sente / Gote labels for KIF export. AI matches map the named side to
+# the chosen character; the human side stays as a generic "プレイヤー".
+# H_VS_H labels both sides as the generic player so the export still
+# round-trips cleanly through any KIF viewer.
+func _player_name_for_side(is_gote: bool) -> String:
+	if _ai_enabled and Settings.side_is_ai(is_gote) and _character != null:
+		return "%s (Lv.%d)" % [_character.display_name, _character.level]
+	return "プレイヤー"
 
 func _on_history_closed() -> void:
 	# Closing without explicitly tapping 現在に戻る still drops the user back

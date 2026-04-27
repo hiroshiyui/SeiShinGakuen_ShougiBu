@@ -79,6 +79,34 @@ impl ShogiCore {
         arr
     }
 
+    /// Parse a KIF document into the same packed-i32 log shape
+    /// `move_log_packed()` produces. Returns an empty array on failure
+    /// (caller should treat as "could not parse — show error").
+    #[func]
+    fn parse_kif_to_packed(&self, text: GString) -> PackedInt32Array {
+        let mut out = PackedInt32Array::new();
+        match kifu::parse_kif(&text.to_string()) {
+            Ok(packed) => {
+                for v in packed {
+                    out.push(v);
+                }
+            }
+            Err(e) => godot_warn!("parse_kif: {}", e),
+        }
+        out
+    }
+
+    #[func]
+    fn to_kif(&self, sente_name: GString, gote_name: GString, started_at: GString) -> GString {
+        kifu::to_kif(
+            &self.board,
+            &sente_name.to_string(),
+            &gote_name.to_string(),
+            &started_at.to_string(),
+        )
+        .into()
+    }
+
     #[func]
     fn move_log_packed(&self) -> PackedInt32Array {
         let mut arr = PackedInt32Array::new();

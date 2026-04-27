@@ -85,6 +85,12 @@ custom_minimum_size = Vector2(0, 56)
 text = "続きから"
 theme_override_font_sizes/font_size = 24
 
+[node name="KifuLibraryButton" type="Button" parent="Center/Panel/Box"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 48)
+text = "棋譜検討"
+theme_override_font_sizes/font_size = 24
+
 [node name="StartButton" type="Button" parent="Center/Panel/Box"]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 56)
