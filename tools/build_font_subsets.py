@@ -54,6 +54,7 @@ UI_SAFETY = (
     "一二三四五六七八九"
     "同成打"
     "歩香桂銀金角飛王玉と杏圭全馬龍"
+    "◎△"  # KifuReviewer analysis-badge prefixes (× is already above)
 )
 
 # Codepoint-range regex covering every Japanese glyph we care about:

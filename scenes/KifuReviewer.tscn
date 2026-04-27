@@ -1,8 +1,9 @@
-[gd_scene load_steps=4 format=3]
+[gd_scene load_steps=5 format=3]
 
 [ext_resource type="Script" path="res://scripts/KifuReviewer.gd" id="1_rev"]
 [ext_resource type="PackedScene" path="res://scenes/game/Board.tscn" id="2_board"]
 [ext_resource type="PackedScene" path="res://scenes/game/Hand.tscn" id="3_hand"]
+[ext_resource type="Texture2D" path="res://assets/backgrounds/kifu_reviewer_bg.webp" id="4_bg"]
 
 [node name="KifuReviewer" type="Control"]
 anchor_right = 1.0
@@ -13,6 +14,14 @@ script = ExtResource("1_rev")
 anchor_right = 1.0
 anchor_bottom = 1.0
 color = Color(0.08, 0.08, 0.1, 1)
+mouse_filter = 2
+
+[node name="BackgroundImage" type="TextureRect" parent="."]
+anchor_right = 1.0
+anchor_bottom = 1.0
+texture = ExtResource("4_bg")
+expand_mode = 1
+stretch_mode = 6
 mouse_filter = 2
 
 [node name="Layout" type="VBoxContainer" parent="."]
@@ -32,6 +41,12 @@ clip_text = true
 text_overrun_behavior = 2
 vertical_alignment = 1
 theme_override_colors/font_color = Color(0.98, 0.98, 0.98, 1)
+theme_override_font_sizes/font_size = 22
+
+[node name="AnalyzeButton" type="Button" parent="Layout/HeaderRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(140, 48)
+text = "解析"
 theme_override_font_sizes/font_size = 22
 
 [node name="BackButton" type="Button" parent="Layout/HeaderRow"]
@@ -65,6 +80,17 @@ text = "0 / 0 手目"
 horizontal_alignment = 1
 theme_override_colors/font_color = Color(0.98, 0.85, 0.45, 1)
 theme_override_font_sizes/font_size = 22
+
+[node name="AnalysisLabel" type="Label" parent="Layout"]
+unique_name_in_owner = true
+visible = false
+custom_minimum_size = Vector2(0, 48)
+horizontal_alignment = 1
+text = ""
+theme_override_colors/font_color = Color(0.95, 0.88, 0.6, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 6
+theme_override_font_sizes/font_size = 30
 
 [node name="NavRow" type="HBoxContainer" parent="Layout"]
 custom_minimum_size = Vector2(0, 64)

@@ -199,6 +199,30 @@ func _save_prefs() -> void:
 	if err != OK:
 		push_warning("save_prefs: ConfigFile.save returned %d" % err)
 
+# Compute the per-side inset (left, top, right, bottom) a fullscreen
+# Control should apply so content clears the OS status bar / gesture
+# nav / camera cutout. Mirrors GameController._apply_safe_area; pulled
+# onto Settings so KifuLibrary / KifuReviewer / future fullscreen
+# screens can call the same logic without duplicating code.
+func safe_area_insets(viewport_size: Vector2) -> Rect2:
+	const EXTRA_H := 12.0
+	const EXTRA_TOP := 16.0
+	const EXTRA_BOTTOM := 32.0
+	var top := EXTRA_TOP
+	var bottom := EXTRA_BOTTOM
+	var left := EXTRA_H
+	var right := EXTRA_H
+	var safe: Rect2i = DisplayServer.get_display_safe_area()
+	var screen_size: Vector2i = DisplayServer.screen_get_size()
+	if safe.size != Vector2i.ZERO and screen_size != Vector2i.ZERO and viewport_size.y > 0:
+		var sy: float = viewport_size.y / float(screen_size.y)
+		top += float(safe.position.y) * sy
+		bottom += float(screen_size.y - safe.position.y - safe.size.y) * sy
+	# Horizontal inset stays fixed — Android sometimes reports a non-zero
+	# safe.position.x for gesture nav / foldable hinges that would shift
+	# layouts sideways in portrait mode.
+	return Rect2(left, top, right, bottom)
+
 func ai_plays_gote() -> bool:
 	return mode == Mode.H_VS_AI_GOTE
 

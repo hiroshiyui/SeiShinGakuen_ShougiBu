@@ -11,17 +11,36 @@ const PieceScript := preload("res://scripts/game/Piece.gd")
 @onready var _board_view = %BoardView
 @onready var _sente_hand = %SenteHand
 @onready var _gote_hand = %GoteHand
+@onready var _layout: VBoxContainer = $Layout
 @onready var _filename_label: Label = %FilenameLabel
 @onready var _ply_label: Label = %PlyLabel
+@onready var _analysis_label: Label = %AnalysisLabel
 @onready var _back_btn: Button = %BackButton
+@onready var _analyze_btn: Button = %AnalyzeButton
 @onready var _first_btn: Button = %FirstButton
 @onready var _prev_btn: Button = %PrevButton
 @onready var _next_btn: Button = %NextButton
 @onready var _last_btn: Button = %LastButton
 
+# Heuristics for the per-move classification badge. Tuned conservatively
+# so a casual blunder shows as 疑問手 (yellow) and an obvious giveaway
+# shows as 悪手 (red) — Piyo Shogi uses similar bands.
+const _BAD_MOVE_THRESHOLD := 0.30
+const _QUESTIONABLE_THRESHOLD := 0.15
+const _GOOD_MOVE_THRESHOLD := 0.05
+# Per-ply MCTS budget. 128 keeps the whole-game pass under ~30s on a
+# mid-range phone while still giving the value head enough rollouts to
+# differentiate top moves.
+const _ANALYSIS_PLAYOUTS := 128
+
 var _core: Object
 var _packed: PackedInt32Array = PackedInt32Array()
 var _ply: int = 0
+# One entry per played move (so size == _packed.size()) once analysis
+# completes; null entries mark plies the search couldn't evaluate (e.g.
+# terminal positions returning no legal moves).
+var _analyses: Array = []
+var _analyzing: bool = false
 
 func _ready() -> void:
 	if not ClassDB.class_exists("ShogiCore"):
@@ -51,13 +70,24 @@ func _ready() -> void:
 	_replay_to_ply()
 
 	_back_btn.pressed.connect(_pop_back)
+	_analyze_btn.pressed.connect(_on_analyze)
+	_analyze_btn.disabled = _packed.is_empty()
 	_first_btn.pressed.connect(func(): _set_ply(0))
 	_prev_btn.pressed.connect(func(): _set_ply(_ply - 1))
 	_next_btn.pressed.connect(func(): _set_ply(_ply + 1))
 	_last_btn.pressed.connect(func(): _set_ply(_packed.size()))
 
 	get_viewport().size_changed.connect(_refit_board)
+	get_viewport().size_changed.connect(_apply_safe_area)
+	_apply_safe_area()
 	_refit_board()
+
+func _apply_safe_area() -> void:
+	var insets: Rect2 = Settings.safe_area_insets(get_viewport_rect().size)
+	_layout.offset_left = insets.position.x
+	_layout.offset_top = insets.position.y
+	_layout.offset_right = -insets.size.x
+	_layout.offset_bottom = -insets.size.y
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("ui_cancel"):
@@ -82,10 +112,155 @@ func _replay_to_ply() -> void:
 	_sente_hand.render(_core)
 	_gote_hand.render(_core)
 	_ply_label.text = "%d / %d 手目" % [_ply, _packed.size()]
-	_first_btn.disabled = _ply == 0
-	_prev_btn.disabled = _ply == 0
-	_next_btn.disabled = _ply == _packed.size()
-	_last_btn.disabled = _ply == _packed.size()
+	_first_btn.disabled = _ply == 0 or _analyzing
+	_prev_btn.disabled = _ply == 0 or _analyzing
+	_next_btn.disabled = _ply == _packed.size() or _analyzing
+	_last_btn.disabled = _ply == _packed.size() or _analyzing
+	_refresh_analysis_label()
+
+# Picks the analysis row matching the move that brought us to `_ply`
+# (i.e. _packed[_ply - 1]) and renders the badge / win-rate. Hides the
+# label while at the starting position or when no analysis has run yet.
+func _refresh_analysis_label() -> void:
+	if _analyses.is_empty() or _ply == 0 or _ply > _analyses.size():
+		_analysis_label.visible = false
+		return
+	var entry: Dictionary = _analyses[_ply - 1]
+	if entry.is_empty():
+		_analysis_label.visible = false
+		return
+	var badge_text: String = ""
+	var color: Color = Color(0.95, 0.88, 0.6, 1)
+	match String(entry["classification"]):
+		"good":
+			badge_text = "◎ 好手"
+			color = Color(0.6, 0.95, 0.55, 1)
+		"questionable":
+			badge_text = "△ 疑問手"
+			color = Color(0.95, 0.85, 0.45, 1)
+		"blunder":
+			badge_text = "× 悪手"
+			color = Color(1, 0.55, 0.5, 1)
+	var winrate_pct: int = roundi(float(entry["sente_winrate"]) * 100.0)
+	var delta_pct: int = roundi(float(entry["delta"]) * 100.0)
+	var parts: Array[String] = ["先手勝率 %d%%" % winrate_pct]
+	if badge_text != "":
+		parts.append(badge_text)
+	if delta_pct >= 5:
+		parts.append("(-%d%%)" % delta_pct)
+	_analysis_label.text = "  ".join(parts)
+	_analysis_label.add_theme_color_override("font_color", color)
+	_analysis_label.visible = true
+
+# --- analysis -------------------------------------------------------------
+
+func _on_analyze() -> void:
+	if _analyzing or _packed.is_empty():
+		return
+	_analyzing = true
+	# Keep the button visually enabled while running so the "解析中" text
+	# stays bright against the dark theme; the _analyzing guard above
+	# already swallows extra taps.
+	_analyze_btn.add_theme_color_override("font_color", Color(0.55, 1.0, 0.65, 1))
+	_back_btn.disabled = true
+	_first_btn.disabled = true
+	_prev_btn.disabled = true
+	_next_btn.disabled = true
+	_last_btn.disabled = true
+
+	var model_path: String = Settings.model_absolute_path()
+	if model_path == "" or not bool(_core.load_model(model_path)):
+		_analyze_btn.text = "解析失敗"
+		_analyze_btn.add_theme_color_override("font_color", Color(1, 0.55, 0.5, 1))
+		_analyzing = false
+		_back_btn.disabled = false
+		return
+
+	_analyses.clear()
+	_analyses.resize(_packed.size())
+	var total: int = _packed.size()
+	for n in range(total):
+		var prefix: PackedInt32Array = _packed.slice(0, n)
+		if not bool(_core.apply_packed(prefix)):
+			push_warning("analysis: apply_packed failed at ply %d" % n)
+			break
+		var stm_is_gote: bool = bool(_core.side_to_move_gote())
+		var top: Array = _core.suggest_moves_mcts(32, _ANALYSIS_PLAYOUTS)
+		if top.is_empty():
+			continue
+		var best_q: float = float(top[0]["win_rate"])
+		var actual_dict: Dictionary = _decode_packed_move(_packed[n])
+		var actual_q: float = _find_q_for_move(top, actual_dict)
+		var delta: float = max(0.0, best_q - actual_q)
+		# best_q is from the perspective of whoever's about to move; project
+		# back to sente so the per-ply bar reads consistently across both
+		# colours' moves.
+		var sente_winrate: float = best_q if not stm_is_gote else (1.0 - best_q)
+		_analyses[n] = {
+			sente_winrate = sente_winrate,
+			delta = delta,
+			classification = _classify_delta(delta),
+		}
+		_analyze_btn.text = "解析中… %d / %d" % [n + 1, total]
+		# Yield often enough that the UI stays responsive but not so often
+		# we tank the playouts/sec from frame churn.
+		if n % 2 == 0:
+			await get_tree().process_frame
+			if not is_inside_tree():
+				return
+
+	_analyze_btn.text = "解析済"
+	# Settle on the theme's idle gold so the button reads as "done".
+	_analyze_btn.remove_theme_color_override("font_color")
+	_analyzing = false
+	_back_btn.disabled = false
+	# Restore the user's view + re-render with the fresh analysis label.
+	_replay_to_ply()
+
+func _classify_delta(delta: float) -> String:
+	if delta < _GOOD_MOVE_THRESHOLD:
+		return "good"
+	if delta < _QUESTIONABLE_THRESHOLD:
+		return "neutral"
+	if delta < _BAD_MOVE_THRESHOLD:
+		return "questionable"
+	return "blunder"
+
+# Mirror of Rust kifu::pack_move so we can cheaply recover the move
+# parameters on the GD side without round-tripping through apply_packed.
+func _decode_packed_move(packed: int) -> Dictionary:
+	var d: Dictionary = {}
+	if packed & 1 != 0:
+		d["drop_kind"] = (packed >> 1) & 0x0f
+		d["to"] = _idx_to_square((packed >> 8) & 0x7f)
+	else:
+		d["from"] = _idx_to_square((packed >> 1) & 0x7f)
+		d["to"] = _idx_to_square((packed >> 8) & 0x7f)
+		d["promote"] = (packed >> 15) & 1 != 0
+	return d
+
+func _idx_to_square(idx: int) -> Vector2i:
+	return Vector2i(idx / 9 + 1, idx % 9 + 1)
+
+# Walks suggest_moves_mcts output looking for the move actually played.
+# Returns 0.0 if it wasn't visited — that's the worst possible q anyway,
+# so the delta heuristic still flags it as a blunder.
+func _find_q_for_move(top: Array, target: Dictionary) -> float:
+	var target_is_drop: bool = target.has("drop_kind")
+	for entry in top:
+		var entry_is_drop: bool = entry.has("drop_kind")
+		if entry_is_drop != target_is_drop:
+			continue
+		if Vector2i(entry["to"]) != Vector2i(target["to"]):
+			continue
+		if target_is_drop:
+			if int(entry["drop_kind"]) == int(target["drop_kind"]):
+				return float(entry["win_rate"])
+		else:
+			if Vector2i(entry["from"]) == Vector2i(target["from"]) \
+					and bool(entry["promote"]) == bool(target["promote"]):
+				return float(entry["win_rate"])
+	return 0.0
 
 # Match GameController's board-fit math so the reviewer board respects
 # the same hand / nav padding budget. Simpler than reusing the live
