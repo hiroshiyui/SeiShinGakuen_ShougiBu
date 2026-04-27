@@ -21,11 +21,7 @@ func _ready() -> void:
 	_refresh()
 
 func _apply_safe_area() -> void:
-	var insets: Rect2 = Settings.safe_area_insets(get_viewport_rect().size)
-	_root.offset_left = insets.position.x
-	_root.offset_top = insets.position.y
-	_root.offset_right = -insets.size.x
-	_root.offset_bottom = -insets.size.y
+	Settings.apply_safe_area_to(_root)
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("ui_cancel"):

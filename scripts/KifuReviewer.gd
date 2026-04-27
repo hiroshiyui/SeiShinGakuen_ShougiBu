@@ -41,7 +41,6 @@ const _PIECE_KANJI := {
 	8: "と", 9: "成香", 10: "成桂", 11: "成銀", 12: "馬", 13: "龍",
 }
 const _FILE_DIGIT := ["", "１", "２", "３", "４", "５", "６", "７", "８", "９"]
-const _RANK_KANJI := ["", "一", "二", "三", "四", "五", "六", "七", "八", "九"]
 
 var _core: Object
 var _packed: PackedInt32Array = PackedInt32Array()
@@ -93,11 +92,7 @@ func _ready() -> void:
 	_refit_board()
 
 func _apply_safe_area() -> void:
-	var insets: Rect2 = Settings.safe_area_insets(get_viewport_rect().size)
-	_layout.offset_left = insets.position.x
-	_layout.offset_top = insets.position.y
-	_layout.offset_right = -insets.size.x
-	_layout.offset_bottom = -insets.size.y
+	Settings.apply_safe_area_to(_layout)
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("ui_cancel"):
@@ -291,7 +286,7 @@ func _format_move_kifu(mv: Dictionary, mover_is_gote: bool, prev_dest: Variant) 
 	if prev_dest != null and Vector2i(prev_dest) == to:
 		dest = "同　"
 	else:
-		dest = "%s%s" % [_FILE_DIGIT[to.x], _RANK_KANJI[to.y]]
+		dest = "%s%s" % [_FILE_DIGIT[to.x], Settings.RANK_KANJI[to.y]]
 	if mv.has("drop_kind"):
 		var kind: int = int(mv["drop_kind"])
 		return "%s%s%s打" % [marker, dest, _PIECE_KANJI.get(kind, "?")]

@@ -212,6 +212,28 @@ func _save_prefs() -> void:
 	if err != OK:
 		push_warning("save_prefs: ConfigFile.save returned %d" % err)
 
+# Rank-kanji table — index by 1..9 to convert a board rank into its
+# 漢数字 form (``5 → "五"``). Indexed at 0 returns "" so the lookup is
+# safe for "no rank" / placeholder inputs. Lives here because three
+# scenes (GameController promo dialog + status, KifuReviewer kifu
+# rendering) need the same table.
+const RANK_KANJI: Array[String] = ["", "一", "二", "三", "四", "五", "六", "七", "八", "九"]
+
+# Apply the safe-area inset (computed by safe_area_insets below) to a
+# Control's offset_* properties. Pure boilerplate that every fullscreen
+# scene needs after the autoload split — call this in `_ready` and on
+# every `viewport.size_changed`. The node is typed loosely as Control
+# so callers can pass a VBoxContainer / MarginContainer / plain Control
+# without an upcast.
+func apply_safe_area_to(node: Control) -> void:
+	if node == null:
+		return
+	var insets: Rect2 = safe_area_insets(get_tree().root.size)
+	node.offset_left = insets.position.x
+	node.offset_top = insets.position.y
+	node.offset_right = -insets.size.x
+	node.offset_bottom = -insets.size.y
+
 # Compute the per-side inset (left, top, right, bottom) a fullscreen
 # Control should apply so content clears the OS status bar / gesture
 # nav / camera cutout. Mirrors GameController._apply_safe_area; pulled

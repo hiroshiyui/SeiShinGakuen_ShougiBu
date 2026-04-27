@@ -40,7 +40,6 @@ var _thinking: bool = false
 var _teacher_thinking: bool = false
 var _ai_enabled: bool = false
 
-const _RANK_KANJI := ["", "一", "二", "三", "四", "五", "六", "七", "八", "九"]
 
 enum SelState { IDLE, BOARD, HAND }
 
@@ -182,38 +181,13 @@ func _apply_board_side(side: float, animate: bool) -> void:
 	_board_resize_tween.tween_property(
 		_board_view, "custom_minimum_size", target, _BOARD_RESIZE_DURATION)
 
-# Inset Layout so GoteHand / StatusBar don't sit under the Android status
-# bar, gesture-nav bar, or rounded-corner cutouts. DisplayServer
-# safe-area is in screen pixels; scale to Control coordinates via the
-# viewport/screen ratio. A fixed extra pad on every edge gives rounded
-# corners some breathing room. On desktop the OS-reported safe area is
-# the full window so only the fixed pad applies.
+# Inset Layout so GoteHand / StatusBar don't sit under the Android
+# status bar, gesture-nav bar, or rounded-corner cutouts. The math
+# (DisplayServer safe-area scaled to Control coordinates + a fixed
+# extra pad) lives in Settings.apply_safe_area_to / safe_area_insets,
+# shared with KifuLibrary / KifuReviewer.
 func _apply_safe_area() -> void:
-	if _layout == null:
-		return
-	const EXTRA_H := 12.0
-	const EXTRA_TOP := 16.0
-	const EXTRA_BOTTOM := 32.0
-	var safe: Rect2i = DisplayServer.get_display_safe_area()
-	var screen_size: Vector2i = DisplayServer.screen_get_size()
-	var top := EXTRA_TOP
-	var bottom := EXTRA_BOTTOM
-	var left := EXTRA_H
-	var right := EXTRA_H
-	# Only apply safe-area insets vertically. In portrait mode phones have
-	# no left/right hardware cutouts, and Android sometimes reports a
-	# non-zero safe.position.x (gesture navigation, foldable hinge, etc.)
-	# that would shift the layout sideways. Horizontal breathing room is
-	# handled by the fixed EXTRA_H alone.
-	if safe.size != Vector2i.ZERO and screen_size != Vector2i.ZERO:
-		var vp: Vector2 = get_viewport_rect().size
-		var sy: float = vp.y / float(screen_size.y)
-		top += float(safe.position.y) * sy
-		bottom += float(screen_size.y - safe.position.y - safe.size.y) * sy
-	_layout.offset_left = left
-	_layout.offset_top = top
-	_layout.offset_right = -right
-	_layout.offset_bottom = -bottom
+	Settings.apply_safe_area_to(_layout)
 
 func _load_ai_if_needed() -> void:
 	if Settings.mode == Settings.Mode.H_VS_H:
@@ -499,7 +473,7 @@ func _handle_drop_target(to: Vector2i) -> void:
 
 func _prompt_promotion() -> void:
 	var to: Vector2i = Vector2i(_pending_move["to"])
-	_promo_dialog.dialog_text = "%d%s で成りますか?" % [to.x, _RANK_KANJI[to.y]]
+	_promo_dialog.dialog_text = "%d%s で成りますか?" % [to.x, Settings.RANK_KANJI[to.y]]
 	_promo_dialog.popup_centered()
 
 func _on_promo_confirmed() -> void:
@@ -738,7 +712,7 @@ func _log_move(mover: String, m: Dictionary) -> void:
 		print("[game] %s %s→%s%s" % [mover, _square_str(from), _square_str(to2), suffix])
 
 func _square_str(v: Vector2i) -> String:
-	return "%d%s" % [v.x, _RANK_KANJI[v.y]]
+	return "%d%s" % [v.x, Settings.RANK_KANJI[v.y]]
 
 # --- 先生モード (teacher mode) ---------------------------------------------
 
