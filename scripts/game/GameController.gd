@@ -552,10 +552,27 @@ func _check_end_state() -> void:
 	match str(_core.detect_sennichite()):
 		"draw":
 			_end_game("千日手 — 引き分け")
+			return
 		"sente_loses":
 			_end_game("連続王手の千日手 — 後手の勝ち")
+			return
 		"gote_loses":
 			_end_game("連続王手の千日手 — 先手の勝ち")
+			return
+	# 持将棋 / AI auto-declaration. Check both sides every commit so a
+	# qualifying position fires the same turn it arises, regardless of
+	# whose move produced it.
+	var sente_ok: bool = bool(_core.can_declare_jishogi(false)["ok"])
+	var gote_ok: bool = bool(_core.can_declare_jishogi(true)["ok"])
+	if sente_ok and gote_ok:
+		_end_game("持将棋 — 引き分け")
+		return
+	if _ai_enabled:
+		var ai_is_gote: bool = Settings.ai_plays_gote()
+		var ai_qualifies: bool = (gote_ok if ai_is_gote else sente_ok)
+		if ai_qualifies:
+			var winner := "後手" if ai_is_gote else "先手"
+			_end_game("入玉宣言 — %s の勝ち" % winner)
 
 func _end_game(text: String) -> void:
 	_game_over = true
