@@ -61,6 +61,10 @@ func set_ai_level(lvl: int) -> void:
 # Populated by MainMenu when the user picks 続きから; consumed once by
 # GameController._ready. Empty string = start from the standard position.
 var resume_sfen: String = ""
+# Companion to resume_sfen — packed move log (one i32/move) so resumed
+# games rebuild their full 棋譜 history. Empty = legacy save / no log;
+# GameController falls back to load_sfen and the kifu panel starts blank.
+var resume_packed: PackedInt32Array = PackedInt32Array()
 
 # Path defaults for production. Tests override these via the
 # `_set_storage_paths_for_test` seam below so they can round-trip
@@ -205,20 +209,25 @@ func side_is_ai(is_gote: bool) -> bool:
 func has_saved_game() -> bool:
 	return FileAccess.file_exists(SAVE_PATH)
 
-func save_game(sfen: String) -> void:
+func save_game(sfen: String, packed_log: PackedInt32Array = PackedInt32Array()) -> void:
 	var cfg := ConfigFile.new()
 	cfg.set_value("game", "sfen", sfen)
 	cfg.set_value("game", "mode", mode)
 	cfg.set_value("game", "level", ai_level)
 	cfg.set_value("game", "character_id", selected_character_id)
+	# Packed move log replays the entire game on resume so the 棋譜 panel
+	# survives "続きから". Falling back to SFEN-only is harmless — review
+	# just shows an empty kifu — so older saves keep loading.
+	cfg.set_value("game", "packed_log", packed_log)
 	var err: int = cfg.save(SAVE_PATH)
 	if err != OK:
 		push_warning("save_game: ConfigFile.save returned %d" % err)
 
-# Returns {sfen, mode, level, character_id} on success, or an empty
-# Dictionary on failure (corrupt / missing file). Older saves omit
-# `character_id` (added 2026-04-27); the loader returns "" so the
-# caller can fall back to the current pref.
+# Returns {sfen, mode, level, character_id, packed_log} on success, or an
+# empty Dictionary on failure (corrupt / missing file). Older saves omit
+# `character_id` (added 2026-04-27) and `packed_log` (added 2026-04-28);
+# the loader supplies "" / empty PackedInt32Array so callers can detect
+# the legacy state and fall back to SFEN-only resume (no kifu history).
 func load_saved_game() -> Dictionary:
 	var cfg := ConfigFile.new()
 	if cfg.load(SAVE_PATH) != OK:
@@ -228,6 +237,7 @@ func load_saved_game() -> Dictionary:
 		mode = int(cfg.get_value("game", "mode", Mode.H_VS_AI_GOTE)),
 		level = clamp_level(int(cfg.get_value("game", "level", ai_level))),
 		character_id = str(cfg.get_value("game", "character_id", "")),
+		packed_log = PackedInt32Array(cfg.get_value("game", "packed_log", PackedInt32Array())),
 	}
 
 func clear_saved_game() -> void:

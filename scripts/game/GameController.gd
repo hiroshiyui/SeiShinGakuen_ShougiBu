@@ -10,6 +10,9 @@ const HandViewScript := preload("res://scripts/game/HandView.gd")
 @onready var _gote_hand: HandViewScript = %GoteHand
 @onready var _status: Label = %StatusLabel
 @onready var _check_banner: Label = %CheckBanner
+@onready var _review_banner: Button = %ReviewBanner
+@onready var _history_btn: Button = %HistoryButton
+@onready var _history_dialog: Control = %MoveHistoryDialog
 @onready var _promo_dialog: ConfirmationDialog = %PromotionDialog
 @onready var _gameover_dialog: AcceptDialog = %GameOverDialog
 @onready var _undo_btn: Button = %UndoButton
@@ -40,6 +43,11 @@ const _RANK_KANJI := ["", "一", "二", "三", "四", "五", "六", "七", "八"
 enum SelState { IDLE, BOARD, HAND }
 
 var _core: Object
+# Set to a scratch ShogiCore replaying ply 1..N when the player opens the
+# history dialog and taps a row. Read-only — all mutations still target
+# `_core`. `_active_core()` picks whichever the views should render from.
+var _review_core: Object = null
+var _in_review: bool = false
 var _last_move: Dictionary = {}
 var _sel_state: int = SelState.IDLE
 var _sel_from: Vector2i = Vector2i.ZERO
@@ -69,7 +77,18 @@ func _ready() -> void:
 		return
 	_core = ClassDB.instantiate("ShogiCore")
 	_load_ai_if_needed()
-	if Settings.resume_sfen != "":
+	if not Settings.resume_packed.is_empty():
+		# Prefer replay-from-start so the kifu panel + sennichite history
+		# rebuild correctly. Falls back to SFEN-load if the packed log
+		# doesn't apply cleanly (e.g. a future engine change rejected an
+		# older move).
+		if not bool(_core.apply_packed(Settings.resume_packed)):
+			push_warning("resume: apply_packed failed; falling back to SFEN. SFEN was: %s" % Settings.resume_sfen)
+			if Settings.resume_sfen != "" and not bool(_core.load_sfen(Settings.resume_sfen)):
+				push_warning("resume: load_sfen also failed; starting fresh.")
+		Settings.resume_packed = PackedInt32Array()
+		Settings.resume_sfen = ""
+	elif Settings.resume_sfen != "":
 		if not bool(_core.load_sfen(Settings.resume_sfen)):
 			push_warning("resume: load_sfen failed; starting fresh. SFEN was: %s" % Settings.resume_sfen)
 		Settings.resume_sfen = ""
@@ -82,6 +101,11 @@ func _ready() -> void:
 	_gameover_dialog.confirmed.connect(_on_restart)
 	_undo_btn.pressed.connect(_on_undo)
 	_exit_btn.pressed.connect(_on_exit_pressed)
+	_history_btn.pressed.connect(_on_history_pressed)
+	_history_dialog.ply_selected.connect(_on_history_ply_selected)
+	_history_dialog.return_to_live.connect(_on_history_back_to_live)
+	_history_dialog.closed.connect(_on_history_closed)
+	_review_banner.pressed.connect(_on_history_back_to_live)
 	_quit_dialog.confirmed.connect(_on_quit_confirmed)
 	_teacher_btn.pressed.connect(_on_teacher_pressed)
 	_close_suggestions_btn.pressed.connect(_close_suggestions)
@@ -279,18 +303,28 @@ func _process(_delta: float) -> void:
 		_commit_move(mv)
 
 func _refresh_all() -> void:
-	_board_view.render(_core)
-	_sente_hand.render(_core)
-	_gote_hand.render(_core)
-	var side_gote: bool = _core.side_to_move_gote()
+	var view_core: Object = _active_core()
+	_board_view.render(view_core)
+	_sente_hand.render(view_core)
+	_gote_hand.render(view_core)
+	var side_gote: bool = view_core.side_to_move_gote()
 	var mover := "後手" if side_gote else "先手"
-	var in_check: bool = _core.is_check()
-	_check_banner.visible = in_check and not _game_over
-	var ply: int = int(_core.move_log_size()) + 1
-	_status.text = "%s の手番 (%d手目)" % [mover, ply]
-	_undo_btn.disabled = int(_core.move_log_size()) == 0 or _game_over
+	var in_check: bool = view_core.is_check()
+	_check_banner.visible = in_check and not _game_over and not _in_review
+	if _in_review:
+		var review_ply: int = int(_review_core.move_log_size())
+		var live_ply: int = int(_core.move_log_size())
+		_status.text = "%d手目 / %d手目 (棋譜閲覧中)" % [review_ply, live_ply]
+	else:
+		var ply: int = int(_core.move_log_size()) + 1
+		_status.text = "%s の手番 (%d手目)" % [mover, ply]
+	_undo_btn.disabled = int(_core.move_log_size()) == 0 or _game_over or _in_review
+	_history_btn.disabled = int(_core.move_log_size()) == 0
 	var ai_turn := _ai_enabled and Settings.side_is_ai(side_gote)
-	_teacher_btn.disabled = _game_over or _thinking or ai_turn or not _ai_enabled
+	_teacher_btn.disabled = _game_over or _thinking or ai_turn or not _ai_enabled or _in_review
+
+func _active_core() -> Object:
+	return _review_core if _in_review and _review_core != null else _core
 
 func _clear_selection() -> void:
 	_sel_state = SelState.IDLE
@@ -304,7 +338,7 @@ func _clear_selection() -> void:
 	_gote_hand.render(_core)
 
 func _on_board_tapped(file: int, rank: int) -> void:
-	if _game_over or _thinking:
+	if _game_over or _thinking or _in_review:
 		return
 	if _ai_enabled and Settings.side_is_ai(_core.side_to_move_gote()):
 		return
@@ -319,7 +353,7 @@ func _on_board_tapped(file: int, rank: int) -> void:
 			_handle_drop_target(key)
 
 func _on_hand_tapped(kind: int, is_gote: bool) -> void:
-	if _game_over or _thinking or is_gote != _core.side_to_move_gote():
+	if _game_over or _thinking or _in_review or is_gote != _core.side_to_move_gote():
 		return
 	if _ai_enabled and Settings.side_is_ai(is_gote):
 		return
@@ -481,7 +515,7 @@ func _commit_move(m: Dictionary) -> void:
 		_pending_zoom_back = false
 		_zoom_back_after_slide()
 	if not _game_over:
-		Settings.save_game(str(_core.to_sfen()))
+		Settings.save_game(str(_core.to_sfen()), _core.move_log_packed())
 	_maybe_start_ai_turn()
 
 func _refresh_last_move_hint() -> void:
@@ -752,3 +786,47 @@ func _zoom_back_after_slide() -> void:
 	if not is_inside_tree():
 		return
 	_refit_board_smooth()
+
+# --- 棋譜 history dialog ---------------------------------------------------
+
+func _on_history_pressed() -> void:
+	var lines: PackedStringArray = _core.move_log_kifu_lines()
+	# Highlight the row matching whatever ply is currently visible — the
+	# live tip if not in review, or the rewound ply if reopened mid-review.
+	var ply: int = int(_review_core.move_log_size()) if _in_review and _review_core != null else int(_core.move_log_size())
+	_history_dialog.show_with(lines, ply)
+
+# Build a scratch core, replay ply 1..N from the live log, and swap the
+# views over to it. _active_core() now returns the scratch — interactive
+# inputs are gated by _in_review and refuse to fire.
+func _on_history_ply_selected(ply: int) -> void:
+	var packed: PackedInt32Array = _core.move_log_packed()
+	var clamped: int = clamp(ply, 0, packed.size())
+	var prefix: PackedInt32Array = packed.slice(0, clamped)
+	if _review_core == null:
+		_review_core = ClassDB.instantiate("ShogiCore")
+	if not bool(_review_core.apply_packed(prefix)):
+		push_warning("history: apply_packed failed for ply %d" % clamped)
+		return
+	_in_review = true
+	_review_banner.visible = true
+	# Hide stale highlights from the live game while reviewing.
+	_board_view.clear_selected()
+	_board_view.clear_move_hints()
+	_refresh_all()
+
+func _on_history_back_to_live() -> void:
+	_exit_review()
+
+func _on_history_closed() -> void:
+	# Closing without explicitly tapping 現在に戻る still drops the user back
+	# to the live position — leaving them stranded in scrub-mode after a
+	# stray tap on 閉じる would be a footgun.
+	if _in_review:
+		_exit_review()
+
+func _exit_review() -> void:
+	_in_review = false
+	_review_core = null
+	_review_banner.visible = false
+	_refresh_all()

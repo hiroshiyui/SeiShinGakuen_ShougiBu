@@ -71,7 +71,8 @@ func _test_save_load_roundtrip() -> String:
 	_settings.ai_level = 7
 	_settings.selected_character_id = "yoshida-sensei"
 	var sfen := "lnsgkgsnl/1r5b1/ppppppppp/9/9/9/PPPPPPPPP/1B5R1/LNSGKGSNL b - 1"
-	_settings.save_game(sfen)
+	var packed := PackedInt32Array([0x1234, 0x5678, 0x9abc])
+	_settings.save_game(sfen, packed)
 	var loaded: Dictionary = _settings.load_saved_game()
 	if loaded.is_empty():
 		return "load_saved_game returned empty after save"
@@ -83,6 +84,9 @@ func _test_save_load_roundtrip() -> String:
 		return "level drift: %d" % loaded.get("level")
 	if str(loaded.get("character_id")) != "yoshida-sensei":
 		return "character_id drift: %s" % loaded.get("character_id")
+	var loaded_packed: PackedInt32Array = PackedInt32Array(loaded.get("packed_log", PackedInt32Array()))
+	if loaded_packed != packed:
+		return "packed_log drift: got %s, want %s" % [loaded_packed, packed]
 	return ""
 
 func _test_load_missing_returns_empty() -> String:
@@ -108,7 +112,7 @@ func _test_load_corrupt_returns_empty() -> String:
 	return ""
 
 func _test_load_legacy_save() -> String:
-	# Hand-write a save that omits character_id (older format).
+	# Hand-write a save that omits character_id and packed_log (older format).
 	var cfg := ConfigFile.new()
 	cfg.set_value("game", "sfen", "lnsgkgsnl/1r5b1/ppppppppp/9/9/9/PPPPPPPPP/1B5R1/LNSGKGSNL b - 1")
 	cfg.set_value("game", "mode", _settings.Mode.H_VS_AI_GOTE)
@@ -121,6 +125,9 @@ func _test_load_legacy_save() -> String:
 		return "legacy save loaded non-empty character_id: %s" % loaded.get("character_id")
 	if int(loaded.get("level")) != 4:
 		return "level not restored from legacy save: %d" % loaded.get("level")
+	var legacy_packed: PackedInt32Array = PackedInt32Array(loaded.get("packed_log", PackedInt32Array()))
+	if not legacy_packed.is_empty():
+		return "legacy save loaded non-empty packed_log: %s" % legacy_packed
 	return ""
 
 func _test_clear_removes_file() -> String:

@@ -40,7 +40,21 @@ PIECE_TEXT = "歩香桂銀金角飛王玉と杏圭全馬龍"
 # Always-include safety set for runtime-injected glyphs (digits,
 # format-string filler, common punctuation). Mirrors UI_SAFETY in the
 # old shell version.
-UI_SAFETY = "0123456789%→×！？・、。「」…"
+#
+# Kifu (棋譜) glyphs are bundled here because the strings are assembled
+# in the Rust core (`kifu::log_to_lines`) and emitted via FFI — the
+# scan-the-source pass would never see them. Includes ☗ ☖ side markers,
+# ZENKAKU file digits, rank kanji 一..九, 同 (recapture marker), 成 / 打,
+# and every piece kanji that can render in the kifu — these overlap with
+# PIECE_TEXT but that set's a separate pass for the piece-tile font.
+UI_SAFETY = (
+    "0123456789%→×！？・、。「」…"
+    "☗☖"
+    "０１２３４５６７８９"
+    "一二三四五六七八九"
+    "同成打"
+    "歩香桂銀金角飛王玉と杏圭全馬龍"
+)
 
 # Codepoint-range regex covering every Japanese glyph we care about:
 # hiragana, katakana, chouon, iteration marks, CJK unified ideographs

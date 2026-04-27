@@ -23,6 +23,7 @@ pub enum LogEntry {
         from: Square,
         to: Square,
         prev_kind: Kind,
+        promoted: bool,
         captured: Option<Piece>,
         by: Color,
         was_check: bool,
@@ -240,12 +241,12 @@ impl Board {
             from,
             to,
             prev_kind: piece.kind,
+            promoted: promote,
             captured,
             by: mover,
             was_check: false,
             position_key_after: String::new(),
         });
-        let _ = promote; // encoded into `prev_kind -> new_kind`; keep param readable
         true
     }
 

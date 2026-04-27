@@ -1,10 +1,11 @@
-[gd_scene load_steps=7 format=3]
+[gd_scene load_steps=8 format=3]
 
 [ext_resource type="Script" path="res://scripts/game/GameController.gd" id="1_gc"]
 [ext_resource type="PackedScene" path="res://scenes/game/Board.tscn" id="2_board"]
 [ext_resource type="PackedScene" path="res://scenes/game/Hand.tscn" id="3_hand"]
 [ext_resource type="Texture2D" path="res://assets/backgrounds/in_game_bg.webp" id="4_bg"]
 [ext_resource type="Shader" path="res://assets/shaders/rounded_corners.gdshader" id="5_round"]
+[ext_resource type="PackedScene" path="res://scenes/MoveHistoryDialog.tscn" id="6_history"]
 
 [sub_resource type="ShaderMaterial" id="1_round_mat"]
 shader = ExtResource("5_round")
@@ -137,6 +138,10 @@ vertical_alignment = 1
 clip_text = true
 text_overrun_behavior = 2
 
+[node name="HistoryButton" type="Button" parent="Layout/StatusBar"]
+unique_name_in_owner = true
+text = "棋譜"
+
 [node name="UndoButton" type="Button" parent="Layout/StatusBar"]
 unique_name_in_owner = true
 text = "待った"
@@ -176,6 +181,19 @@ theme_override_font_sizes/font_size = 28
 text = "王手！"
 horizontal_alignment = 1
 
+[node name="ReviewBanner" type="Button" parent="."]
+unique_name_in_owner = true
+visible = false
+anchor_left = 0.5
+anchor_top = 0.08
+anchor_right = 0.5
+anchor_bottom = 0.08
+offset_left = -200.0
+offset_right = 200.0
+offset_bottom = 56.0
+theme_override_font_sizes/font_size = 22
+text = "棋譜閲覧中 — タップで現在に戻る"
+
 [node name="PromotionDialog" type="ConfirmationDialog" parent="."]
 unique_name_in_owner = true
 min_size = Vector2(420, 240)
@@ -196,3 +214,7 @@ title = "投了"
 dialog_text = "投了してタイトル画面に戻りますか?"
 ok_button_text = "はい"
 cancel_button_text = "いいえ"
+
+[node name="MoveHistoryDialog" parent="." instance=ExtResource("6_history")]
+unique_name_in_owner = true
+visible = false

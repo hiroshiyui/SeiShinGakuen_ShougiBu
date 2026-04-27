@@ -1,5 +1,6 @@
 mod board;
 mod encode;
+mod kifu;
 mod mcts;
 mod move_index;
 mod movegen;
@@ -67,6 +68,47 @@ impl ShogiCore {
     #[func]
     fn move_log_size(&self) -> i64 {
         self.board.log.len() as i64
+    }
+
+    #[func]
+    fn move_log_kifu_lines(&self) -> PackedStringArray {
+        let mut arr = PackedStringArray::new();
+        for s in kifu::log_to_lines(&self.board) {
+            arr.push(&GString::from(s));
+        }
+        arr
+    }
+
+    #[func]
+    fn move_log_packed(&self) -> PackedInt32Array {
+        let mut arr = PackedInt32Array::new();
+        for v in kifu::pack_log(&self.board) {
+            arr.push(v);
+        }
+        arr
+    }
+
+    /// Reset to the standard starting position and replay each packed move
+    /// in turn (with sennichite + check tags). Returns false if any move
+    /// fails to apply — caller should `reset_starting()` and treat as a
+    /// fresh game.
+    #[func]
+    fn apply_packed(&mut self, packed: PackedInt32Array) -> bool {
+        self.board.reset_starting();
+        let key = sfen::position_key(&self.board);
+        *self.board.position_counts.entry(key).or_insert(0) += 1;
+        for i in 0..packed.len() {
+            let Some(mv) = kifu::unpack_move(packed.get(i).unwrap_or(0)) else {
+                return false;
+            };
+            if !self.board.apply_move(mv) {
+                return false;
+            }
+            let was_check = is_check(&self.board, self.board.side_to_move);
+            let key = sfen::position_key(&self.board);
+            self.board.tag_last_move(was_check, key);
+        }
+        true
     }
 
     #[func]

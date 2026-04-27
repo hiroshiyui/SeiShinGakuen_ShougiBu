@@ -95,6 +95,7 @@ func _on_resume() -> void:
 	else:
 		Settings.set_ai_level(int(saved.get("level", Settings.ai_level)))
 	Settings.resume_sfen = str(saved["sfen"])
+	Settings.resume_packed = PackedInt32Array(saved.get("packed_log", PackedInt32Array()))
 	_go_to("res://scenes/Main.tscn")
 
 func _go_to(scene_path: String) -> void:
