@@ -239,6 +239,7 @@ Shipped differently:
 - [x] **棋譜検討 — saved-game library + reviewer with MCTS analysis.** New 棋譜検討 entry on MainMenu opens `scenes/KifuLibrary.tscn` (lists every `.kif` in the Documents dir + `user://` fallback, newest-first, with per-row 削除). Tapping a file opens `scenes/KifuReviewer.tscn`: parses via Rust `kifu::parse_kif` (tolerates Kifu-for-Windows time annotations, 不成, 同　, 中断 / 投了 / 詰み / 千日手 / 持将棋 terminators), replays on a private `ShogiCore`, exposes `<<` `<` `>` `>>` step nav + ply counter. The 解析 button runs MCTS at every ply (`suggest_moves_mcts(32, 128)` on a scratch core), finds the actual move's q in the search tree, computes delta vs best, and renders an analysis label per ply: 先手勝率 N% + classification badge (◎好手 / △疑問手 / ×悪手) + 推奨手 when the played move was 疑問手 or worse. Whole-game analysis ≈ 30s on a mid-range phone; button text glows green ("解析中… N / M") during the run. See [ADR-0008](./docs/adr/0008-review-mode-scratch-core.md) for why review mode keeps a separate `_review_core` rather than rewinding the live `_core`.
 - [x] **Android back gesture routes to ui_cancel, not OS quit.** Godot 4's default `application/config/quit_on_go_back=true` was calling `get_tree().quit()` on the Android back button / swipe, dropping players out of mid-game without 投了 confirmation or save. Now disabled in `project.godot`; `Settings._notification(NOTIFICATION_WM_GO_BACK_REQUEST)` synthesizes a `ui_cancel` `InputEventAction` so every existing scene's `_unhandled_input(ui_cancel)` handler — quit dialogs, scene back-out, MoveHistoryDialog dismiss — fires identically to desktop Esc.
 - [x] **加藤先生 avatar on the teacher button.** 48×48 circular alpha-masked WebP (north-cropped from the source so the face stays in frame) renders before "加藤先生！教えてください！" via `Button.icon`. Pre-sized at the source so no `expand_icon` / `icon_max_width` gymnastics needed.
+- [x] **入玉宣言 — in-game declaration button + 持将棋 / AI auto-declare.** Rust grows `pieces_in_opponent_camp(color)` and `can_declare_jishogi(color) → DeclareResult` (Ok / KingNotEntered / InCheck / InsufficientPieces{have,need} / InsufficientPoints{have,need}). Asymmetric thresholds: 28 points for sente, 27 for gote (matching 日本将棋連盟 / 柿木将棋 official rules — the one-point delta compensates for first-move advantage). 10-piece minimum (excluding the king) in the opponent's promotion zone. Exposed to GDScript as `ShogiCore.can_declare_jishogi(is_gote) → Dictionary` so the UI gets `{ok, reason, points_have, points_need, pieces_have, pieces_need}` in one call. In-game 入玉宣言 button appears in the StatusBar when the side-to-move's king has entered the opponent's camp on a human turn; tap → either ends the game with `入玉宣言 — N の勝ち` or pops an info dialog explaining the deficit (`持ち点が足りません (15点 / 必要 28点)` / `敵陣の自駒が足りません (8枚 / 必要 10枚)` / `玉が王手にかかっているため宣言できません`). `_check_end_state` runs the same check after every commit so the AI auto-declares on its turn when qualified, and 持将棋 (both sides qualify) ends in a draw.
 
 ---
 
@@ -274,9 +275,10 @@ bump. `.gdextension` manifest declares `compatibility_minimum = 4.3`.
   Tagging each move with `was_check` + `position_key_after` lets us
   distinguish a plain 4-fold draw from a perpetual-check loss for the
   checker.
-- 入玉: ships as detection-only (`Rules::king_entered` +
-  `Rules::jishogi_points`, 27-point rule). A player-triggered "claim"
-  button is still an open question below.
+- 入玉: full 入玉宣言 declaration shipped via `Rules::can_declare_jishogi`
+  (asymmetric 28-point sente / 27-point gote thresholds, 10-piece
+  minimum excluding the king, in-check rejection). Surfaced as the
+  in-game 入玉宣言 button + AI auto-declaration + 持将棋 mutual draw.
 - Stalemate is effectively impossible in Shogi (hand drops), but
   `has_any_legal_move` handles the corner case for free.
 
@@ -309,7 +311,7 @@ bump. `.gdextension` manifest declares `compatibility_minimum = 4.3`.
 
 - [x] ~~千日手 perpetual-check rule variant — confirm Japanese professional rules~~ — implemented as "checker loses", 4-fold detection in `Rules::detect_sennichite`. 2026-04-22.
 - [x] ~~入玉 point rule — 24 or 27?~~ — 27. `Rules::jishogi_points`. 2026-04-22.
-- [ ] In-game 入玉 claim button (currently detection-only).
+- [x] ~~In-game 入玉 claim button (currently detection-only).~~ — shipped 2026-04-28. `ShogiCore.can_declare_jishogi(is_gote)` returns `{ok, reason, points_have, points_need, pieces_have, pieces_need}`; `GameController._on_jishogi_pressed` ends the game on Ok and explains the deficit otherwise. AI auto-declares from `_check_end_state` when its side qualifies; 持将棋 fires the draw path when both sides qualify simultaneously. Asymmetric 28/27 thresholds, 10-piece minimum (excl. king), official-rule conformant.
 - [x] ~~App icon + main-menu art — source or commission?~~ — AI-generated in-house, both icon (`assets/branding/`) and backgrounds (`assets/backgrounds/`) plus the 8 character portraits (`assets/characters/**/neutral.webp`). 2026-04-27.
 - [x] ~~Cloud save / cross-device persistence?~~ — explicitly skipped to stay free of Google Play services dependencies. Players who uninstall lose `user://prefs.cfg` + `user://saved_game.cfg`; that's the trade-off. 2026-04-27.
 - [x] ~~Play Store distribution or sideload only?~~ — sideload only via signed APK on GitHub Releases. Play Store is explicitly out of scope; we don't want the Google Play ecosystem dependencies (developer account, policy compliance, mandatory privacy URL, upload-key custody) for a single-player offline game. AAB target left in `tools/build_all.sh --aab` for completeness but unused. 2026-04-27.
@@ -318,4 +320,4 @@ bump. `.gdextension` manifest declares `compatibility_minimum = 4.3`.
 
 ---
 
-*Last updated: 2026-04-28 (KIF library + reviewer with MCTS analysis)*
+*Last updated: 2026-04-28 (入玉宣言 declaration + 持将棋)*
