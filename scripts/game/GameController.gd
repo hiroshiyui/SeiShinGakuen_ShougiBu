@@ -225,6 +225,9 @@ func _load_ai_if_needed() -> void:
 		_ai_enabled = false
 		return
 	_ai_enabled = true
+	# Load the opening book once. Small JSON, FileAccess works on
+	# Android; failure is non-fatal — the AI just always thinks via MCTS.
+	_load_opening_book()
 	_character = Settings.load_character(Settings.selected_character_id)
 	# Prefer the selected character's display name over LEVEL_NAMES so
 	# the strip stays in sync with the picker — LEVEL_NAMES is a fallback
@@ -233,6 +236,23 @@ func _load_ai_if_needed() -> void:
 		else Settings.level_name(Settings.ai_level))
 	_set_opponent_portrait(_character)
 	_opponent_strip.visible = true
+
+func _load_opening_book() -> void:
+	const BOOK_PATH := "res://assets/opening_book.json"
+	if not ResourceLoader.exists(BOOK_PATH) and not FileAccess.file_exists(BOOK_PATH):
+		# Optional asset — nothing shipped means MCTS-only behaviour,
+		# which is the same as before the book existed.
+		return
+	var f := FileAccess.open(BOOK_PATH, FileAccess.READ)
+	if f == null:
+		push_warning("opening book: cannot open %s (%d)" % [BOOK_PATH, FileAccess.get_open_error()])
+		return
+	var json := f.get_as_text()
+	f.close()
+	if not bool(_core.load_opening_book_json(json)):
+		push_warning("opening book: parse failed")
+		return
+	print("[ai] opening book loaded — %d positions" % int(_core.opening_book_size()))
 
 func _set_opponent_portrait(profile: CharacterProfile) -> void:
 	# Hide the avatar slot entirely when there's no portrait — keeps the
@@ -268,15 +288,38 @@ func _maybe_start_ai_turn() -> void:
 	var stm_gote: bool = _core.side_to_move_gote()
 	if not Settings.side_is_ai(stm_gote):
 		return
+	var params: Dictionary = Settings.level_params(Settings.ai_level)
+	var temperature: float = float(params["temperature"])
+	# Try the opening book first — for known positions this skips the
+	# ~150 ms MCTS search entirely and gives the AI varied openings
+	# without the policy net's bias toward a single line. `null` =
+	# position not in book → fall through to MCTS as before.
+	var book_move: Variant = _core.opening_book_pick(temperature)
+	if book_move != null:
+		_thinking = true  # so _refresh_all disables player input
+		_thinking_label.visible = true
+		_undo_btn.disabled = true
+		_teacher_btn.disabled = true
+		_run_book_move_with_pause(book_move)
+		return
 	_thinking = true
 	_thinking_label.visible = true
 	_undo_btn.disabled = true
 	_teacher_btn.disabled = true
-	var params: Dictionary = Settings.level_params(Settings.ai_level)
 	var playouts: int = int(params["playouts"])
-	var temperature: float = float(params["temperature"])
 	_think_thread = Thread.new()
 	_think_thread.start(_run_ai_think.bind(playouts, temperature))
+
+# Same natural-pause delay the MCTS path uses so a book-driven move
+# doesn't snap onto the board instantly while the human is still
+# absorbing their last move.
+func _run_book_move_with_pause(mv: Dictionary) -> void:
+	await get_tree().create_timer(randf_range(0.6, 1.4)).timeout
+	if not is_inside_tree() or _game_over:
+		return
+	_thinking = false
+	_thinking_label.visible = false
+	_commit_move(mv)
 
 func _run_ai_think(playouts: int, temperature: float) -> Variant:
 	return _core.think_sampled(playouts, temperature)
