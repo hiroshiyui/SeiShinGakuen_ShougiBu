@@ -68,14 +68,14 @@ func _pop_back() -> void:
 	get_tree().change_scene_to_file("res://scenes/KifuLibrary.tscn")
 
 func _set_ply(n: int) -> void:
-	var clamped := clamp(n, 0, _packed.size())
+	var clamped: int = clamp(n, 0, _packed.size())
 	if clamped == _ply:
 		return
 	_ply = clamped
 	_replay_to_ply()
 
 func _replay_to_ply() -> void:
-	var prefix := _packed.slice(0, _ply)
+	var prefix: PackedInt32Array = _packed.slice(0, _ply)
 	if not bool(_core.apply_packed(prefix)):
 		push_warning("kifu reviewer: apply_packed failed at ply %d" % _ply)
 	_board_view.render(_core)
