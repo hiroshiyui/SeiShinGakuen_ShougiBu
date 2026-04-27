@@ -72,10 +72,10 @@ text = "選んでください"
 [node name="Spacer" type="Control" parent="Center/Panel/Box"]
 custom_minimum_size = Vector2(0, 8)
 
-[node name="StartButton" type="Button" parent="Center/Panel/Box"]
+[node name="SettingsButton" type="Button" parent="Center/Panel/Box"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 56)
-text = "新規対局"
+custom_minimum_size = Vector2(0, 48)
+text = "設定"
 theme_override_font_sizes/font_size = 24
 
 [node name="ResumeButton" type="Button" parent="Center/Panel/Box"]
@@ -85,14 +85,15 @@ custom_minimum_size = Vector2(0, 56)
 text = "続きから"
 theme_override_font_sizes/font_size = 24
 
-[node name="SettingsButton" type="Button" parent="Center/Panel/Box"]
+[node name="StartButton" type="Button" parent="Center/Panel/Box"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 48)
-text = "設定"
+custom_minimum_size = Vector2(0, 56)
+text = "新規対局"
 theme_override_font_sizes/font_size = 24
 
 [node name="QuitDialog" type="ConfirmationDialog" parent="."]
 unique_name_in_owner = true
+min_size = Vector2(560, 260)
 title = "終了"
 dialog_text = "アプリを終了しますか?"
 ok_button_text = "はい"
