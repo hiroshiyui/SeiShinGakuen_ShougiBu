@@ -178,17 +178,20 @@ horizontal_alignment = 1
 
 [node name="PromotionDialog" type="ConfirmationDialog" parent="."]
 unique_name_in_owner = true
+min_size = Vector2(420, 240)
 title = "成り"
 ok_button_text = "成る"
 cancel_button_text = "不成"
 
 [node name="GameOverDialog" type="AcceptDialog" parent="."]
 unique_name_in_owner = true
+min_size = Vector2(420, 240)
 title = "対局終了"
 ok_button_text = "再戦"
 
 [node name="QuitDialog" type="ConfirmationDialog" parent="."]
 unique_name_in_owner = true
+min_size = Vector2(560, 260)
 title = "投了"
 dialog_text = "投了してタイトル画面に戻りますか?"
 ok_button_text = "はい"

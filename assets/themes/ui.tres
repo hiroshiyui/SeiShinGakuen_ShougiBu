@@ -1,7 +1,41 @@
-[gd_resource type="Theme" load_steps=8 format=3]
+[gd_resource type="Theme" load_steps=11 format=3]
 
 [ext_resource type="FontFile" path="res://assets/fonts/noto-serif-jp/NotoSerifCJKjp-Medium.otf" id="1_medium"]
 [ext_resource type="FontFile" path="res://assets/fonts/noto-serif-jp/NotoSerifCJKjp-Bold.otf" id="2_bold"]
+
+[sub_resource type="FontVariation" id="title_font_variation"]
+base_font = ExtResource("2_bold")
+spacing_glyph = 4
+
+[sub_resource type="StyleBoxFlat" id="dlg_border"]
+bg_color = Color(0.10, 0.08, 0.06, 0.96)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.78, 0.62, 0.30, 1)
+corner_radius_top_left = 14
+corner_radius_top_right = 14
+corner_radius_bottom_right = 14
+corner_radius_bottom_left = 14
+content_margin_left = 24.0
+content_margin_top = 28.0
+content_margin_right = 24.0
+content_margin_bottom = 24.0
+shadow_color = Color(0, 0, 0, 0.55)
+shadow_size = 12
+shadow_offset = Vector2(0, 4)
+
+[sub_resource type="StyleBoxFlat" id="dlg_panel"]
+bg_color = Color(0.10, 0.08, 0.06, 0.96)
+corner_radius_top_left = 14
+corner_radius_top_right = 14
+corner_radius_bottom_right = 14
+corner_radius_bottom_left = 14
+content_margin_left = 24.0
+content_margin_top = 24.0
+content_margin_right = 24.0
+content_margin_bottom = 24.0
 
 [sub_resource type="StyleBoxFlat" id="btn_normal"]
 bg_color = Color(0.10, 0.08, 0.06, 0.85)
@@ -104,3 +138,25 @@ Button/colors/font_hover_color = Color(1, 0.94, 0.78, 1)
 Button/colors/font_pressed_color = Color(0.85, 0.74, 0.50, 1)
 Button/colors/font_disabled_color = Color(0.60, 0.55, 0.45, 0.6)
 Button/colors/font_focus_color = Color(1, 0.94, 0.78, 1)
+Window/constants/title_height = 80
+Window/constants/title_outline_size = 12
+Window/colors/title_color = Color(0.98, 0.85, 0.45, 1)
+Window/colors/title_outline_modulate = Color(0, 0, 0, 1)
+Window/fonts/title_font = SubResource("title_font_variation")
+Window/font_sizes/title_font_size = 56
+Window/styles/embedded_border = SubResource("dlg_border")
+Window/styles/embedded_unfocused_border = SubResource("dlg_border")
+AcceptDialog/styles/panel = SubResource("dlg_panel")
+AcceptDialog/constants/buttons_separation = 16
+AcceptDialog/constants/title_height = 80
+AcceptDialog/constants/title_outline_size = 12
+AcceptDialog/colors/title_color = Color(0.98, 0.85, 0.45, 1)
+AcceptDialog/colors/title_outline_modulate = Color(0, 0, 0, 1)
+AcceptDialog/fonts/title_font = SubResource("title_font_variation")
+AcceptDialog/font_sizes/title_font_size = 56
+ConfirmationDialog/constants/title_height = 80
+ConfirmationDialog/constants/title_outline_size = 12
+ConfirmationDialog/colors/title_color = Color(0.98, 0.85, 0.45, 1)
+ConfirmationDialog/colors/title_outline_modulate = Color(0, 0, 0, 1)
+ConfirmationDialog/fonts/title_font = SubResource("title_font_variation")
+ConfirmationDialog/font_sizes/title_font_size = 56
