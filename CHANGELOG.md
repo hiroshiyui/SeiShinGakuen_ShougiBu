@@ -8,6 +8,30 @@ All notable changes to this project. Format follows
 
 ## [Unreleased]
 
+## [0.4.0] — 2026-04-28
+
+### Added
+- Opening book — ~12 mainline positions covering the first 4–5 plies
+  of 相居飛車 / 矢倉 entry / 中飛車 / 四間飛車. The AI consults the book
+  before MCTS each turn and only falls through to search when the
+  position isn't recognised. Adds opening variety at the same character
+  level and skips the ~150 ms search on book hits.
+- 棋譜検討 reviewer now highlights the last-moved squares with the
+  same blue overlay the in-game scene uses.
+
+### Changed
+- `RANK_KANJI` (漢数字 0..9 lookup) and the safe-area inset boilerplate
+  consolidated onto the `Settings` autoload — removes verbatim
+  duplicates from `GameController`, `KifuLibrary`, and `KifuReviewer`.
+
+### Internal
+- `tools/*.gd` excluded from the shipped APK — dev-only generators
+  (`gen_opening_book`, `gen_sample_kif`, `setup_jishogi_test`) had been
+  silently bundled. ~7 KB saved.
+
+[Full release notes](./docs/release-notes/0.4.0.md) ·
+[GitHub Release](https://github.com/hiroshiyui/SeiShinGakuen_ShougiBu/releases/tag/0.4.0)
+
 ## [0.3.0] — 2026-04-28
 
 ### Added
@@ -110,7 +134,8 @@ First public release.
 [Full release notes](./docs/release-notes/0.1.1.md) ·
 [GitHub Release](https://github.com/hiroshiyui/SeiShinGakuen_ShougiBu/releases/tag/0.1.1)
 
-[Unreleased]: https://github.com/hiroshiyui/SeiShinGakuen_ShougiBu/compare/0.3.0...HEAD
+[Unreleased]: https://github.com/hiroshiyui/SeiShinGakuen_ShougiBu/compare/0.4.0...HEAD
+[0.4.0]: https://github.com/hiroshiyui/SeiShinGakuen_ShougiBu/compare/0.3.0...0.4.0
 [0.3.0]: https://github.com/hiroshiyui/SeiShinGakuen_ShougiBu/compare/0.2.0...0.3.0
 [0.2.0]: https://github.com/hiroshiyui/SeiShinGakuen_ShougiBu/compare/0.1.2...0.2.0
 [0.1.2]: https://github.com/hiroshiyui/SeiShinGakuen_ShougiBu/compare/0.1.1...0.1.2
