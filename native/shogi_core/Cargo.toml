@@ -11,6 +11,7 @@ crate-type = ["cdylib"]
 godot = "0.2"
 tract-onnx = "0.21"
 rand = "0.9"
+serde_json = "1"
 
 [profile.release]
 opt-level = 3

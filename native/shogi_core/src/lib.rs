@@ -5,6 +5,7 @@ mod mcts;
 mod move_index;
 mod movegen;
 mod nn;
+mod opening_book;
 mod rules;
 mod sfen;
 mod types;
@@ -21,6 +22,7 @@ use godot::prelude::*;
 use crate::board::Board;
 use crate::encode::encode_position;
 use crate::mcts::{Searcher, all_legal_moves};
+use crate::opening_book::OpeningBook;
 use crate::move_index::encode_move;
 use crate::nn::NeuralNet;
 use crate::rules::{DeclareResult, SennichiteStatus, can_declare_jishogi, detect_sennichite, is_check, is_checkmate, jishogi_points, king_entered, legal_drops, legal_moves_from, pieces_in_opponent_camp};
@@ -37,12 +39,13 @@ unsafe impl ExtensionLibrary for ShogiCoreExt {}
 pub struct ShogiCore {
     board: Board,
     nn: Option<NeuralNet>,
+    book: OpeningBook,
 }
 
 #[godot_api]
 impl IRefCounted for ShogiCore {
     fn init(_base: Base<RefCounted>) -> Self {
-        Self { board: Board::default(), nn: None }
+        Self { board: Board::default(), nn: None, book: OpeningBook::default() }
     }
 }
 
@@ -422,6 +425,40 @@ impl ShogiCore {
     #[func]
     fn think_best_move(&mut self, playouts: i64) -> Variant {
         self.think_sampled(playouts, 0.0)
+    }
+
+    /// Load the opening book from a JSON string. Small file (~few KB)
+    /// so we hand it across the FFI as content rather than a path —
+    /// sidesteps the `res://` extraction dance the ONNX model needs on
+    /// Android. Returns true on success; logs the parse error on
+    /// failure.
+    #[func]
+    fn load_opening_book_json(&mut self, json: GString) -> bool {
+        match OpeningBook::load_from_str(&json.to_string()) {
+            Ok(book) => {
+                self.book = book;
+                true
+            }
+            Err(e) => {
+                godot_warn!("load_opening_book_json: {}", e);
+                false
+            }
+        }
+    }
+
+    /// Try the opening book at the current position. Returns the move
+    /// dict on hit, `nil` on miss. Caller falls through to think_best_move.
+    #[func]
+    fn opening_book_pick(&self, temperature: f64) -> Variant {
+        match self.book.pick(&self.board, temperature.max(0.0) as f32) {
+            Some(mv) => move_to_dict(mv).to_variant(),
+            None => Variant::nil(),
+        }
+    }
+
+    #[func]
+    fn opening_book_size(&self) -> i64 {
+        self.book.len() as i64
     }
 
     /// MCTS with visit-count sampling. `temperature == 0.0` is greedy

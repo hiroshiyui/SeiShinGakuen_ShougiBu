@@ -1197,6 +1197,7 @@ version = "0.1.0"
 dependencies = [
  "godot",
  "rand 0.9.4",
+ "serde_json",
  "tract-onnx",
 ]
 
