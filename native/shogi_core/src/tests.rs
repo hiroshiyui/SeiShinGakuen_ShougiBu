@@ -192,3 +192,136 @@ fn generate_moves_from_empty_returns_none() {
     generate_moves_from(&b, Square::new(5, 5), &mut out);
     assert!(out.is_empty());
 }
+
+// ---- 入玉宣言 ---------------------------------------------------------------
+
+#[test]
+fn jishogi_starting_position_rejected() {
+    let b = Board::default();
+    let r = crate::rules::can_declare_jishogi(&b, Color::Sente);
+    assert!(matches!(r, crate::rules::DeclareResult::KingNotEntered),
+        "expected KingNotEntered, got {:?}", r);
+}
+
+#[test]
+fn jishogi_lone_king_in_camp_insufficient_pieces() {
+    // Sente king alone at 5-1 (in 後手 camp). No other pieces, no hand.
+    let b = placed(
+        &[
+            (5, 1, Kind::King, Color::Sente),
+            (5, 9, Kind::King, Color::Gote),
+        ],
+        &[],
+        Color::Sente,
+    );
+    let r = crate::rules::can_declare_jishogi(&b, Color::Sente);
+    assert!(matches!(r, crate::rules::DeclareResult::InsufficientPieces { have: 0, need: 10 }),
+        "expected InsufficientPieces{{0, 10}}, got {:?}", r);
+}
+
+#[test]
+fn jishogi_qualified_sente_accepted() {
+    // Sente king at 5-1 plus 10 own non-king pieces in rank 1-3 worth
+    // 28 points (2 rooks * 5 + 2 bishops * 5 + 8 small pieces = 28).
+    let b = placed(
+        &[
+            (5, 1, Kind::King, Color::Sente),
+            // Two big pieces (5 pts each): 10 pts
+            (1, 1, Kind::Rook, Color::Sente),
+            (9, 1, Kind::Bishop, Color::Sente),
+            // Two more big (promoted): 10 pts → running total 20
+            (1, 2, Kind::Dragon, Color::Sente),
+            (9, 2, Kind::Horse, Color::Sente),
+            // Eight small (1 pt each): 8 → total 28
+            (2, 1, Kind::Gold, Color::Sente),
+            (3, 1, Kind::Gold, Color::Sente),
+            (4, 1, Kind::Silver, Color::Sente),
+            (6, 1, Kind::Silver, Color::Sente),
+            (7, 1, Kind::Knight, Color::Sente),
+            (8, 1, Kind::Knight, Color::Sente),
+            (2, 2, Kind::Lance, Color::Sente),
+            (8, 2, Kind::Lance, Color::Sente),
+            // Lone gote king out of any sente attack range.
+            (5, 9, Kind::King, Color::Gote),
+        ],
+        &[],
+        Color::Sente,
+    );
+    assert!(crate::rules::pieces_in_opponent_camp(&b, Color::Sente) >= 10);
+    assert_eq!(crate::rules::jishogi_points(&b, Color::Sente), 28);
+    let r = crate::rules::can_declare_jishogi(&b, Color::Sente);
+    assert!(matches!(r, crate::rules::DeclareResult::Ok),
+        "expected Ok, got {:?}", r);
+}
+
+#[test]
+fn jishogi_in_check_rejected() {
+    // Same as the qualified-sente position but stick a gote rook
+    // attacking the sente king on file 5.
+    let b = placed(
+        &[
+            (5, 1, Kind::King, Color::Sente),
+            (5, 5, Kind::Rook, Color::Gote),  // 王手
+            // Pad to clear the piece + point thresholds so the only
+            // remaining failure is the check.
+            (1, 1, Kind::Rook, Color::Sente),
+            (9, 1, Kind::Bishop, Color::Sente),
+            (1, 2, Kind::Dragon, Color::Sente),
+            (9, 2, Kind::Horse, Color::Sente),
+            (2, 1, Kind::Gold, Color::Sente),
+            (3, 1, Kind::Gold, Color::Sente),
+            (4, 1, Kind::Silver, Color::Sente),
+            (6, 1, Kind::Silver, Color::Sente),
+            (7, 1, Kind::Knight, Color::Sente),
+            (8, 1, Kind::Knight, Color::Sente),
+            (2, 2, Kind::Lance, Color::Sente),
+            (8, 2, Kind::Lance, Color::Sente),
+            (5, 9, Kind::King, Color::Gote),
+        ],
+        &[],
+        Color::Sente,
+    );
+    let r = crate::rules::can_declare_jishogi(&b, Color::Sente);
+    assert!(matches!(r, crate::rules::DeclareResult::InCheck),
+        "expected InCheck, got {:?}", r);
+}
+
+#[test]
+fn jishogi_asymmetric_thresholds_27_for_gote_28_for_sente() {
+    // Gote analogue of qualified position: king at 5-9, ten own
+    // pieces in rank 7-9 worth exactly 27 points (one less large
+    // piece). Gote should pass (need 27); sente threshold would
+    // reject the same point total.
+    assert_eq!(crate::rules::jishogi_point_threshold(Color::Sente), 28);
+    assert_eq!(crate::rules::jishogi_point_threshold(Color::Gote), 27);
+
+    let b = placed(
+        &[
+            (5, 9, Kind::King, Color::Gote),
+            // Three big pieces = 15 pts
+            (1, 9, Kind::Rook, Color::Gote),
+            (9, 9, Kind::Bishop, Color::Gote),
+            (1, 8, Kind::Dragon, Color::Gote),
+            // Twelve small pieces = 12 pts → total 27 (and 15 pieces — well over the count threshold)
+            (2, 9, Kind::Gold, Color::Gote),
+            (3, 9, Kind::Gold, Color::Gote),
+            (4, 9, Kind::Silver, Color::Gote),
+            (6, 9, Kind::Silver, Color::Gote),
+            (7, 9, Kind::Knight, Color::Gote),
+            (8, 9, Kind::Knight, Color::Gote),
+            (2, 8, Kind::Lance, Color::Gote),
+            (8, 8, Kind::Lance, Color::Gote),
+            (3, 8, Kind::Pawn, Color::Gote),
+            (4, 8, Kind::Pawn, Color::Gote),
+            (5, 8, Kind::Pawn, Color::Gote),
+            (6, 8, Kind::Pawn, Color::Gote),
+            (5, 1, Kind::King, Color::Sente),
+        ],
+        &[],
+        Color::Gote,
+    );
+    assert_eq!(crate::rules::jishogi_points(&b, Color::Gote), 27);
+    let r = crate::rules::can_declare_jishogi(&b, Color::Gote);
+    assert!(matches!(r, crate::rules::DeclareResult::Ok),
+        "gote with 27 pts expected Ok, got {:?}", r);
+}

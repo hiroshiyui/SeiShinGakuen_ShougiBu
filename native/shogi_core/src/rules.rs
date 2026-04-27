@@ -220,3 +220,74 @@ pub fn jishogi_points(board: &Board, color: Color) -> u32 {
     }
     total
 }
+
+/// Count of own pieces in the opponent's promotion zone, **excluding
+/// the king**. The 入玉宣言 rule requires at least 10 such pieces in
+/// addition to the point threshold.
+pub fn pieces_in_opponent_camp(board: &Board, color: Color) -> u32 {
+    let mut count: u32 = 0;
+    for r in 1..=9 {
+        let in_opp_camp = match color {
+            Color::Sente => r <= 3,
+            Color::Gote => r >= 7,
+        };
+        if !in_opp_camp {
+            continue;
+        }
+        for f in 1..=9 {
+            let Some(p) = board.piece_at(Square::new(f, r)) else { continue };
+            if p.color == color && p.kind != Kind::King {
+                count += 1;
+            }
+        }
+    }
+    count
+}
+
+/// Threshold for 入玉宣言: 28 points if you're sente, 27 if gote. The
+/// asymmetry compensates for first-move advantage — same convention
+/// the 日本将棋連盟 / 柿木将棋 official rules use.
+pub fn jishogi_point_threshold(color: Color) -> u32 {
+    match color {
+        Color::Sente => 28,
+        Color::Gote => 27,
+    }
+}
+
+/// Minimum count of own pieces (excluding the king) the declarer must
+/// have in the opponent's promotion zone.
+pub const JISHOGI_PIECE_THRESHOLD: u32 = 10;
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum DeclareResult {
+    Ok,
+    KingNotEntered,
+    InCheck,
+    InsufficientPieces { have: u32, need: u32 },
+    InsufficientPoints { have: u32, need: u32 },
+}
+
+/// Combined check used by the in-game 入玉宣言 button. The four
+/// failure variants carry enough detail for the UI to tell the player
+/// *what* is missing without re-querying every sub-rule.
+pub fn can_declare_jishogi(board: &Board, color: Color) -> DeclareResult {
+    if !king_entered(board, color) {
+        return DeclareResult::KingNotEntered;
+    }
+    if is_check(board, color) {
+        return DeclareResult::InCheck;
+    }
+    let pieces = pieces_in_opponent_camp(board, color);
+    if pieces < JISHOGI_PIECE_THRESHOLD {
+        return DeclareResult::InsufficientPieces {
+            have: pieces,
+            need: JISHOGI_PIECE_THRESHOLD,
+        };
+    }
+    let points = jishogi_points(board, color);
+    let need = jishogi_point_threshold(color);
+    if points < need {
+        return DeclareResult::InsufficientPoints { have: points, need };
+    }
+    DeclareResult::Ok
+}

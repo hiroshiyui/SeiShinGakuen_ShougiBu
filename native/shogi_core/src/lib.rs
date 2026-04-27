@@ -23,7 +23,7 @@ use crate::encode::encode_position;
 use crate::mcts::{Searcher, all_legal_moves};
 use crate::move_index::encode_move;
 use crate::nn::NeuralNet;
-use crate::rules::{SennichiteStatus, detect_sennichite, is_check, is_checkmate, jishogi_points, king_entered, legal_drops, legal_moves_from};
+use crate::rules::{DeclareResult, SennichiteStatus, can_declare_jishogi, detect_sennichite, is_check, is_checkmate, jishogi_points, king_entered, legal_drops, legal_moves_from, pieces_in_opponent_camp};
 use crate::sfen::parse_sfen;
 use crate::types::{Color, Kind, Move, Square};
 
@@ -258,6 +258,40 @@ impl ShogiCore {
     #[func]
     fn jishogi_points(&self, is_gote: bool) -> i64 {
         jishogi_points(&self.board, Color::from_gote(is_gote)) as i64
+    }
+
+    #[func]
+    fn pieces_in_opponent_camp(&self, is_gote: bool) -> i64 {
+        pieces_in_opponent_camp(&self.board, Color::from_gote(is_gote)) as i64
+    }
+
+    /// Returns a Dictionary describing whether `is_gote` may declare
+    /// 入玉宣言 win at the current position. Shape:
+    ///   { ok: bool,
+    ///     reason: String,            # one of: "ok" / "king_not_entered" /
+    ///                                #   "in_check" / "insufficient_pieces" /
+    ///                                #   "insufficient_points"
+    ///     points_have: i64, points_need: i64,    # always populated
+    ///     pieces_have: i64, pieces_need: i64 }   # always populated
+    #[func]
+    fn can_declare_jishogi(&self, is_gote: bool) -> Dictionary {
+        let color = Color::from_gote(is_gote);
+        let result = can_declare_jishogi(&self.board, color);
+        let mut d = Dictionary::new();
+        let (ok, reason) = match &result {
+            DeclareResult::Ok => (true, "ok"),
+            DeclareResult::KingNotEntered => (false, "king_not_entered"),
+            DeclareResult::InCheck => (false, "in_check"),
+            DeclareResult::InsufficientPieces { .. } => (false, "insufficient_pieces"),
+            DeclareResult::InsufficientPoints { .. } => (false, "insufficient_points"),
+        };
+        d.set("ok", ok);
+        d.set("reason", reason);
+        d.set("points_have", jishogi_points(&self.board, color) as i64);
+        d.set("points_need", crate::rules::jishogi_point_threshold(color) as i64);
+        d.set("pieces_have", pieces_in_opponent_camp(&self.board, color) as i64);
+        d.set("pieces_need", crate::rules::JISHOGI_PIECE_THRESHOLD as i64);
+        d
     }
 
     // --- SFEN import --------------------------------------------------------
