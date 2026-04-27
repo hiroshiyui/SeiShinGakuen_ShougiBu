@@ -150,6 +150,11 @@ unique_name_in_owner = true
 text = "待った"
 disabled = true
 
+[node name="JishogiButton" type="Button" parent="Layout/StatusBar"]
+unique_name_in_owner = true
+visible = false
+text = "入玉宣言"
+
 [node name="ExitButton" type="Button" parent="Layout/StatusBar"]
 unique_name_in_owner = true
 text = "投了"
@@ -217,6 +222,12 @@ title = "投了"
 dialog_text = "投了してタイトル画面に戻りますか?"
 ok_button_text = "はい"
 cancel_button_text = "いいえ"
+
+[node name="JishogiInfoDialog" type="AcceptDialog" parent="."]
+unique_name_in_owner = true
+min_size = Vector2(560, 260)
+title = "入玉宣言"
+ok_button_text = "閉じる"
 
 [node name="MoveHistoryDialog" parent="." instance=ExtResource("6_history")]
 unique_name_in_owner = true

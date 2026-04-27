@@ -17,6 +17,8 @@ const HandViewScript := preload("res://scripts/game/HandView.gd")
 @onready var _gameover_dialog: AcceptDialog = %GameOverDialog
 @onready var _undo_btn: Button = %UndoButton
 @onready var _exit_btn: Button = %ExitButton
+@onready var _jishogi_btn: Button = %JishogiButton
+@onready var _jishogi_info_dialog: AcceptDialog = %JishogiInfoDialog
 @onready var _quit_dialog: ConfirmationDialog = %QuitDialog
 @onready var _thinking_label: Label = %ThinkingLabel
 @onready var _layout: VBoxContainer = $Layout
@@ -101,6 +103,7 @@ func _ready() -> void:
 	_gameover_dialog.confirmed.connect(_on_restart)
 	_undo_btn.pressed.connect(_on_undo)
 	_exit_btn.pressed.connect(_on_exit_pressed)
+	_jishogi_btn.pressed.connect(_on_jishogi_pressed)
 	_history_btn.pressed.connect(_on_history_pressed)
 	_history_dialog.ply_selected.connect(_on_history_ply_selected)
 	_history_dialog.return_to_live.connect(_on_history_back_to_live)
@@ -323,6 +326,18 @@ func _refresh_all() -> void:
 	_history_btn.disabled = int(_core.move_log_size()) == 0
 	var ai_turn := _ai_enabled and Settings.side_is_ai(side_gote)
 	_teacher_btn.disabled = _game_over or _thinking or ai_turn or not _ai_enabled or _in_review
+	# 入玉宣言: button is shown to whichever human side has their king
+	# in the opponent's promotion zone on their own turn. The actual
+	# 27/28-point check fires on tap so the player can see *why* it
+	# isn't accepted yet (and so we don't quietly hide the button when
+	# only one rule is unmet).
+	_jishogi_btn.visible = (
+		not _game_over
+		and not _in_review
+		and not _thinking
+		and not ai_turn
+		and bool(view_core.king_entered(side_gote))
+	)
 
 func _active_core() -> Object:
 	return _review_core if _in_review and _review_core != null else _core
@@ -574,6 +589,36 @@ func _on_undo() -> void:
 
 func _on_exit_pressed() -> void:
 	_quit_dialog.popup_centered()
+
+# 入玉宣言: query the rule. Ok → end the game with the declarer winning.
+# Otherwise pop an info dialog explaining what's missing so the player
+# can keep playing toward the threshold.
+func _on_jishogi_pressed() -> void:
+	if _game_over or _in_review:
+		return
+	var side_gote: bool = _core.side_to_move_gote()
+	var result: Dictionary = _core.can_declare_jishogi(side_gote)
+	if bool(result["ok"]):
+		var winner := "後手" if side_gote else "先手"
+		_end_game("入玉宣言 — %s の勝ち" % winner)
+		return
+	_jishogi_info_dialog.dialog_text = _jishogi_info_text(result)
+	_jishogi_info_dialog.popup_centered()
+
+func _jishogi_info_text(result: Dictionary) -> String:
+	match String(result["reason"]):
+		"king_not_entered":
+			return "玉が敵陣に入っていません。"
+		"in_check":
+			return "玉が王手にかかっているため宣言できません。"
+		"insufficient_pieces":
+			return "敵陣の自駒が足りません (%d枚 / 必要 %d枚)。" % [
+				int(result["pieces_have"]), int(result["pieces_need"])]
+		"insufficient_points":
+			return "持ち点が足りません (%d点 / 必要 %d点)。\n大駒・成大駒は5点、その他の駒は1点です (玉は除く)。" % [
+				int(result["points_have"]), int(result["points_need"])]
+		_:
+			return "宣言できません。"
 
 # Esc on desktop / Android back button-or-swipe (both map to ui_cancel by
 # default) closes the suggestions panel if it's open, otherwise leaves
