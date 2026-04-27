@@ -121,6 +121,17 @@ func _replay_to_ply() -> void:
 	_board_view.render(_core)
 	_sente_hand.render(_core)
 	_gote_hand.render(_core)
+	# Highlight the move that brought us to this ply, same blue overlay
+	# the in-game scene uses. Drops surface only the to-square (matching
+	# GameController._refresh_last_move_hint).
+	if _ply == 0:
+		_board_view.clear_last_move()
+	else:
+		var last: Dictionary = _decode_packed_move(_packed[_ply - 1])
+		var from: Vector2i = Vector2i.ZERO
+		if not last.has("drop_kind"):
+			from = Vector2i(last["from"])
+		_board_view.show_last_move(from, Vector2i(last["to"]))
 	_ply_label.text = "%d / %d 手目" % [_ply, _packed.size()]
 	_first_btn.disabled = _ply == 0 or _analyzing
 	_prev_btn.disabled = _ply == 0 or _analyzing
