@@ -1,4 +1,4 @@
-[gd_scene load_steps=8 format=3]
+[gd_scene load_steps=9 format=3]
 
 [ext_resource type="Script" path="res://scripts/game/GameController.gd" id="1_gc"]
 [ext_resource type="PackedScene" path="res://scenes/game/Board.tscn" id="2_board"]
@@ -6,6 +6,7 @@
 [ext_resource type="Texture2D" path="res://assets/backgrounds/in_game_bg.webp" id="4_bg"]
 [ext_resource type="Shader" path="res://assets/shaders/rounded_corners.gdshader" id="5_round"]
 [ext_resource type="PackedScene" path="res://scenes/MoveHistoryDialog.tscn" id="6_history"]
+[ext_resource type="Texture2D" path="res://assets/ui/teacher_icon_katou.webp" id="7_teacher"]
 
 [sub_resource type="ShaderMaterial" id="1_round_mat"]
 shader = ExtResource("5_round")
@@ -95,7 +96,9 @@ size_flags_horizontal = 3
 unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 52)
 text = "加藤先生！教えてください！"
+icon = ExtResource("7_teacher")
 theme_override_font_sizes/font_size = 22
+theme_override_constants/h_separation = 12
 
 [node name="RightSpacer" type="Control" parent="Layout/TeacherRow"]
 unique_name_in_owner = true
