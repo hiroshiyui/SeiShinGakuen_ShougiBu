@@ -37,19 +37,29 @@ is in service of them.
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │ UI  — GDScript                                              │
-│      scenes/MainMenu.tscn, scenes/CharacterPicker.tscn,     │
-│      scenes/Main.tscn                                       │
-│      scripts/MainMenu.gd, scripts/CharacterPicker.gd,       │
+│      scenes/MainMenu.tscn, scenes/SettingsScreen.tscn,      │
+│      scenes/CharacterPicker.tscn, scenes/Main.tscn,         │
+│      scenes/MoveHistoryDialog.tscn (in-game 棋譜),          │
+│      scenes/KifuLibrary.tscn + scenes/KifuReviewer.tscn     │
+│      (棋譜検討 — saved-game library + replayer)             │
+│      scripts/MainMenu.gd, scripts/SettingsScreen.gd,        │
+│      scripts/CharacterPicker.gd,                            │
+│      scripts/MoveHistoryDialog.gd,                          │
+│      scripts/KifuLibrary.gd, scripts/KifuReviewer.gd,       │
 │      scripts/game/GameController.gd                         │
 │      scripts/game/{BoardView,HandView,Square}.gd            │
-│      scripts/autoload/Settings.gd (session + save/resume)   │
+│      scripts/autoload/Settings.gd (session + save/resume,   │
+│      safe_area_insets, NOTIFICATION_WM_GO_BACK_REQUEST →    │
+│      ui_cancel synth)                                       │
+│      scripts/autoload/SoundManager.gd                       │
 │      scripts/CharacterProfile.gd + .tres data under         │
 │      assets/characters/{teachers,students}/                 │
 └────────────────────────┬────────────────────────────────────┘
                          │  FFI: #[godot_api] methods on
                          │  ShogiCore (RefCounted). Moves are
                          │  Dictionary {from, to, promote} or
-                         │  {drop_kind, to}.
+                         │  {drop_kind, to}; packed move log is
+                         │  a PackedInt32Array (one i32/move).
 ┌────────────────────────┴────────────────────────────────────┐
 │ Native core — Rust (cdylib via gdext 0.2.4)                 │
 │      native/shogi_core/src/                                 │
@@ -60,10 +70,13 @@ is in service of them.
 │        rules.rs     check, legal filter, mate, sennichite,  │
 │                     jishogi                                 │
 │        sfen.rs      parse + serialize + position_key        │
+│        kifu.rs      LogEntry → 棋譜 string + KIF emit /     │
+│                     parse + per-move i32 pack/unpack        │
 │        encode.rs    (45,9,9) position tensor                │
 │        move_index.rs (139,9,9) move ↔ index                 │
 │        nn.rs        tract RunnableModel wrapper             │
 │        mcts.rs      single-threaded PUCT + Dirichlet noise  │
+│                     + top_k_root_children() for analysis    │
 └────────────────────────┬────────────────────────────────────┘
                          │  ONNX forward pass, single batch
 ┌────────────────────────┴────────────────────────────────────┐
@@ -102,6 +115,48 @@ Square._gui_input(touch)                                  — UI tap
                       └─> GameController._commit_move(ai_move)
                           └─> (same path as human commit above)
 ```
+
+## Review mode and the kifu library
+
+Two flows render historical positions on the board without disturbing
+the live game: the in-game 棋譜 dialog and the standalone 棋譜検討
+viewer. Both use the same trick — a *separate* `ShogiCore` instance
+plays the role of the renderer's data source.
+
+```
+GameController                       KifuReviewer
+  ├─ _core            (live)           └─ _core    (private — never live)
+  └─ _review_core     (scratch,           apply_packed(prefix) on every
+     populated by                         prev/next/first/last tap
+     apply_packed(prefix)
+     on row-tap)
+
+_active_core() → _review_core if reviewing else _core
+                  ^ used by every render; mutations always target _core
+```
+
+The packed prefix comes from `kifu::pack_log` — one i32 per move
+(drop bit + from sq + to sq + promote flag). `apply_packed` resets to
+the starting position and replays each move with sennichite + check
+tags, so the scratch core is self-consistent at any ply (legal-move
+queries, repetition detection, current-side-to-move all work).
+
+KifuReviewer additionally runs **MCTS analysis** on demand: for each
+ply, replay → `suggest_moves_mcts(top_k=32, playouts=128)` →
+extract the actual move's q from the search tree → compare against
+`top[0].q` → classify as 好手 / neutral / 疑問手 / 悪手 by the delta.
+The recommended move (`top[0]`) is rendered to a kifu string while
+the scratch core is still at the pre-move position so `piece_at(from)`
+returns the right kanji.
+
+KIF on disk uses `kifu::to_kif` (header + per-move lines + 中断) for
+export and `kifu::parse_kif` (tolerates Kifu-for-Windows time
+annotations + 不成 + 同　 + 中断/投了/詰み terminators) for round-trip
+loading. Saved games persist under `OS.SYSTEM_DIR_DOCUMENTS,
+shared_storage=false` — see [ADR-0009](./adr/0009-kif-library-app-private-storage.md).
+
+Background on why review mode keeps a separate core instead of
+rewinding `_core` in place: [ADR-0008](./adr/0008-review-mode-scratch-core.md).
 
 ## Extension points
 

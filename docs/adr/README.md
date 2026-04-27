@@ -13,6 +13,8 @@ alternative was rejected for non-obvious reasons.
 | [0005](./0005-font-subset-pipeline.md) | Keep full upstream fonts in-repo, subset at build time | Accepted |
 | [0006](./0006-character-driven-difficulty.md) | AI strength is chosen by picking a character, not a level | Accepted |
 | [0007](./0007-font-subsetter-scans-tres.md) | Font subsetter scans `assets/**/*.tres`, not just code/scenes | Accepted |
+| [0008](./0008-review-mode-scratch-core.md) | Review mode keeps a separate `_review_core` instead of rewinding the live core | Accepted |
+| [0009](./0009-kif-library-app-private-storage.md) | KIF library writes to app-private external Documents, not shared storage | Accepted |
 
 ## Authoring a new ADR
 
