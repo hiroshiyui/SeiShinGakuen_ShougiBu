@@ -33,6 +33,16 @@ const _GOOD_MOVE_THRESHOLD := 0.05
 # differentiate top moves.
 const _ANALYSIS_PLAYOUTS := 128
 
+# Match Rust kifu::piece_kanji + the FILE_DIGITS / RANK_KANJI tables so
+# engine-recommended moves render in the same notation as the played
+# moves in the rest of the UI.
+const _PIECE_KANJI := {
+	0: "歩", 1: "香", 2: "桂", 3: "銀", 4: "金", 5: "角", 6: "飛", 7: "玉",
+	8: "と", 9: "成香", 10: "成桂", 11: "成銀", 12: "馬", 13: "龍",
+}
+const _FILE_DIGIT := ["", "１", "２", "３", "４", "５", "６", "７", "８", "９"]
+const _RANK_KANJI := ["", "一", "二", "三", "四", "五", "六", "七", "八", "九"]
+
 var _core: Object
 var _packed: PackedInt32Array = PackedInt32Array()
 var _ply: int = 0
@@ -148,6 +158,13 @@ func _refresh_analysis_label() -> void:
 		parts.append(badge_text)
 	if delta_pct >= 5:
 		parts.append("(-%d%%)" % delta_pct)
+	# Only nudge the user toward the engine's pick when their move was
+	# meaningfully worse — surfacing 推奨 on every neutral move would be
+	# nagging.
+	var classification: String = String(entry["classification"])
+	var best_kifu: String = String(entry.get("best_kifu", ""))
+	if best_kifu != "" and (classification == "questionable" or classification == "blunder"):
+		parts.append("推奨: %s" % best_kifu)
 	_analysis_label.text = "  ".join(parts)
 	_analysis_label.add_theme_color_override("font_color", color)
 	_analysis_label.visible = true
@@ -196,10 +213,20 @@ func _on_analyze() -> void:
 		# back to sente so the per-ply bar reads consistently across both
 		# colours' moves.
 		var sente_winrate: float = best_q if not stm_is_gote else (1.0 - best_q)
+		# Format the engine's pick BEFORE moving on; we need _core to still
+		# be at this position so piece_at(from) returns the right kanji.
+		# Use the previously played move's destination (if any) so a
+		# suggested recapture renders as 同 — same convention the played
+		# kifu lines use.
+		var prev_dest: Variant = null
+		if n > 0:
+			prev_dest = Vector2i(_decode_packed_move(_packed[n - 1])["to"])
+		var best_kifu: String = _format_move_kifu(top[0], stm_is_gote, prev_dest)
 		_analyses[n] = {
 			sente_winrate = sente_winrate,
 			delta = delta,
 			classification = _classify_delta(delta),
+			best_kifu = best_kifu,
 		}
 		_analyze_btn.text = "解析中… %d / %d" % [n + 1, total]
 		# Yield often enough that the UI stays responsive but not so often
@@ -241,6 +268,29 @@ func _decode_packed_move(packed: int) -> Dictionary:
 
 func _idx_to_square(idx: int) -> Vector2i:
 	return Vector2i(idx / 9 + 1, idx % 9 + 1)
+
+# Render a single move (from suggest_moves_mcts output) as a kifu string
+# in the same style as the played move log. Only used for the "推奨"
+# hint, so kept minimal — no disambiguator either, matching the v1
+# Rust formatter. `_core` must still be at the pre-move position.
+func _format_move_kifu(mv: Dictionary, mover_is_gote: bool, prev_dest: Variant) -> String:
+	var marker: String = "☖" if mover_is_gote else "☗"
+	var to: Vector2i = Vector2i(mv["to"])
+	var dest: String
+	if prev_dest != null and Vector2i(prev_dest) == to:
+		dest = "同　"
+	else:
+		dest = "%s%s" % [_FILE_DIGIT[to.x], _RANK_KANJI[to.y]]
+	if mv.has("drop_kind"):
+		var kind: int = int(mv["drop_kind"])
+		return "%s%s%s打" % [marker, dest, _PIECE_KANJI.get(kind, "?")]
+	var from: Vector2i = Vector2i(mv["from"])
+	var piece = _core.piece_at(from.x, from.y)
+	var piece_kanji: String = "?"
+	if piece != null:
+		piece_kanji = _PIECE_KANJI.get(int(piece["kind"]), "?")
+	var promote_marker: String = "成" if bool(mv["promote"]) else ""
+	return "%s%s%s%s" % [marker, dest, piece_kanji, promote_marker]
 
 # Walks suggest_moves_mcts output looking for the move actually played.
 # Returns 0.0 if it wasn't visited — that's the worst possible q anyway,

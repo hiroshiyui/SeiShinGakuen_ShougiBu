@@ -53,6 +53,7 @@ UI_SAFETY = (
     "０１２３４５６７８９"
     "一二三四五六七八九"
     "同成打"
+    "　"  # ZENKAKU space (U+3000) used in 同　 column-aligned recapture marker
     "歩香桂銀金角飛王玉と杏圭全馬龍"
     "◎△"  # KifuReviewer analysis-badge prefixes (× is already above)
 )
