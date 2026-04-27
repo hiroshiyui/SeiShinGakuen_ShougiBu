@@ -78,6 +78,7 @@ func _set_storage_paths_for_test(save: String, prefs: String) -> void:
 # and written back via setter methods.
 var teacher_side: String = "right"  # "left" or "right"
 var selected_character_id: String = ""  # empty = no character picked yet (first launch)
+var sound_enabled: bool = true
 
 const CHARACTERS_DIR := "res://assets/characters"
 
@@ -90,6 +91,12 @@ func set_teacher_side(side: String) -> void:
 	if side == teacher_side:
 		return
 	teacher_side = side
+	_save_prefs()
+
+func set_sound_enabled(enabled: bool) -> void:
+	if enabled == sound_enabled:
+		return
+	sound_enabled = enabled
 	_save_prefs()
 
 func set_selected_character_id(cid: String) -> void:
@@ -172,12 +179,14 @@ func _load_prefs() -> void:
 		teacher_side = side
 	selected_character_id = str(cfg.get_value("ai", "character_id", ""))
 	ai_level = clamp_level(int(cfg.get_value("ai", "level", ai_level)))
+	sound_enabled = bool(cfg.get_value("audio", "sound_enabled", true))
 
 func _save_prefs() -> void:
 	var cfg := ConfigFile.new()
 	cfg.set_value("ui", "teacher_side", teacher_side)
 	cfg.set_value("ai", "character_id", selected_character_id)
 	cfg.set_value("ai", "level", ai_level)
+	cfg.set_value("audio", "sound_enabled", sound_enabled)
 	var err: int = cfg.save(PREFS_PATH)
 	if err != OK:
 		push_warning("save_prefs: ConfigFile.save returned %d" % err)

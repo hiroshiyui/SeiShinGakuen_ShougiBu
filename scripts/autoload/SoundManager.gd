@@ -23,6 +23,8 @@ func _play_click() -> void:
 	play("click")
 
 func play(sound_name: String) -> void:
+	if not Settings.sound_enabled:
+		return
 	var stream = _get_sound(sound_name)
 	if stream == null:
 		return

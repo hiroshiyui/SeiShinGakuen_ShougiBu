@@ -4,11 +4,8 @@ extends Control
 @onready var _opponent_btn: Button = %OpponentButton
 @onready var _start_btn: Button = %StartButton
 @onready var _resume_btn: Button = %ResumeButton
-@onready var _teacher_side: OptionButton = %TeacherSideSelect
+@onready var _settings_btn: Button = %SettingsButton
 @onready var _quit_dialog: ConfirmationDialog = %QuitDialog
-
-const _TEACHER_RIGHT_ID := 0
-const _TEACHER_LEFT_ID := 1
 
 func _ready() -> void:
 	_mode.clear()
@@ -17,15 +14,10 @@ func _ready() -> void:
 	_mode.add_item("先手(AI) 対 後手(人)", Settings.Mode.H_VS_AI_SENTE)
 	_mode.select(_mode.get_item_index(Settings.mode))
 	_opponent_btn.pressed.connect(_on_opponent_pressed)
-	_teacher_side.clear()
-	_teacher_side.add_item("右側", _TEACHER_RIGHT_ID)
-	_teacher_side.add_item("左側", _TEACHER_LEFT_ID)
-	_teacher_side.select(_teacher_side.get_item_index(
-		_TEACHER_LEFT_ID if Settings.teacher_side == "left" else _TEACHER_RIGHT_ID))
-	_teacher_side.item_selected.connect(_on_teacher_side_changed)
 	_start_btn.pressed.connect(_on_start)
 	_resume_btn.pressed.connect(_on_resume)
 	_resume_btn.visible = Settings.has_saved_game()
+	_settings_btn.pressed.connect(_on_settings_pressed)
 	_quit_dialog.confirmed.connect(_on_quit_confirmed)
 	_ensure_default_character()
 	_refresh_opponent_label()
@@ -60,9 +52,8 @@ func _unhandled_input(event: InputEvent) -> void:
 func _on_quit_confirmed() -> void:
 	get_tree().quit()
 
-func _on_teacher_side_changed(idx: int) -> void:
-	var id: int = _teacher_side.get_item_id(idx)
-	Settings.set_teacher_side("left" if id == _TEACHER_LEFT_ID else "right")
+func _on_settings_pressed() -> void:
+	get_tree().change_scene_to_file("res://scenes/SettingsScreen.tscn")
 
 func _refresh_opponent_label() -> void:
 	var profile := Settings.load_character(Settings.selected_character_id)

@@ -1,0 +1,82 @@
+[gd_scene load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://scripts/SettingsScreen.gd" id="1_set"]
+[ext_resource type="Texture2D" path="res://assets/backgrounds/in_game_bg.webp" id="2_bg"]
+
+[sub_resource type="StyleBoxFlat" id="1_panel"]
+bg_color = Color(0, 0, 0, 0.5)
+content_margin_left = 24.0
+content_margin_top = 20.0
+content_margin_right = 24.0
+content_margin_bottom = 24.0
+corner_radius_top_left = 14
+corner_radius_top_right = 14
+corner_radius_bottom_right = 14
+corner_radius_bottom_left = 14
+
+[node name="SettingsScreen" type="Control"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+script = ExtResource("1_set")
+
+[node name="Background" type="ColorRect" parent="."]
+anchor_right = 1.0
+anchor_bottom = 1.0
+color = Color(0.08, 0.08, 0.1, 1)
+mouse_filter = 2
+
+[node name="BackgroundImage" type="TextureRect" parent="."]
+anchor_right = 1.0
+anchor_bottom = 1.0
+texture = ExtResource("2_bg")
+expand_mode = 1
+stretch_mode = 6
+mouse_filter = 2
+
+[node name="Center" type="CenterContainer" parent="."]
+anchor_right = 1.0
+anchor_bottom = 1.0
+
+[node name="Panel" type="PanelContainer" parent="Center"]
+theme_override_styles/panel = SubResource("1_panel")
+
+[node name="Box" type="VBoxContainer" parent="Center/Panel"]
+custom_minimum_size = Vector2(480, 0)
+theme_override_constants/separation = 18
+
+[node name="Title" type="Label" parent="Center/Panel/Box"]
+text = "設定"
+horizontal_alignment = 1
+theme_override_font_sizes/font_size = 36
+theme_override_colors/font_color = Color(0.98, 0.98, 0.98, 1)
+
+[node name="SoundRow" type="HBoxContainer" parent="Center/Panel/Box"]
+theme_override_constants/separation = 16
+
+[node name="SoundLabel" type="Label" parent="Center/Panel/Box/SoundRow"]
+text = "効果音"
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.92, 0.92, 0.92, 1)
+theme_override_font_sizes/font_size = 28
+
+[node name="SoundToggle" type="CheckButton" parent="Center/Panel/Box/SoundRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 40)
+
+[node name="TeacherSideLabel" type="Label" parent="Center/Panel/Box"]
+text = "先生ボタンの位置"
+theme_override_colors/font_color = Color(0.85, 0.85, 0.85, 1)
+theme_override_font_sizes/font_size = 28
+
+[node name="TeacherSideSelect" type="OptionButton" parent="Center/Panel/Box"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 44)
+
+[node name="Spacer" type="Control" parent="Center/Panel/Box"]
+custom_minimum_size = Vector2(0, 12)
+
+[node name="BackButton" type="Button" parent="Center/Panel/Box"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 56)
+text = "戻る"
+theme_override_font_sizes/font_size = 24

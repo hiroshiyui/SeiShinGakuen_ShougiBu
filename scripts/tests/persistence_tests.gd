@@ -33,6 +33,8 @@ func _initialize() -> void:
 		_test_select_character_single_write)
 	_run("select_character is idempotent on same id+level",
 		_test_select_character_idempotent)
+	_run("sound_enabled defaults to true and round-trips through prefs",
+		_test_sound_enabled_roundtrip)
 	_run("atomic copy writes destination, leaves no .tmp",
 		_test_atomic_copy_no_tmp_leak)
 	_run("atomic copy preserves byte content",
@@ -165,6 +167,25 @@ func _test_select_character_idempotent() -> String:
 	_settings.select_character(profile)
 	if FileAccess.file_exists(_TEST_PREFS):
 		return "select_character with unchanged id+level wrote prefs anyway"
+	return ""
+
+# --- sound_enabled pref --------------------------------------------------
+
+func _test_sound_enabled_roundtrip() -> String:
+	if _settings.sound_enabled != true:
+		return "default sound_enabled was not true"
+	_settings.set_sound_enabled(false)
+	if _settings.sound_enabled != false:
+		return "setter did not flip in-memory value"
+	# Reload through a fresh Settings instance pointed at the same prefs file
+	# to prove _save_prefs actually wrote the key.
+	var fresh := _SettingsScript.new()
+	fresh._set_storage_paths_for_test(_TEST_SAVE, _TEST_PREFS)
+	fresh._load_prefs()
+	if fresh.sound_enabled != false:
+		return "sound_enabled did not survive prefs round-trip: %s" % fresh.sound_enabled
+	# Restore for following tests on the shared _settings instance.
+	_settings.set_sound_enabled(true)
 	return ""
 
 # --- atomic resource copy -----------------------------------------------
