@@ -1,7 +1,8 @@
-[gd_scene load_steps=4 format=3]
+[gd_scene load_steps=5 format=3]
 
 [ext_resource type="Script" path="res://scripts/MainMenu.gd" id="1_mm"]
 [ext_resource type="Texture2D" path="res://assets/backgrounds/main_title_bg.webp" id="2_bg"]
+[ext_resource type="FontFile" path="res://assets/fonts/m-plus-2/MPLUS2-Regular.otf" id="3_mplus2"]
 
 [sub_resource type="StyleBoxFlat" id="1_panel"]
 bg_color = Color(0, 0, 0, 0.5)
@@ -55,6 +56,7 @@ theme_override_constants/outline_size = 10
 [node name="ModeLabel" type="Label" parent="Center/Panel/Box"]
 text = "対局モード"
 theme_override_colors/font_color = Color(0.85, 0.85, 0.85, 1)
+theme_override_fonts/font = ExtResource("3_mplus2")
 
 [node name="ModeSelect" type="OptionButton" parent="Center/Panel/Box"]
 unique_name_in_owner = true
@@ -63,6 +65,7 @@ custom_minimum_size = Vector2(0, 48)
 [node name="OpponentLabel" type="Label" parent="Center/Panel/Box"]
 text = "対戦相手"
 theme_override_colors/font_color = Color(0.85, 0.85, 0.85, 1)
+theme_override_fonts/font = ExtResource("3_mplus2")
 
 [node name="OpponentButton" type="Button" parent="Center/Panel/Box"]
 unique_name_in_owner = true

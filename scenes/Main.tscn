@@ -1,4 +1,4 @@
-[gd_scene load_steps=9 format=3]
+[gd_scene load_steps=10 format=3]
 
 [ext_resource type="Script" path="res://scripts/game/GameController.gd" id="1_gc"]
 [ext_resource type="PackedScene" path="res://scenes/game/Board.tscn" id="2_board"]
@@ -7,6 +7,7 @@
 [ext_resource type="Shader" path="res://assets/shaders/rounded_corners.gdshader" id="5_round"]
 [ext_resource type="PackedScene" path="res://scenes/MoveHistoryDialog.tscn" id="6_history"]
 [ext_resource type="Texture2D" path="res://assets/ui/teacher_icon_katou.webp" id="7_teacher"]
+[ext_resource type="FontFile" path="res://assets/fonts/m-plus-2/MPLUS2-Regular.otf" id="8_mplus2"]
 
 [sub_resource type="ShaderMaterial" id="1_round_mat"]
 shader = ExtResource("5_round")
@@ -139,6 +140,7 @@ size_flags_horizontal = 3
 theme_override_colors/font_color = Color(0.9, 0.9, 0.9, 1)
 theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
 theme_override_constants/outline_size = 6
+theme_override_fonts/font = ExtResource("8_mplus2")
 vertical_alignment = 1
 clip_text = true
 text_overrun_behavior = 2

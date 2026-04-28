@@ -202,6 +202,12 @@ def main() -> int:
         ui_text,
         pyftsubset,
     )
+    subset(
+        REPO_ROOT / "assets/fonts/m-plus-2/MPLUS2-Regular-full.otf",
+        REPO_ROOT / "assets/fonts/m-plus-2/MPLUS2-Regular.otf",
+        ui_text,
+        pyftsubset,
+    )
 
     print()
     print("Subsets written. Triggering Godot reimport so .godot/imported/ picks them up…")
