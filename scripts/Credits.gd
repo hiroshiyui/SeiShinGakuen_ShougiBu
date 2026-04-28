@@ -10,7 +10,6 @@ var _hidden: bool = false
 func _ready() -> void:
 	_back_btn.pressed.connect(_back_to_title)
 	_hide_btn.pressed.connect(_toggle_hidden)
-	Settings.apply_safe_area_to($Layout)
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("ui_cancel"):

@@ -9,19 +9,13 @@ extends Control
 @onready var _empty_hint: Label = %EmptyHint
 @onready var _back_btn: Button = %BackButton
 @onready var _delete_dialog: ConfirmationDialog = %DeleteDialog
-@onready var _root: VBoxContainer = $Root
 
 var _pending_delete_path: String = ""
 
 func _ready() -> void:
 	_back_btn.pressed.connect(_on_back)
 	_delete_dialog.confirmed.connect(_on_delete_confirmed)
-	get_viewport().size_changed.connect(_apply_safe_area)
-	_apply_safe_area()
 	_refresh()
-
-func _apply_safe_area() -> void:
-	Settings.apply_safe_area_to(_root)
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("ui_cancel"):

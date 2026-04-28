@@ -1,10 +1,11 @@
-[gd_scene load_steps=6 format=3]
+[gd_scene load_steps=7 format=3]
 
 [ext_resource type="Script" path="res://scripts/KifuReviewer.gd" id="1_rev"]
 [ext_resource type="PackedScene" path="res://scenes/game/Board.tscn" id="2_board"]
 [ext_resource type="PackedScene" path="res://scenes/game/Hand.tscn" id="3_hand"]
 [ext_resource type="Texture2D" path="res://assets/backgrounds/kifu_reviewer_bg.webp" id="4_bg"]
 [ext_resource type="FontFile" path="res://assets/fonts/m-plus-2/MPLUS2-Regular.otf" id="5_mplus2"]
+[ext_resource type="Script" path="res://scripts/SafeAreaLayout.gd" id="6_safe"]
 
 [node name="KifuReviewer" type="Control"]
 anchor_right = 1.0
@@ -29,6 +30,7 @@ mouse_filter = 2
 anchor_right = 1.0
 anchor_bottom = 1.0
 theme_override_constants/separation = 8
+script = ExtResource("6_safe")
 
 [node name="HeaderRow" type="HBoxContainer" parent="Layout"]
 custom_minimum_size = Vector2(0, 56)

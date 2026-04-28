@@ -11,7 +11,6 @@ const PieceScript := preload("res://scripts/game/Piece.gd")
 @onready var _board_view = %BoardView
 @onready var _sente_hand = %SenteHand
 @onready var _gote_hand = %GoteHand
-@onready var _layout: VBoxContainer = $Layout
 @onready var _filename_label: Label = %FilenameLabel
 @onready var _ply_label: Label = %PlyLabel
 @onready var _analysis_label: Label = %AnalysisLabel
@@ -87,12 +86,7 @@ func _ready() -> void:
 	_last_btn.pressed.connect(func(): _set_ply(_packed.size()))
 
 	get_viewport().size_changed.connect(_refit_board)
-	get_viewport().size_changed.connect(_apply_safe_area)
-	_apply_safe_area()
 	_refit_board()
-
-func _apply_safe_area() -> void:
-	Settings.apply_safe_area_to(_layout)
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("ui_cancel"):

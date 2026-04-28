@@ -1,8 +1,9 @@
-[gd_scene load_steps=5 format=3]
+[gd_scene load_steps=6 format=3]
 
 [ext_resource type="Script" path="res://scripts/KifuLibrary.gd" id="1_lib"]
 [ext_resource type="Texture2D" path="res://assets/backgrounds/main_title_bg.webp" id="2_bg"]
 [ext_resource type="FontFile" path="res://assets/fonts/m-plus-2/MPLUS2-Regular.otf" id="3_mplus2"]
+[ext_resource type="Script" path="res://scripts/SafeAreaLayout.gd" id="4_safe"]
 
 [sub_resource type="StyleBoxFlat" id="1_panel"]
 bg_color = Color(0, 0, 0, 0.5)
@@ -42,6 +43,7 @@ offset_top = 12.0
 offset_right = -12.0
 offset_bottom = -12.0
 theme_override_constants/separation = 12
+script = ExtResource("4_safe")
 
 [node name="HeaderPanel" type="PanelContainer" parent="Root"]
 theme_override_styles/panel = SubResource("1_panel")

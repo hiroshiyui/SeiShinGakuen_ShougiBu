@@ -1,8 +1,9 @@
-[gd_scene load_steps=6 format=3]
+[gd_scene load_steps=7 format=3]
 
 [ext_resource type="Script" path="res://scripts/Credits.gd" id="1_credits"]
 [ext_resource type="Texture2D" path="res://assets/backgrounds/credits_bg.webp" id="2_bg"]
 [ext_resource type="FontFile" path="res://assets/fonts/m-plus-2/MPLUS2-Regular.otf" id="3_mplus2"]
+[ext_resource type="Script" path="res://scripts/SafeAreaLayout.gd" id="4_safe"]
 
 [sub_resource type="StyleBoxFlat" id="1_panel"]
 bg_color = Color(0, 0, 0, 0.55)
@@ -45,6 +46,7 @@ mouse_filter = 2
 anchor_right = 1.0
 anchor_bottom = 1.0
 theme_override_constants/separation = 0
+script = ExtResource("4_safe")
 
 [node name="HeaderPanel" type="PanelContainer" parent="Layout"]
 unique_name_in_owner = true
