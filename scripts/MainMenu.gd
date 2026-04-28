@@ -36,7 +36,7 @@ func _ready() -> void:
 	_ensure_default_character()
 	_refresh_opponent_label()
 	var version: String = ProjectSettings.get_setting("application/config/version", "")
-	_version_label.text = "v%s" % version if version != "" else ""
+	_version_label.text = ("v%s" % version) if version != "" else ""
 
 func _on_title_gui_input(event: InputEvent) -> void:
 	# Android emits both InputEventScreenTouch and a synthesised
