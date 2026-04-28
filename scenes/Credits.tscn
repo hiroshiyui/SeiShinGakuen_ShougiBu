@@ -47,6 +47,7 @@ anchor_bottom = 1.0
 theme_override_constants/separation = 0
 
 [node name="HeaderPanel" type="PanelContainer" parent="Layout"]
+unique_name_in_owner = true
 theme_override_styles/panel = SubResource("2_header")
 
 [node name="Header" type="HBoxContainer" parent="Layout/HeaderPanel"]
@@ -62,12 +63,18 @@ theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
 theme_override_constants/outline_size = 6
 theme_override_fonts/font = ExtResource("3_mplus2")
 
+[node name="HideButton" type="Button" parent="Layout/HeaderPanel/Header"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(120, 48)
+text = "隠す"
+
 [node name="BackButton" type="Button" parent="Layout/HeaderPanel/Header"]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(120, 48)
 text = "戻る"
 
 [node name="ScrollPanel" type="PanelContainer" parent="Layout"]
+unique_name_in_owner = true
 size_flags_vertical = 3
 theme_override_styles/panel = SubResource("1_panel")
 
