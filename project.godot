@@ -12,18 +12,14 @@ config_version=5
 
 config/name="清正学園将棋部"
 run/main_scene="res://scenes/MainMenu.tscn"
+config/quit_on_go_back=false
 config/features=PackedStringArray("4.6", "Mobile")
 config/icon="res://icon.png"
-config/quit_on_go_back=false
 
 [autoload]
 
 Settings="*res://scripts/autoload/Settings.gd"
 SoundManager="*res://scripts/autoload/SoundManager.gd"
-
-[gui]
-
-theme/custom="res://assets/themes/ui.tres"
 
 [display]
 
@@ -32,6 +28,10 @@ window/size/viewport_height=1280
 window/stretch/mode="canvas_items"
 window/stretch/aspect="expand"
 window/handheld/orientation=1
+
+[gui]
+
+theme/custom="res://assets/themes/ui.tres"
 
 [physics]
 

@@ -730,6 +730,11 @@ func _apply_teacher_side() -> void:
 	var right: bool = Settings.teacher_side == "right"
 	_teacher_left_spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL if right else 0
 	_teacher_right_spacer.size_flags_horizontal = 0 if right else Control.SIZE_EXPAND_FILL
+	# Hide the unused spacer so the HBox doesn't insert a trailing
+	# separator after the button — otherwise the row's right edge sits
+	# a few px shy of the StatusBar's right edge below it.
+	_teacher_left_spacer.visible = right
+	_teacher_right_spacer.visible = not right
 
 func _on_teacher_pressed() -> void:
 	if _game_over or _thinking or _teacher_thinking or not _ai_enabled:
