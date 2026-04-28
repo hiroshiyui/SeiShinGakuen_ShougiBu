@@ -8,6 +8,30 @@ All notable changes to this project. Format follows
 
 ## [Unreleased]
 
+## [1.0.1] — 2026-04-29
+
+### Added
+- メインメニュー右下にバージョン表示 (`v1.0.1`)。`application/config/version`
+  を `project.godot` に追加し、画面表示・ビルドメタの単一の出典に。
+
+### Changed
+- 安全領域 (status bar / gesture nav) の処理を共通スクリプト
+  `scripts/SafeAreaLayout.gd` に集約。設定画面・棋譜検討・棋譜一覧・
+  クレジット画面・タイトル画面のインセット計算が同じコードパスを共有
+  する。新しいフルスクリーン画面はこのスクリプトをアタッチするだけで
+  ボイラープレート不要。
+
+### Fixed
+- クレジット画面が viewport リサイズ (回転 / 折りたたみ) に追従して
+  いなかった問題 — `SafeAreaLayout` への移行で解消。
+
+### Internal
+- 未使用の `OpeningBook::is_empty` を削除し、Rust 側のコンパイル警告を
+  解消。
+
+[Full release notes](./docs/release-notes/1.0.1.md) ·
+[GitHub Release](https://github.com/hiroshiyui/SeiShinGakuen_ShougiBu/releases/tag/1.0.1)
+
 ## [1.0.0] — 2026-04-28
 
 First stable release. Phase 1〜7 ロードマップを完走 — 完全な本将棋ルール、
@@ -186,7 +210,8 @@ First public release.
 [Full release notes](./docs/release-notes/0.1.1.md) ·
 [GitHub Release](https://github.com/hiroshiyui/SeiShinGakuen_ShougiBu/releases/tag/0.1.1)
 
-[Unreleased]: https://github.com/hiroshiyui/SeiShinGakuen_ShougiBu/compare/1.0.0...HEAD
+[Unreleased]: https://github.com/hiroshiyui/SeiShinGakuen_ShougiBu/compare/1.0.1...HEAD
+[1.0.1]: https://github.com/hiroshiyui/SeiShinGakuen_ShougiBu/compare/1.0.0...1.0.1
 [1.0.0]: https://github.com/hiroshiyui/SeiShinGakuen_ShougiBu/compare/0.5.0...1.0.0
 [0.5.0]: https://github.com/hiroshiyui/SeiShinGakuen_ShougiBu/compare/0.4.0...0.5.0
 [0.4.0]: https://github.com/hiroshiyui/SeiShinGakuen_ShougiBu/compare/0.3.0...0.4.0
