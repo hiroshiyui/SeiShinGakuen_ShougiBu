@@ -207,23 +207,30 @@ const LINES := [
 	},
 	# ─ 端歩・脇道への gote 受け ─────────────────────────────
 	# Off-book sente moves the AI-as-gote should reply sensibly to.
-	{plies = ["1g1f","8c8d"]},
-	{plies = ["9g9f","8c8d"]},
-	{plies = ["4g4f","8c8d"]},
-	{plies = ["3g3f","8c8d"]},
-	{plies = ["1g1f","1c1d"]},  # alt: gote mirrors
-	{plies = ["9g9f","9c9d"]},
+	# `start_at = 1` means we don't emit an entry for the *root*
+	# position (we don't want the AI-as-sente to *play* 1g1f); only
+	# the depth-1 entry (the gote reply) ends up in the book.
+	{plies = ["1g1f","8c8d"], start_at = 1},
+	{plies = ["9g9f","8c8d"], start_at = 1},
+	{plies = ["4g4f","8c8d"], start_at = 1},
+	{plies = ["3g3f","8c8d"], start_at = 1},
+	{plies = ["1g1f","1c1d"], start_at = 1},  # alt: gote mirrors
+	{plies = ["9g9f","9c9d"], start_at = 1},
 ]
 
 func _explode_lines() -> Array:
 	# Expand each LINE into one {reach, candidates} entry per position.
 	# alts at index i extend the candidate list for the entry whose
-	# `reach` is plies[0..i].
+	# `reach` is plies[0..i]. `start_at` (default 0) lets a LINE skip
+	# emitting entries for shallow depths — useful for "AI-as-gote
+	# reply only" lines whose first ply belongs to the human, not to
+	# the AI's repertoire.
 	var out: Array = []
 	for line in LINES:
 		var plies: Array = line.plies
 		var alts: Dictionary = line.get("alts", {})
-		for i in range(plies.size()):
+		var start_at: int = int(line.get("start_at", 0))
+		for i in range(start_at, plies.size()):
 			var reach: Array = []
 			for j in range(i):
 				reach.append(plies[j])
@@ -264,8 +271,12 @@ func _initialize() -> void:
 		var key: String = String(core.position_key())
 		# Merge with whatever's already at this key — converging lines
 		# (e.g. 矢倉 and 角換わり both touching the after-7g7f node) should
-		# union their candidate lists instead of overwriting. For each
-		# duplicate USI, keep the higher of the two weights.
+		# union their candidate lists instead of overwriting. For
+		# duplicate USI moves, the *first* writer wins: ENTRIES is
+		# processed before LINES so curated frequencies (e.g. the
+		# starting position's 50/35/10/5 distribution) aren't clobbered
+		# by LINE_PRIMARY_WEIGHT just because some line happens to
+		# emit the same first ply.
 		var existing: Array = book.get(key, [])
 		var by_usi: Dictionary = {}
 		for cand in existing:
@@ -275,8 +286,9 @@ func _initialize() -> void:
 				# Weight 0 = explicitly excluded from this revision.
 				continue
 			var u := String(cand.usi)
-			var w := int(cand.weight)
-			by_usi[u] = max(int(by_usi.get(u, 0)), w)
+			if by_usi.has(u):
+				continue
+			by_usi[u] = int(cand.weight)
 		var arr: Array = []
 		for u in by_usi.keys():
 			arr.append({usi = u, weight = int(by_usi[u])})

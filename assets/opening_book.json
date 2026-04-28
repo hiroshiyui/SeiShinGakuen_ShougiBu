@@ -2,7 +2,7 @@
   "lnsgkgsnl/1r5b1/ppppppppp/9/9/9/PPPPPPPPP/1B5R1/LNSGKGSNL b -": [
     {
       "usi": "7g7f",
-      "weight": 60
+      "weight": 50
     },
     {
       "usi": "2g2f",
@@ -10,37 +10,21 @@
     },
     {
       "usi": "5g5f",
-      "weight": 60
+      "weight": 10
     },
     {
       "usi": "6g6f",
       "weight": 5
-    },
-    {
-      "usi": "1g1f",
-      "weight": 60
-    },
-    {
-      "usi": "9g9f",
-      "weight": 60
-    },
-    {
-      "usi": "4g4f",
-      "weight": 60
-    },
-    {
-      "usi": "3g3f",
-      "weight": 60
     }
   ],
   "lnsgkgsnl/1r5b1/ppppppppp/9/9/2P6/PP1PPPPPP/1B5R1/LNSGKGSNL w -": [
     {
       "usi": "8c8d",
-      "weight": 60
+      "weight": 45
     },
     {
       "usi": "3c3d",
-      "weight": 60
+      "weight": 45
     },
     {
       "usi": "4a3b",
@@ -50,11 +34,11 @@
   "lnsgkgsnl/1r5b1/p1ppppppp/1p7/9/2P6/PP1PPPPPP/1B5R1/LNSGKGSNL b -": [
     {
       "usi": "2g2f",
-      "weight": 60
+      "weight": 50
     },
     {
       "usi": "6g6f",
-      "weight": 60
+      "weight": 25
     },
     {
       "usi": "7i7h",
@@ -68,7 +52,7 @@
   "lnsgkgsnl/1r5b1/p1ppppppp/1p7/9/2P4P1/PP1PPPP1P/1B5R1/LNSGKGSNL w -": [
     {
       "usi": "8d8e",
-      "weight": 60
+      "weight": 40
     },
     {
       "usi": "3c3d",
@@ -82,11 +66,11 @@
   "lnsgkgsnl/1r5b1/pppppp1pp/6p2/9/2P6/PP1PPPPPP/1B5R1/LNSGKGSNL b -": [
     {
       "usi": "2g2f",
-      "weight": 60
+      "weight": 40
     },
     {
       "usi": "6g6f",
-      "weight": 60
+      "weight": 25
     },
     {
       "usi": "7i6h",
@@ -104,7 +88,7 @@
   "lnsgkgsnl/1r5b1/pppppp1pp/6p2/9/2P4P1/PP1PPPP1P/1B5R1/LNSGKGSNL w -": [
     {
       "usi": "4a3b",
-      "weight": 60
+      "weight": 35
     },
     {
       "usi": "8c8d",
@@ -146,7 +130,7 @@
   "lnsgkgsnl/1r5b1/ppppppppp/9/9/4P4/PPPP1PPPP/1B5R1/LNSGKGSNL w -": [
     {
       "usi": "3c3d",
-      "weight": 60
+      "weight": 40
     },
     {
       "usi": "8c8d",
@@ -206,7 +190,7 @@
     },
     {
       "usi": "3c3d",
-      "weight": 60
+      "weight": 20
     }
   ],
   "lnsgkgsnl/1r5b1/p1ppppppp/9/1p7/2PP5/PP2PPPPP/1B5R1/LNSGKGSNL b -": [

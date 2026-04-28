@@ -628,6 +628,14 @@ func _on_undo() -> void:
 	_clear_selection()
 	_refresh_all()
 	_refresh_last_move_hint()
+	# Keep the saved game in sync with the live board, otherwise 続きから
+	# would resume from the *pre-undo* position.
+	if not _game_over:
+		Settings.save_game(str(_core.to_sfen()), _core.move_log_packed())
+	# If the undo lands on the AI's turn (e.g. AI-as-sente undone before
+	# the human had a chance to move), kick the AI back to life — nothing
+	# else triggers _maybe_start_ai_turn outside of _ready / _commit_move.
+	_maybe_start_ai_turn()
 
 func _on_exit_pressed() -> void:
 	_quit_dialog.popup_centered()
