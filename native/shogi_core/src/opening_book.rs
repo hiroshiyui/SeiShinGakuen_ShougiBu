@@ -74,7 +74,6 @@ impl OpeningBook {
     }
 
     pub fn len(&self) -> usize { self.entries.len() }
-    pub fn is_empty(&self) -> bool { self.entries.is_empty() }
 
     /// Sample a candidate from the book at the current position. Returns
     /// `None` if the position isn't in the book or all candidates have
