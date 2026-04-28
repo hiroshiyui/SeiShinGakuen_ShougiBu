@@ -36,16 +36,17 @@ func _ready() -> void:
 	_refresh_opponent_label()
 
 func _on_title_gui_input(event: InputEvent) -> void:
-	# Count tap-down events only — both a finger-tap on Android and a
-	# left-click on desktop trigger the same path. We don't want to
-	# double-count touch + synthesised mouse clicks, so we ignore mouse
-	# events on platforms that emit synthesised ones together with
-	# screen touches (Android already routes touches through both).
+	# Android emits both InputEventScreenTouch and a synthesised
+	# InputEventMouseButton for every finger-tap, so listening to both
+	# would double-count. Mirror Square.gd's split: touch on mobile,
+	# mouse on desktop.
 	var pressed := false
-	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
-		pressed = true
-	elif event is InputEventScreenTouch and event.pressed:
-		pressed = true
+	if OS.has_feature("mobile"):
+		if event is InputEventScreenTouch and event.pressed:
+			pressed = true
+	else:
+		if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
+			pressed = true
 	if not pressed:
 		return
 	var now := Time.get_ticks_msec() / 1000.0
