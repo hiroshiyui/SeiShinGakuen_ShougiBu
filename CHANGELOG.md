@@ -8,6 +8,14 @@ All notable changes to this project. Format follows
 
 ## [Unreleased]
 
+## [1.0.2] — 2026-04-29
+
+### Changed
+- 小さなレイアウト調整。
+
+[Full release notes](./docs/release-notes/1.0.2.md) ·
+[GitHub Release](https://github.com/hiroshiyui/SeiShinGakuen_ShougiBu/releases/tag/1.0.2)
+
 ## [1.0.1] — 2026-04-29
 
 ### Added
@@ -210,7 +218,8 @@ First public release.
 [Full release notes](./docs/release-notes/0.1.1.md) ·
 [GitHub Release](https://github.com/hiroshiyui/SeiShinGakuen_ShougiBu/releases/tag/0.1.1)
 
-[Unreleased]: https://github.com/hiroshiyui/SeiShinGakuen_ShougiBu/compare/1.0.1...HEAD
+[Unreleased]: https://github.com/hiroshiyui/SeiShinGakuen_ShougiBu/compare/1.0.2...HEAD
+[1.0.2]: https://github.com/hiroshiyui/SeiShinGakuen_ShougiBu/compare/1.0.1...1.0.2
 [1.0.1]: https://github.com/hiroshiyui/SeiShinGakuen_ShougiBu/compare/1.0.0...1.0.1
 [1.0.0]: https://github.com/hiroshiyui/SeiShinGakuen_ShougiBu/compare/0.5.0...1.0.0
 [0.5.0]: https://github.com/hiroshiyui/SeiShinGakuen_ShougiBu/compare/0.4.0...0.5.0
