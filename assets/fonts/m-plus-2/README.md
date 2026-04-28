@@ -1,6 +1,10 @@
 # M PLUS 2 (Regular)
 
-Japanese sans-serif webfont vendored for future UI use.
+Japanese sans-serif webfont used for the modern UI labels — メインメニュー
+の対戦相手名、設定、対局中の補助ラベル、棋譜検討の見出し、バージョン
+表示など。本将棋らしい筆書体 (`fude-goshirae`) は駒文字専用、画面の
+本文と UI ラベルは可読性重視で M PLUS 2 と Noto Serif JP に役割分担して
+いる。
 
 ## Files
 

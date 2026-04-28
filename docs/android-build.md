@@ -77,8 +77,11 @@ keystore configured in editor settings.)
   extracted to `user://` on first launch by `Settings.model_absolute_path()`.
   tract mmaps it from the OS filesystem; reading inside the PCK is not
   supported by third-party native code.
-- The vendored font (`assets/fonts/fude-goshirae/fude-goshirae.otf`,
-  40 MB) dominates APK size. Subsetting to the ~24 glyphs we actually
-  use is a follow-up task.
+- Fonts under `assets/fonts/**` are vendored twice — `<name>-full.otf`
+  (upstream source, excluded from the APK by `export_presets.cfg`'s
+  `exclude_filter`) and `<name>.otf` (subset, shipped). Re-run
+  `./tools/build_font_subsets.py` after editing UI strings so newly
+  introduced Japanese glyphs make it into the subsets. See
+  [ADR-0005](./adr/0005-font-subset-pipeline.md).
 - `/build/` and any `*.keystore` are gitignored — don't commit APKs or
   signing material.

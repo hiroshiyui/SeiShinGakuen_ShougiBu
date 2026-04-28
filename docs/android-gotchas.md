@@ -134,22 +134,31 @@ item_rect_changed.connect(func():
 
 ## APK is much bigger than you expected
 
-**Current contributors** (58 MB total):
-- `libgodot_android.so` — ~70 MB raw, compressed by APK zip.
-- `libshogi_core.so` (Rust + tract) — 14 MB raw.
-- Vendored Japanese font — 40 MB raw, ~18 MB imported.
+**Current contributors** (~52 MB release APK):
+- `libgodot_android.so` — ~70 MB raw, compressed by APK zip; the
+  single biggest contributor.
+- `libshogi_core.so` (Rust + tract, stripped) — 14 MB raw.
+- AI-generated artwork (backgrounds, character portraits, app icon) —
+  combined a few MB once Godot imports them to compressed textures.
 - ONNX model — 1.3 MB.
+- Vendored Japanese fonts (subset) — Fude Goshirae 175 KB +
+  Noto Serif JP Medium/Bold ~270 KB each + M PLUS 2 ~91 KB.
 
-**Cheap wins:**
-- Subset the font to only used glyphs. A ~15-glyph piece-kanji subset
-  drops the font to tens of KB. See `ROADMAP.md` Phase 7 entries for
-  both the static-text and scan-driven approaches.
-- Ship arm64-v8a only (already doing). Adding armeabi-v7a ≈ +14 MB
-  Rust `.so` per architecture.
-- `strip = "symbols"` is already in `Cargo.toml`'s release profile —
-  don't remove it.
-- The `libgodot_android.so` size is mostly engine; can only avoid with
-  a custom build.
+**Cheap wins (already taken):**
+- Font subsetting via `tools/build_font_subsets.py` — Fude Goshirae
+  39 MB → 175 KB, Noto Medium 24 MB → 79 KB, Noto Bold 25 MB → 79 KB.
+  Run after touching UI strings; see [ADR-0005](./adr/0005-font-subset-pipeline.md).
+- Ship arm64-v8a only. Adding armeabi-v7a ≈ +14 MB Rust `.so` per
+  architecture.
+- `strip = "symbols"` in `Cargo.toml`'s release profile — don't remove it.
+- Originals (`-full.otf`) excluded via `export_presets.cfg`'s
+  `exclude_filter`.
+
+**What's left:**
+- `libgodot_android.so` is mostly engine; only a custom Godot build
+  shrinks it.
+- AI-generated WebP backgrounds compress well already; further gains
+  would mean lower resolution or fewer characters.
 
 ## Layout is off on devices with a different aspect ratio than the base
 

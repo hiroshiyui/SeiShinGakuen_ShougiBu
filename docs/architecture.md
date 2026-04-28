@@ -164,7 +164,11 @@ rewinding `_core` in place: [ADR-0008](./adr/0008-review-mode-scratch-core.md).
 
 - **New UI scene** — add `.tscn` under `scenes/`, its script under
   `scripts/`. Wire from MainMenu or add to the VBoxContainer in
-  `scenes/Main.tscn`.
+  `scenes/Main.tscn`. For fullscreen scenes attach
+  [`scripts/SafeAreaLayout.gd`](../scripts/SafeAreaLayout.gd) to a
+  full-rect `Control` child — it auto-applies `Settings.apply_safe_area_to(self)`
+  on `_ready` and on viewport resize, so per-scene boilerplate stays
+  in `Settings`.
 - **New Rule** — extend
   [`native/shogi_core/src/rules.rs`](../native/shogi_core/src/rules.rs).
   Add a parity test in `tests.rs`. Do not change `encode.rs` or

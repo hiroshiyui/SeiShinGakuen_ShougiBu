@@ -146,3 +146,16 @@ APK export: [`docs/android-build.md`](./docs/android-build.md).
   for Japanese characters. If you add text via code composition
   (`"... %s" % x`) make sure the injected characters are in its
   safety-list.
+- **Fullscreen scenes use `SafeAreaLayout`.** New top-level scenes
+  should attach `scripts/SafeAreaLayout.gd` to a full-rect `Control`
+  child rather than calling `Settings.apply_safe_area_to(...)` from
+  `_ready` by hand — the script does the inset + viewport-resize
+  wiring once. `MainMenu`, `SettingsScreen`, `Credits`, `KifuLibrary`,
+  and `KifuReviewer` all use it. `GameController` and `CharacterPicker`
+  intentionally still roll their own because their inset math is
+  intertwined with board-sizing / custom display calculations.
+- **App version is read from `application/config/version` in
+  `project.godot`.** Single source of truth for the on-screen "v1.0.0"
+  badge and any other runtime references; bump alongside
+  `version/name` + `version/code` in `export_presets.cfg` at release
+  time. The release-engineering skill keeps both in sync.
