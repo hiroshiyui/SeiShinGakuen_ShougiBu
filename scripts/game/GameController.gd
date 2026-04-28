@@ -610,16 +610,24 @@ func _on_restart() -> void:
 	_refresh_last_move_hint()
 
 func _on_undo() -> void:
-	if _game_over:
+	if _game_over or _thinking:
 		return
-	if bool(_core.undo_move()):
-		# No single-level cache of the move *before* the one we just undid;
-		# simplest correct behaviour is to blank the highlight until the
-		# next move is committed.
-		_last_move = {}
-		_clear_selection()
-		_refresh_all()
-		_refresh_last_move_hint()
+	if not bool(_core.undo_move()):
+		return
+	# In vs-AI modes the player expects 待った to revert their *own* last
+	# move, but the move log's tail is the AI's reply — undo a second ply
+	# so the position is restored to just before the human moved.
+	if _ai_enabled \
+			and Settings.side_is_ai(_core.side_to_move_gote()) \
+			and int(_core.move_log_size()) > 0:
+		_core.undo_move()
+	# No single-level cache of the move *before* the one we just undid;
+	# simplest correct behaviour is to blank the highlight until the
+	# next move is committed.
+	_last_move = {}
+	_clear_selection()
+	_refresh_all()
+	_refresh_last_move_hint()
 
 func _on_exit_pressed() -> void:
 	_quit_dialog.popup_centered()
