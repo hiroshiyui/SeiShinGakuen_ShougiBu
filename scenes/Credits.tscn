@@ -1,0 +1,115 @@
+[gd_scene load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://scripts/Credits.gd" id="1_credits"]
+[ext_resource type="Texture2D" path="res://assets/backgrounds/credits_bg.webp" id="2_bg"]
+[ext_resource type="FontFile" path="res://assets/fonts/m-plus-2/MPLUS2-Regular.otf" id="3_mplus2"]
+
+[sub_resource type="StyleBoxFlat" id="1_panel"]
+bg_color = Color(0, 0, 0, 0.55)
+content_margin_left = 24.0
+content_margin_top = 20.0
+content_margin_right = 24.0
+content_margin_bottom = 24.0
+corner_radius_top_left = 14
+corner_radius_top_right = 14
+corner_radius_bottom_right = 14
+corner_radius_bottom_left = 14
+
+[sub_resource type="StyleBoxFlat" id="2_header"]
+bg_color = Color(0, 0, 0, 0.5)
+content_margin_left = 16.0
+content_margin_top = 12.0
+content_margin_right = 16.0
+content_margin_bottom = 12.0
+
+[node name="Credits" type="Control"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+script = ExtResource("1_credits")
+
+[node name="Background" type="ColorRect" parent="."]
+anchor_right = 1.0
+anchor_bottom = 1.0
+color = Color(0.08, 0.08, 0.1, 1)
+mouse_filter = 2
+
+[node name="BackgroundImage" type="TextureRect" parent="."]
+anchor_right = 1.0
+anchor_bottom = 1.0
+texture = ExtResource("2_bg")
+expand_mode = 1
+stretch_mode = 6
+mouse_filter = 2
+
+[node name="Layout" type="VBoxContainer" parent="."]
+anchor_right = 1.0
+anchor_bottom = 1.0
+theme_override_constants/separation = 0
+
+[node name="HeaderPanel" type="PanelContainer" parent="Layout"]
+theme_override_styles/panel = SubResource("2_header")
+
+[node name="Header" type="HBoxContainer" parent="Layout/HeaderPanel"]
+theme_override_constants/separation = 12
+
+[node name="Title" type="Label" parent="Layout/HeaderPanel/Header"]
+text = "クレジット"
+size_flags_horizontal = 3
+vertical_alignment = 1
+theme_override_font_sizes/font_size = 28
+theme_override_colors/font_color = Color(0.98, 0.98, 0.98, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 6
+theme_override_fonts/font = ExtResource("3_mplus2")
+
+[node name="BackButton" type="Button" parent="Layout/HeaderPanel/Header"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(120, 48)
+text = "戻る"
+
+[node name="ScrollPanel" type="PanelContainer" parent="Layout"]
+size_flags_vertical = 3
+theme_override_styles/panel = SubResource("1_panel")
+
+[node name="Scroll" type="ScrollContainer" parent="Layout/ScrollPanel"]
+horizontal_scroll_mode = 0
+
+[node name="Body" type="RichTextLabel" parent="Layout/ScrollPanel/Scroll"]
+custom_minimum_size = Vector2(0, 0)
+size_flags_horizontal = 3
+size_flags_vertical = 3
+bbcode_enabled = true
+fit_content = true
+scroll_active = false
+text = "[font_size=26][b]清正学園将棋部[/b][/font_size]
+[color=#cfd0d6]a single-player Shogi game by hiroshiyui[/color]
+
+[font_size=22][b]作者より[/b][/font_size]
+[color=#e6d8a8]このゲームは、ソフトウェア業界を離れる前に作る最後の作品です。長く無職の時期を過ごしてきました。ソフトウェア開発が大好きですが、ワーク・ライフ・バランスを保てる仕事にはなかなか巡り合えませんでした。このゲームを気に入っていただけたら嬉しいです。どうぞ将棋をお楽しみください。深い鬱の中にいた頃、将棋は私の心をそっと癒やしてくれた、そんな大切なゲームです。[/color]
+
+[font_size=22][b]制作[/b][/font_size]
+hiroshiyui
+
+[font_size=22][b]AI モデル[/b][/font_size]
+Bonanza policy + value network
+学習基盤・参考実装: [color=#a4c8ff]ShogiDojo[/color]
+推論ランタイム: [color=#a4c8ff]tract[/color] (ONNX runtime in Rust)
+
+[font_size=22][b]ゲームエンジン[/b][/font_size]
+[color=#a4c8ff]Godot Engine 4.6.2[/color] (MIT)
+[color=#a4c8ff]godot-rust[/color] — Rust bindings for the Godot engine (MIT)
+
+[font_size=22][b]フォント[/b][/font_size]
+[color=#a4c8ff]Noto Serif JP[/color] (SIL OFL 1.1) — Google Noto Project
+[color=#a4c8ff]M PLUS 2 Regular[/color] (SIL OFL 1.1) — coz-m / MPLUS_FONTS
+[color=#a4c8ff]筆ごしらえ (Fude Goshirae)[/color] (SIL OFL 1.1) — booth.pm/ja/items/7797956
+
+[font_size=22][b]謝辞[/b][/font_size]
+将棋という奥深いゲームを生み出した先人の方々
+オープンソースで開発を支えてくれた全てのコントリビューター
+
+[font_size=18][color=#9090a0]© 2026 hiroshiyui — Released under the project's repository license. Sideload only; not affiliated with any commercial Shogi service.[/color][/font_size]"
+theme_override_font_sizes/normal_font_size = 20
+theme_override_colors/default_color = Color(0.94, 0.94, 0.96, 1)
+theme_override_fonts/normal_font = ExtResource("3_mplus2")
+theme_override_fonts/bold_font = ExtResource("3_mplus2")

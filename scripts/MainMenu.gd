@@ -1,5 +1,6 @@
 extends Control
 
+@onready var _title: Label = %Title
 @onready var _mode: OptionButton = %ModeSelect
 @onready var _opponent_btn: Button = %OpponentButton
 @onready var _start_btn: Button = %StartButton
@@ -7,6 +8,15 @@ extends Control
 @onready var _settings_btn: Button = %SettingsButton
 @onready var _kifu_library_btn: Button = %KifuLibraryButton
 @onready var _quit_dialog: ConfirmationDialog = %QuitDialog
+
+# Hidden credits trigger: 10 taps on the title within _TITLE_TAP_WINDOW
+# seconds of each other opens the credits scene. The window resets the
+# counter on a stale gap so a stray double-tap a minute ago doesn't
+# accumulate forever.
+const _TITLE_TAPS_NEEDED := 10
+const _TITLE_TAP_WINDOW := 3.0
+var _title_tap_count: int = 0
+var _title_tap_last: float = 0.0
 
 func _ready() -> void:
 	_mode.clear()
@@ -21,8 +31,31 @@ func _ready() -> void:
 	_settings_btn.pressed.connect(_on_settings_pressed)
 	_kifu_library_btn.pressed.connect(_on_kifu_library_pressed)
 	_quit_dialog.confirmed.connect(_on_quit_confirmed)
+	_title.gui_input.connect(_on_title_gui_input)
 	_ensure_default_character()
 	_refresh_opponent_label()
+
+func _on_title_gui_input(event: InputEvent) -> void:
+	# Count tap-down events only — both a finger-tap on Android and a
+	# left-click on desktop trigger the same path. We don't want to
+	# double-count touch + synthesised mouse clicks, so we ignore mouse
+	# events on platforms that emit synthesised ones together with
+	# screen touches (Android already routes touches through both).
+	var pressed := false
+	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
+		pressed = true
+	elif event is InputEventScreenTouch and event.pressed:
+		pressed = true
+	if not pressed:
+		return
+	var now := Time.get_ticks_msec() / 1000.0
+	if now - _title_tap_last > _TITLE_TAP_WINDOW:
+		_title_tap_count = 0
+	_title_tap_last = now
+	_title_tap_count += 1
+	if _title_tap_count >= _TITLE_TAPS_NEEDED:
+		_title_tap_count = 0
+		get_tree().change_scene_to_file("res://scenes/Credits.tscn")
 
 # First-run convenience: if nothing is selected yet, pick the character
 # whose level matches Settings.ai_level (default Lv 4 = 伊藤明) so an AI
