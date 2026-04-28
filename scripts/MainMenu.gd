@@ -9,7 +9,6 @@ extends Control
 @onready var _kifu_library_btn: Button = %KifuLibraryButton
 @onready var _quit_dialog: ConfirmationDialog = %QuitDialog
 @onready var _version_label: Label = %VersionLabel
-@onready var _layout: Control = %Layout
 
 # Hidden credits trigger: 10 taps on the title within _TITLE_TAP_WINDOW
 # seconds of each other opens the credits scene. The window resets the
@@ -38,11 +37,6 @@ func _ready() -> void:
 	_refresh_opponent_label()
 	var version: String = ProjectSettings.get_setting("application/config/version", "")
 	_version_label.text = "v%s" % version if version != "" else ""
-	_apply_safe_area()
-	get_viewport().size_changed.connect(_apply_safe_area)
-
-func _apply_safe_area() -> void:
-	Settings.apply_safe_area_to(_layout)
 
 func _on_title_gui_input(event: InputEvent) -> void:
 	# Android emits both InputEventScreenTouch and a synthesised
