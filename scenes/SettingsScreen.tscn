@@ -1,7 +1,8 @@
-[gd_scene load_steps=4 format=3]
+[gd_scene load_steps=5 format=3]
 
 [ext_resource type="Script" path="res://scripts/SettingsScreen.gd" id="1_set"]
 [ext_resource type="Texture2D" path="res://assets/backgrounds/in_game_bg.webp" id="2_bg"]
+[ext_resource type="FontFile" path="res://assets/fonts/m-plus-2/MPLUS2-Regular.otf" id="3_mplus2"]
 
 [sub_resource type="StyleBoxFlat" id="1_panel"]
 bg_color = Color(0, 0, 0, 0.5)
@@ -58,6 +59,7 @@ text = "効果音"
 size_flags_horizontal = 3
 theme_override_colors/font_color = Color(0.92, 0.92, 0.92, 1)
 theme_override_font_sizes/font_size = 28
+theme_override_fonts/font = ExtResource("3_mplus2")
 
 [node name="SoundToggle" type="CheckButton" parent="Center/Panel/Box/SoundRow"]
 unique_name_in_owner = true
@@ -67,6 +69,7 @@ custom_minimum_size = Vector2(0, 40)
 text = "先生ボタンの位置"
 theme_override_colors/font_color = Color(0.85, 0.85, 0.85, 1)
 theme_override_font_sizes/font_size = 28
+theme_override_fonts/font = ExtResource("3_mplus2")
 
 [node name="TeacherSideSelect" type="OptionButton" parent="Center/Panel/Box"]
 unique_name_in_owner = true

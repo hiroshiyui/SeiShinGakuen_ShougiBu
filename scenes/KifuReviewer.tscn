@@ -1,9 +1,10 @@
-[gd_scene load_steps=5 format=3]
+[gd_scene load_steps=6 format=3]
 
 [ext_resource type="Script" path="res://scripts/KifuReviewer.gd" id="1_rev"]
 [ext_resource type="PackedScene" path="res://scenes/game/Board.tscn" id="2_board"]
 [ext_resource type="PackedScene" path="res://scenes/game/Hand.tscn" id="3_hand"]
 [ext_resource type="Texture2D" path="res://assets/backgrounds/kifu_reviewer_bg.webp" id="4_bg"]
+[ext_resource type="FontFile" path="res://assets/fonts/m-plus-2/MPLUS2-Regular.otf" id="5_mplus2"]
 
 [node name="KifuReviewer" type="Control"]
 anchor_right = 1.0
@@ -42,6 +43,7 @@ text_overrun_behavior = 2
 vertical_alignment = 1
 theme_override_colors/font_color = Color(0.98, 0.98, 0.98, 1)
 theme_override_font_sizes/font_size = 22
+theme_override_fonts/font = ExtResource("5_mplus2")
 
 [node name="AnalyzeButton" type="Button" parent="Layout/HeaderRow"]
 unique_name_in_owner = true
@@ -80,6 +82,7 @@ text = "0 / 0 手目"
 horizontal_alignment = 1
 theme_override_colors/font_color = Color(0.98, 0.85, 0.45, 1)
 theme_override_font_sizes/font_size = 22
+theme_override_fonts/font = ExtResource("5_mplus2")
 
 [node name="AnalysisLabel" type="Label" parent="Layout"]
 unique_name_in_owner = true
