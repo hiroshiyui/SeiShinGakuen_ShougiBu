@@ -140,6 +140,100 @@ const ENTRIES := [
 	},
 ]
 
+# Deeper mainlines authored as a single ply sequence + optional alternate
+# branches at specific depths. _explode_lines() turns each LINE into one
+# entry per position along the way, with the next ply as the primary
+# candidate (weight = LINE_PRIMARY_WEIGHT) and any `alts[i]` listed
+# alongside. Entries that converge on the same position key are merged
+# in _initialize() so converging lines union their candidate lists.
+#
+# Plies start from the standard initial position. Even-indexed plies
+# are sente moves, odd-indexed are gote replies.
+const LINE_PRIMARY_WEIGHT := 60
+
+const LINES := [
+	# ─ 矢倉本線 (居飛車相懸 矢倉) ─────────────────────────────
+	{
+		plies = ["7g7f","8c8d","6g6f","8d8e","7i7h","3c3d","7h7g","4a3b","5g5f","5c5d","4i5h","5a4b","3i4h","6a5b","5i6h","7a7b"],
+		alts = {
+			3: [{usi="3c3d",weight=20}],
+			5: [{usi="6c6d",weight=15}],
+			11: [{usi="7a6b",weight=20}],
+		},
+	},
+	# ─ 角換わり (角道を開けてからの構え) ─────────────────────
+	# Book ends before the bishop trade — the actual 8h2b+ recapture
+	# move depends on which gote piece is on 3b/3a at trade time, and
+	# coding the variation is more error-prone than letting MCTS take
+	# over with a sound development pattern.
+	{
+		plies = ["7g7f","3c3d","2g2f","4a3b","2f2e","3a4b"],
+		alts = {
+			5: [{usi="2c2d",weight=15}],
+		},
+	},
+	# ─ 横歩取り ─────────────────────────────────────────────
+	{
+		plies = ["7g7f","8c8d","2g2f","8d8e","2f2e","3c3d","2e2d","2c2d","2h2d","8e8f","8g8f","8b8f","2d3d","2b3c"],
+		alts = {
+			11: [{usi="P*8g",weight=20}],
+		},
+	},
+	# ─ 中飛車 (▲5六歩からの中飛車) ────────────────────────────
+	{
+		plies = ["5g5f","3c3d","2h5h","8c8d","5i4h","4a3b","4h3h","5a4b","3h2h","6a5b","6i7h","6c6d"],
+		alts = {
+			1: [{usi="8c8d",weight=30},{usi="5c5d",weight=15}],
+		},
+	},
+	# ─ 四間飛車 (vs 居飛車) ─────────────────────────────────
+	{
+		plies = ["7g7f","3c3d","6g6f","8c8d","2h6h","6a5b","6i7h","4a3b","4i5h","5a4b","5i6i","6c6d"],
+		alts = {
+			3: [{usi="3c3d",weight=15}],
+		},
+	},
+	# ─ 三間飛車 ─────────────────────────────────────────────
+	{
+		plies = ["7g7f","3c3d","6g6f","8c8d","2h7h","4a3b","5i6h","5a4b"],
+	},
+	# ─ 早石田 ─────────────────────────────────────────────
+	{
+		plies = ["7g7f","3c3d","7f7e","4a3b","8h7g","8c8d","2h7h","8d8e"],
+	},
+	# ─ 雁木 (居飛車左美濃〜雁木) ──────────────────────────────
+	{
+		plies = ["7g7f","8c8d","6g6f","3c3d","2g2f","4a3b","5g5f","5c5d","6i7h","6a5b","4i5h","5a4b"],
+	},
+	# ─ 端歩・脇道への gote 受け ─────────────────────────────
+	# Off-book sente moves the AI-as-gote should reply sensibly to.
+	{plies = ["1g1f","8c8d"]},
+	{plies = ["9g9f","8c8d"]},
+	{plies = ["4g4f","8c8d"]},
+	{plies = ["3g3f","8c8d"]},
+	{plies = ["1g1f","1c1d"]},  # alt: gote mirrors
+	{plies = ["9g9f","9c9d"]},
+]
+
+func _explode_lines() -> Array:
+	# Expand each LINE into one {reach, candidates} entry per position.
+	# alts at index i extend the candidate list for the entry whose
+	# `reach` is plies[0..i].
+	var out: Array = []
+	for line in LINES:
+		var plies: Array = line.plies
+		var alts: Dictionary = line.get("alts", {})
+		for i in range(plies.size()):
+			var reach: Array = []
+			for j in range(i):
+				reach.append(plies[j])
+			var cands: Array = [{usi = plies[i], weight = LINE_PRIMARY_WEIGHT}]
+			if alts.has(i):
+				for a in alts[i]:
+					cands.append({usi = String(a.usi), weight = int(a.weight)})
+			out.append({reach = reach, candidates = cands})
+	return out
+
 func _initialize() -> void:
 	if not ClassDB.class_exists("ShogiCore"):
 		push_error("ShogiCore not registered — build the desktop .so first")
@@ -149,7 +243,13 @@ func _initialize() -> void:
 	var book: Dictionary = {}
 	var skipped: int = 0
 
-	for entry in ENTRIES:
+	var all_entries: Array = []
+	for e in ENTRIES:
+		all_entries.append(e)
+	for e in _explode_lines():
+		all_entries.append(e)
+
+	for entry in all_entries:
 		var core = ClassDB.instantiate("ShogiCore")
 		core.reset_starting()
 		var ok := true
@@ -162,14 +262,24 @@ func _initialize() -> void:
 			skipped += 1
 			continue
 		var key: String = String(core.position_key())
-		var arr: Array = []
+		# Merge with whatever's already at this key — converging lines
+		# (e.g. 矢倉 and 角換わり both touching the after-7g7f node) should
+		# union their candidate lists instead of overwriting. For each
+		# duplicate USI, keep the higher of the two weights.
+		var existing: Array = book.get(key, [])
+		var by_usi: Dictionary = {}
+		for cand in existing:
+			by_usi[String(cand.usi)] = int(cand.weight)
 		for cand in entry.candidates:
 			if int(cand.weight) <= 0:
-				# Weight 0 means "explicitly excluded from this revision";
-				# keeps history readable in the source without polluting
-				# the shipped JSON.
+				# Weight 0 = explicitly excluded from this revision.
 				continue
-			arr.append({usi = String(cand.usi), weight = int(cand.weight)})
+			var u := String(cand.usi)
+			var w := int(cand.weight)
+			by_usi[u] = max(int(by_usi.get(u, 0)), w)
+		var arr: Array = []
+		for u in by_usi.keys():
+			arr.append({usi = u, weight = int(by_usi[u])})
 		if arr.is_empty():
 			continue
 		book[key] = arr
