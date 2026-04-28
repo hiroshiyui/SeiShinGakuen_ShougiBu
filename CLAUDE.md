@@ -71,6 +71,10 @@ Godot is not on PATH — always invoke by full path.
 # GDScript tests (save/resume + prefs + atomic model copy)
 ~/.local/bin/Godot_v4.6.2-stable_linux.x86_64 \
   --headless -s res://scripts/tests/persistence_tests.gd --path .
+
+# GDScript tests (opening book content sanity — every USI legal etc.)
+~/.local/bin/Godot_v4.6.2-stable_linux.x86_64 \
+  --headless -s res://scripts/tests/opening_book_tests.gd --path .
 ```
 
 Rust:
