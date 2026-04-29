@@ -99,12 +99,27 @@ func _ready() -> void:
 # get_tree().quit(); we set quit_on_go_back=false in project.godot and
 # synthesize the event here so MainMenu / GameController / KifuLibrary /
 # etc. don't each need their own _notification handler.
+#
+# Why an InputEventKey(KEY_ESCAPE) and not InputEventAction("ui_cancel"):
+# in Godot 4, parse_input_event for InputEventAction updates polling
+# state but doesn't reliably propagate to _unhandled_input, so the
+# Game / MainMenu handlers that check is_action_pressed never fired and
+# the back gesture appeared to dump the player straight out of the app.
+# A real key event is routed through the standard input pipeline and
+# matches the desktop Esc binding for ui_cancel.
 func _notification(what: int) -> void:
-	if what == NOTIFICATION_WM_GO_BACK_REQUEST:
-		var ev := InputEventAction.new()
-		ev.action = "ui_cancel"
-		ev.pressed = true
-		Input.parse_input_event(ev)
+	if what != NOTIFICATION_WM_GO_BACK_REQUEST:
+		return
+	var press := InputEventKey.new()
+	press.keycode = KEY_ESCAPE
+	press.physical_keycode = KEY_ESCAPE
+	press.pressed = true
+	Input.parse_input_event(press)
+	var release := InputEventKey.new()
+	release.keycode = KEY_ESCAPE
+	release.physical_keycode = KEY_ESCAPE
+	release.pressed = false
+	Input.parse_input_event(release)
 
 func set_teacher_side(side: String) -> void:
 	if side != "left" and side != "right":
