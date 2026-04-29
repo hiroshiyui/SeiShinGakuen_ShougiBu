@@ -311,7 +311,14 @@ func _process(_delta: float) -> void:
 		_think_thread = null
 		if mv == null:
 			_thinking_label.visible = false
-			push_warning("AI returned no move")
+			# Null usually means the AI side has no legal move. Surface
+			# that as a game end so the UI doesn't freeze waiting for a
+			# move that will never come. Fall back to a warning if the
+			# core disagrees (e.g. model failed to load).
+			if not bool(_core.has_any_legal_move()):
+				_check_end_state()
+			else:
+				push_warning("AI returned no move")
 			_refresh_all()
 			return
 		# Natural pause — avoid the AI snapping a move instantly after a
@@ -565,6 +572,16 @@ func _check_end_state() -> void:
 		var loser := "後手" if _core.side_to_move_gote() else "先手"
 		var winner := "先手" if _core.side_to_move_gote() else "後手"
 		_end_game("詰み\n%s の勝ち (%s を詰ました)" % [winner, loser])
+		return
+	# 手詰まり: side to move has no legal reply but isn't in check. In
+	# practice nearly impossible with drops in play, but if it ever does
+	# arise (e.g. bare-king AI with every escape square attacked) the
+	# rules treat it as a loss for the side to move — match that here so
+	# the game ends instead of the AI thread spinning on a null move.
+	if not bool(_core.has_any_legal_move()):
+		var loser2 := "後手" if _core.side_to_move_gote() else "先手"
+		var winner2 := "先手" if _core.side_to_move_gote() else "後手"
+		_end_game("手詰まり\n%s の勝ち (%s に指す手なし)" % [winner2, loser2])
 		return
 	match str(_core.detect_sennichite()):
 		"draw":

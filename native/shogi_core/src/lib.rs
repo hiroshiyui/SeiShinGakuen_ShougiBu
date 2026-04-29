@@ -25,7 +25,7 @@ use crate::mcts::{Searcher, all_legal_moves};
 use crate::opening_book::OpeningBook;
 use crate::move_index::encode_move;
 use crate::nn::NeuralNet;
-use crate::rules::{DeclareResult, SennichiteStatus, can_declare_jishogi, detect_sennichite, is_check, is_checkmate, jishogi_points, king_entered, legal_drops, legal_moves_from, pieces_in_opponent_camp};
+use crate::rules::{DeclareResult, SennichiteStatus, can_declare_jishogi, detect_sennichite, has_any_legal_move, is_check, is_checkmate, jishogi_points, king_entered, legal_drops, legal_moves_from, pieces_in_opponent_camp};
 use crate::sfen::parse_sfen;
 use crate::types::{Color, Kind, Move, Square};
 
@@ -241,6 +241,11 @@ impl ShogiCore {
     #[func]
     fn is_checkmate(&mut self) -> bool {
         is_checkmate(&mut self.board)
+    }
+
+    #[func]
+    fn has_any_legal_move(&mut self) -> bool {
+        has_any_legal_move(&mut self.board)
     }
 
     #[func]
