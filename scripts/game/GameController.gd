@@ -100,6 +100,10 @@ func _ready() -> void:
 	_promo_dialog.canceled.connect(_on_promo_canceled)
 	_promo_dialog.close_requested.connect(_on_promo_canceled)
 	_gameover_dialog.confirmed.connect(_on_restart)
+	# The built-in close X is hidden via theme (small hitbox + tricky to
+	# tap on mobile). Give players a clear way to dismiss the post-game
+	# dialog without re-matching by adding a sibling cancel button.
+	_gameover_dialog.add_cancel_button("閉じる")
 	_undo_btn.pressed.connect(_on_undo)
 	_exit_btn.pressed.connect(_on_exit_pressed)
 	_jishogi_btn.pressed.connect(_on_jishogi_pressed)
@@ -691,14 +695,45 @@ func _jishogi_info_text(result: Dictionary) -> String:
 # default) closes the suggestions panel if it's open, otherwise leaves
 # the game and returns to the main menu. The board is auto-saved after
 # every move so 続きから will pick up where the player left off.
+# Both desktop Esc (real InputEventKey) and the autoload's synthesized
+# Esc (Settings.gd's WM_GO_BACK_REQUEST bridge) come in here. We also
+# handle WM_GO_BACK_REQUEST directly in _notification below — release
+# builds have been seen to drop the synthesized press/release pair, so
+# the direct notification is the reliable Android path. _back_handled_frame
+# dedupes when both paths fire on the same frame.
+var _back_handled_frame: int = -1
+
 func _unhandled_input(event: InputEvent) -> void:
 	if not event.is_action_pressed("ui_cancel"):
 		return
+	get_viewport().set_input_as_handled()
+	_handle_back()
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_WM_GO_BACK_REQUEST:
+		_handle_back()
+
+func _handle_back() -> void:
+	var f: int = Engine.get_process_frames()
+	if _back_handled_frame == f:
+		return
+	_back_handled_frame = f
+	# Layered dismiss: close whichever popup is on top before falling
+	# through to scene-back. Mirrors the implicit behaviour we used to
+	# get from Godot's built-in popup Esc handling — the autoload no
+	# longer synthesizes Esc, so we close popups explicitly here.
+	if _history_dialog.visible:
+		_history_dialog.hide()
+		return
+	var popups: Array[Window] = [_promo_dialog, _gameover_dialog, _quit_dialog, _jishogi_info_dialog]
+	for popup in popups:
+		if popup.visible:
+			popup.hide()
+			return
 	if _suggestions_panel.visible:
 		_close_suggestions()
-	else:
-		_back_to_title()
-	get_viewport().set_input_as_handled()
+		return
+	_back_to_title()
 
 func _back_to_title() -> void:
 	# Drain any live worker threads so we don't leak join handles when the

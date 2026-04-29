@@ -81,11 +81,32 @@ func _ensure_default_character() -> void:
 # letting Godot fall through to the OS-level quit. Re-pressing while
 # the dialog is already open is ignored (popup_centered re-centers but
 # that's fine).
+#
+# Two paths: real key event via _unhandled_input, and Android
+# WM_GO_BACK_REQUEST via _notification. Settings.gd also synthesizes
+# an Esc press+release for back gestures, but release APKs have been
+# seen to drop the synthesized event, so we listen for the notification
+# directly here too. _back_handled_frame dedupes same-frame double-fires.
+var _back_handled_frame: int = -1
+
 func _unhandled_input(event: InputEvent) -> void:
 	if not event.is_action_pressed("ui_cancel"):
 		return
 	get_viewport().set_input_as_handled()
-	if not _quit_dialog.visible:
+	_handle_back()
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_WM_GO_BACK_REQUEST:
+		_handle_back()
+
+func _handle_back() -> void:
+	var f: int = Engine.get_process_frames()
+	if _back_handled_frame == f:
+		return
+	_back_handled_frame = f
+	if _quit_dialog.visible:
+		_quit_dialog.hide()
+	else:
 		_quit_dialog.popup_centered()
 
 func _on_quit_confirmed() -> void:

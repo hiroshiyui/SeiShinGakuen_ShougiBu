@@ -1,7 +1,9 @@
-[gd_resource type="Theme" load_steps=11 format=3]
+[gd_resource type="Theme" load_steps=13 format=3]
 
 [ext_resource type="FontFile" path="res://assets/fonts/noto-serif-jp/NotoSerifCJKjp-Medium.otf" id="1_medium"]
 [ext_resource type="FontFile" path="res://assets/fonts/noto-serif-jp/NotoSerifCJKjp-Bold.otf" id="2_bold"]
+[ext_resource type="Texture2D" path="res://assets/ui/dialog_close.svg" id="3_close"]
+[ext_resource type="Texture2D" path="res://assets/ui/dialog_close_pressed.svg" id="4_close_pressed"]
 
 [sub_resource type="FontVariation" id="title_font_variation"]
 base_font = ExtResource("2_bold")
@@ -140,10 +142,14 @@ Button/colors/font_disabled_color = Color(0.60, 0.55, 0.45, 0.6)
 Button/colors/font_focus_color = Color(1, 0.94, 0.78, 1)
 Window/constants/title_height = 80
 Window/constants/title_outline_size = 12
+Window/constants/close_h_offset = -200
+Window/constants/close_v_offset = -200
 Window/colors/title_color = Color(0.98, 0.85, 0.45, 1)
 Window/colors/title_outline_modulate = Color(0, 0, 0, 1)
 Window/fonts/title_font = SubResource("title_font_variation")
 Window/font_sizes/title_font_size = 56
+Window/icons/close = ExtResource("3_close")
+Window/icons/close_pressed = ExtResource("4_close_pressed")
 Window/styles/embedded_border = SubResource("dlg_border")
 Window/styles/embedded_unfocused_border = SubResource("dlg_border")
 AcceptDialog/styles/panel = SubResource("dlg_panel")

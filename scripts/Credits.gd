@@ -30,16 +30,12 @@ func _is_winter_holiday() -> bool:
 		return true
 	return false
 
+var _back_handled_frame: int = -1
+
 func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("ui_cancel"):
 		get_viewport().set_input_as_handled()
-		# If the panels are hidden, ui_cancel reveals them again before
-		# the next press exits to the title — saves a step on Android
-		# where the back gesture is the natural "undo" affordance.
-		if _hidden:
-			_toggle_hidden()
-		else:
-			_back_to_title()
+		_handle_back()
 		return
 	# While the credits panels are hidden, any tap on the screen brings
 	# them back so the player can use the 戻る button again.
@@ -63,3 +59,20 @@ func _toggle_hidden() -> void:
 
 func _back_to_title() -> void:
 	get_tree().change_scene_to_file("res://scenes/MainMenu.tscn")
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_WM_GO_BACK_REQUEST:
+		_handle_back()
+
+# If the panels are hidden, the back gesture / Esc reveals them again
+# before the next press exits to the title — saves a step on Android
+# where the back gesture is the natural "undo" affordance.
+func _handle_back() -> void:
+	var f: int = Engine.get_process_frames()
+	if _back_handled_frame == f:
+		return
+	_back_handled_frame = f
+	if _hidden:
+		_toggle_hidden()
+	else:
+		_back_to_title()

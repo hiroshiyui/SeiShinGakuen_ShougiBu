@@ -93,33 +93,16 @@ const CHARACTERS_DIR := "res://assets/characters"
 func _ready() -> void:
 	_load_prefs()
 
-# Bridge Android's hardware/gesture back into the same `ui_cancel` action
-# scenes already listen to via _unhandled_input. Without this, Godot 4's
-# default `quit_on_go_back=true` would short-circuit straight to
-# get_tree().quit(); we set quit_on_go_back=false in project.godot and
-# synthesize the event here so MainMenu / GameController / KifuLibrary /
-# etc. don't each need their own _notification handler.
-#
-# Why an InputEventKey(KEY_ESCAPE) and not InputEventAction("ui_cancel"):
-# in Godot 4, parse_input_event for InputEventAction updates polling
-# state but doesn't reliably propagate to _unhandled_input, so the
-# Game / MainMenu handlers that check is_action_pressed never fired and
-# the back gesture appeared to dump the player straight out of the app.
-# A real key event is routed through the standard input pipeline and
-# matches the desktop Esc binding for ui_cancel.
-func _notification(what: int) -> void:
-	if what != NOTIFICATION_WM_GO_BACK_REQUEST:
-		return
-	var press := InputEventKey.new()
-	press.keycode = KEY_ESCAPE
-	press.physical_keycode = KEY_ESCAPE
-	press.pressed = true
-	Input.parse_input_event(press)
-	var release := InputEventKey.new()
-	release.keycode = KEY_ESCAPE
-	release.physical_keycode = KEY_ESCAPE
-	release.pressed = false
-	Input.parse_input_event(release)
+# Android back gesture is handled per-scene now — each scene that
+# needs it implements `_notification(NOTIFICATION_WM_GO_BACK_REQUEST)`
+# directly, alongside its existing `_unhandled_input(ui_cancel)` for
+# desktop Esc. Earlier revisions tried to synthesize an InputEventAction
+# (didn't propagate to _unhandled_input in Godot 4) and then an
+# InputEventKey(KEY_ESCAPE) — the latter worked in debug builds but
+# release APKs intermittently dropped the synthesized press/release
+# pair, so in-game back appeared to fall through to the OS default
+# (app exit). Per-scene WM_GO_BACK_REQUEST handlers bypass the input
+# synthesis entirely and behave the same in debug and release.
 
 func set_teacher_side(side: String) -> void:
 	if side != "left" and side != "right":

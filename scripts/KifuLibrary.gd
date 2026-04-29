@@ -17,10 +17,27 @@ func _ready() -> void:
 	_delete_dialog.confirmed.connect(_on_delete_confirmed)
 	_refresh()
 
+var _back_handled_frame: int = -1
+
 func _unhandled_input(event: InputEvent) -> void:
-	if event.is_action_pressed("ui_cancel"):
-		get_viewport().set_input_as_handled()
-		_on_back()
+	if not event.is_action_pressed("ui_cancel"):
+		return
+	get_viewport().set_input_as_handled()
+	_handle_back()
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_WM_GO_BACK_REQUEST:
+		_handle_back()
+
+func _handle_back() -> void:
+	var f: int = Engine.get_process_frames()
+	if _back_handled_frame == f:
+		return
+	_back_handled_frame = f
+	if _delete_dialog.visible:
+		_delete_dialog.hide()
+		return
+	_on_back()
 
 func _on_back() -> void:
 	get_tree().change_scene_to_file("res://scenes/MainMenu.tscn")
