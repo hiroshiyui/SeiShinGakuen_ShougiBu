@@ -8,6 +8,39 @@ All notable changes to this project. Format follows
 
 ## [Unreleased]
 
+## [1.0.4] — 2026-04-29
+
+### Fixed
+- 対局画面・棋譜画面・設定画面などからの Android バックジェスチャ
+  (ハードキー / スワイプ) が、リリース APK では稀にアプリを直接終了
+  させていた問題。1.0.3 で `Settings.gd` が `WM_GO_BACK_REQUEST` を
+  `InputEventKey(KEY_ESCAPE)` に合成して各画面の `_unhandled_input`
+  に届けていたが、リリースビルドではこの合成イベント (押下/離上ペア)
+  が稀に取りこぼされ、OS デフォルトの「アプリ終了」にフォールバック
+  していた。各画面 (`MainMenu` / `GameController` / `KifuLibrary` /
+  `KifuReviewer` / `SettingsScreen` / `CharacterPicker` / `Credits`)
+  に直接 `_notification(NOTIFICATION_WM_GO_BACK_REQUEST)` を実装し、
+  入力合成を介さない経路に切り替え。デバッグ・リリースともに同じ
+  挙動になる。フレームガードでデスクトップ Esc との二重発火を防止。
+  各ハンドラはトップにあるポップアップを先に閉じてから画面遷移
+  に進むため、合成 Esc が暗黙に提供していたダイアログ自動クローズ
+  を再現する。
+
+### Changed
+- 対局終了ダイアログ (`GameOverDialog`) に「閉じる」ボタンを追加。
+  従来は「再戦」しか選択肢がなく、再戦せずに終局画面を眺めたい
+  プレイヤーが詰まってしまっていた。タイトルバー右上の × アイコン
+  はテーマで非表示化済みなので、明示的なボタンで離脱経路を確保。
+- ダイアログの × クローズアイコンをテーマで非表示。Godot 4 の埋込み
+  ウィンドウは `close_h_offset` / `close_v_offset` で見た目の位置は
+  動かせるが当たり判定はデフォルト位置のまま残るため、大きいアイコン
+  に差し替えても結局タップしづらい。1×1 透明テクスチャに置換し、
+  オフセットも画面外に押し出す。代わりに各ダイアログは OK / キャンセル
+  ボタンと Android バックで確実に閉じる。
+
+[Full release notes](./docs/release-notes/1.0.4.md) ·
+[GitHub Release](https://github.com/hiroshiyui/SeiShinGakuen_ShougiBu/releases/tag/1.0.4)
+
 ## [1.0.3] — 2026-04-29
 
 ### Fixed
