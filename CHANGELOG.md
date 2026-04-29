@@ -8,6 +8,27 @@ All notable changes to this project. Format follows
 
 ## [Unreleased]
 
+## [1.0.3] — 2026-04-29
+
+### Fixed
+- AI 側に合法手がなく王手もかかっていない局面 (例: 玉一枚で全逃げ場が
+  攻撃されている) で、AI が思考スレッドから `null` を返したまま画面が
+  固まり、対局終了ダイアログが出ない問題。`手詰まり` を検出して相手の
+  勝ちで終局するようにした。Rust 側に `has_any_legal_move()` を公開し、
+  `_check_end_state` と AI 思考結果ハンドラの両方から保険として参照。
+- Android のバックジェスチャ (ハードキー / スワイプ) が対局画面など
+  からアプリを直接終了させていた問題。`Settings._notification` で
+  `WM_GO_BACK_REQUEST` を受けて合成していたイベントを
+  `InputEventAction("ui_cancel")` から `InputEventKey(KEY_ESCAPE)`
+  に変更。Godot 4 ではアクションイベントを `parse_input_event` に渡しても
+  ポーリング状態は更新されるが `_unhandled_input` には届かないため、
+  各シーンの戻る/タイトル復帰ハンドラが起動しなかった。デスクトップの
+  Esc と同じ経路でルーティングされるようになり、各画面の既存ハンドラが
+  そのまま反応する。
+
+[Full release notes](./docs/release-notes/1.0.3.md) ·
+[GitHub Release](https://github.com/hiroshiyui/SeiShinGakuen_ShougiBu/releases/tag/1.0.3)
+
 ## [1.0.2] — 2026-04-29
 
 ### Changed
