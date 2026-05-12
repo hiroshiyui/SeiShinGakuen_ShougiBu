@@ -12,6 +12,9 @@ Assets are grouped by purpose under `assets/` (`fonts/`, `themes/`, `ui/`,
 
 ## Build, Test, and Development Commands
 
+Run shell commands with `/bin/zsh`.
+Load user-defined skills at the start of each session.
+
 Use the full Godot path; it is not assumed to be on `PATH`.
 
 ```bash
