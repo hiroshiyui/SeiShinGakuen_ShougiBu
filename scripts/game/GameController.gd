@@ -724,8 +724,13 @@ func _handle_back() -> void:
 	# longer synthesizes Esc, so we close popups explicitly here.
 	if _history_dialog.visible:
 		_history_dialog.hide()
+		_on_history_closed()
 		return
-	var popups: Array[Window] = [_promo_dialog, _gameover_dialog, _quit_dialog, _jishogi_info_dialog]
+	if _promo_dialog.visible:
+		_promo_dialog.hide()
+		_on_promo_canceled()
+		return
+	var popups: Array[Window] = [_gameover_dialog, _quit_dialog, _jishogi_info_dialog]
 	for popup in popups:
 		if popup.visible:
 			popup.hide()

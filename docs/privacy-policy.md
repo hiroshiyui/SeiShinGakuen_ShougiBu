@@ -11,8 +11,8 @@
 ### Summary
 
 清正学園将棋部 is a single-player offline Shogi (本将棋) game. **The
-application does not collect, store, transmit, or share any personal
-information or user data of any kind.**
+application does not collect, transmit, or share any personal information
+or user data.** It stores only local gameplay data on your device.
 
 ### Data we collect
 
@@ -32,13 +32,14 @@ None. The application:
 ### Data stored on your device
 
 The application saves the following **only on your device's local
-storage** (Android `user://` directory). This data is never
-transmitted anywhere:
+storage**. This data is never transmitted anywhere:
 
-- Game state for save/resume of the current game.
-- User preferences (sound, display, etc.).
+- Game state for save/resume of the current game, in Android `user://`.
+- User preferences (sound, display, etc.), in Android `user://`.
+- KIF game records you explicitly save, in the app's Documents directory
+  or `user://` fallback.
 - The bundled AI model file (`bonanza.onnx`), extracted from the app's
-  asset bundle on first launch.
+  asset bundle to `user://` on first launch.
 
 This data is removed when you uninstall the application or clear the
 app's storage from Android system settings.
@@ -87,8 +88,9 @@ For privacy questions, contact: **hiroshiyui@gmail.com**
 ### 概要
 
 「清正学園将棋部」は、単独プレイ・オフライン動作の本将棋ゲームです。
-**本アプリケーションは、いかなる個人情報・利用者データも収集・保存・
-送信・共有いたしません。**
+**本アプリケーションは、いかなる個人情報・利用者データも収集・送信・
+共有いたしません。** 端末内には、対局に必要なローカルデータのみを
+保存します。
 
 ### 収集する情報
 
@@ -105,14 +107,15 @@ For privacy questions, contact: **hiroshiyui@gmail.com**
 
 ### 端末内に保存されるデータ
 
-以下のデータは **お使いの端末のローカルストレージ**(Android の
-`user://` ディレクトリ)にのみ保存され、外部に送信されることは
-ありません。
+以下のデータは **お使いの端末のローカルストレージ** にのみ保存され、
+外部に送信されることはありません。
 
-- 中断・再開のためのゲーム状態
-- 利用者設定(サウンド、表示等)
+- 中断・再開のためのゲーム状態(Android の `user://`)
+- 利用者設定(サウンド、表示等。Android の `user://`)
+- 利用者が明示的に保存した KIF 棋譜(アプリの Documents ディレクトリ、
+  または `user://` フォールバック)
 - 同梱の AI モデルファイル(`bonanza.onnx`)。初回起動時に APK
-  内のアセットから展開されます。
+  内のアセットから `user://` に展開されます。
 
 これらのデータはアプリをアンインストールするか、Android のシステム
 設定からアプリのデータを消去すると削除されます。
