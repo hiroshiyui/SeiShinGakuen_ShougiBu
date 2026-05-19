@@ -30,8 +30,9 @@
 1.0 リリース済み。Linux デスクトップでの開発実行と、Android
 arm64-v8a 向け APK のビルド・インストールに対応している。合法手判定
 （王手・二歩・打ち歩詰め・千日手）と AI 対局は動作中。配布は GitHub
-Releases に署名付き APK を置くサイドロード方式を一次窓口とし、BOOTH
-と itch.io にも同じ APK を出品予定。各窓口の URL と商品説明原稿は
+Releases に署名付き APK を置くサイドロード方式を一次窓口とし、同じ
+APK を [itch.io](https://hiroshiyui.itch.io/seishingakuen-shougibu)
+でも公開している。窓口一覧と商品説明原稿は
 [`docs/distribution.md`](./docs/distribution.md) に集約。Google Play
 ストアは方針として対象外。詳細は [`ROADMAP.md`](./ROADMAP.md) の
 フェーズ 7 を参照。
@@ -180,7 +181,7 @@ Android 初期セットアップ（NDK の入手、キーストア生成、`expo
 - [`ROADMAP.md`](./ROADMAP.md) — フェーズ別の開発計画、完了内容、残課題。
 - [`docs/architecture.md`](./docs/architecture.md) — レイヤー構成と各部品の役割。
 - [`docs/android-build.md`](./docs/android-build.md) — Android ビルド手順。
-- [`docs/distribution.md`](./docs/distribution.md) — 配布チャネル一覧と BOOTH / itch.io 用商品説明原稿。
+- [`docs/distribution.md`](./docs/distribution.md) — 配布チャネル一覧と itch.io 用商品説明原稿。
 - [`docs/android-gotchas.md`](./docs/android-gotchas.md) — Android 固有の落とし穴。症状 → 原因 → 対処。
 - [`docs/adr/`](./docs/adr/) — アーキテクチャ意思決定記録（ADR）。
 - [`CLAUDE.md`](./CLAUDE.md) — AI ペアプログラマと新規コントリビューター向けのオリエンテーション。
