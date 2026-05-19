@@ -40,9 +40,46 @@ Releases に署名付き APK を置くサイドロード方式。Google Play ス
 
 ### デスクトップ開発（Linux）
 
-前提: Godot 4.6.2 を
-`~/.local/bin/Godot_v4.6.2-stable_linux.x86_64` に配置。Rust 1.93
-（`native/shogi_core/rust-toolchain.toml` で固定）。
+前提:
+
+- **Godot 4.6.2（Linux x86_64, Standard 版）** —
+  [godotengine.org/download/archive/4.6.2-stable](https://godotengine.org/download/archive/4.6.2-stable/)
+  から zip を取得し、実体を `~/.local/bin/` に展開する。
+
+  ```bash
+  curl -L -o /tmp/godot.zip \
+    https://github.com/godotengine/godot/releases/download/4.6.2-stable/Godot_v4.6.2-stable_linux.x86_64.zip
+  unzip /tmp/godot.zip -d ~/.local/bin/
+  chmod +x ~/.local/bin/Godot_v4.6.2-stable_linux.x86_64
+  ```
+
+  短い名前で呼び出したい場合はシンボリックリンクを張っておくと便利:
+
+  ```bash
+  ln -s ~/.local/bin/Godot_v4.6.2-stable_linux.x86_64 ~/.local/bin/godot
+  ```
+
+  これで `godot --editor --path .` のように起動できる
+  （`~/.local/bin` が PATH に通っていることが前提）。
+  [`tools/build_all.sh`](./tools/build_all.sh) には
+  `GODOT=~/.local/bin/godot` のように環境変数で実体パスを渡せる。
+  別の場所に置きたい場合（例: `~/bin/Godot_v4.6.2-stable_linux.x86_64`
+  → `~/bin/godot`）も同じ要領。
+
+- **Rust 1.93** — [rustup](https://rustup.rs/) で導入する。バージョンは
+  `native/shogi_core/rust-toolchain.toml` で固定しているので、初回
+  `cargo` 実行時に rustup が自動で取得する。
+
+  ```bash
+  curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+  source "$HOME/.cargo/env"
+  ```
+
+  Android クロスコンパイルには `cargo-ndk` も必要:
+
+  ```bash
+  cargo install cargo-ndk
+  ```
 
 ```bash
 # 1. ネイティブ GDExtension をビルド
@@ -84,6 +121,56 @@ cargo test --manifest-path native/shogi_core/Cargo.toml
 コンパイル + フォントサブセット + Godot エクスポート）をまとめて回す
 [`tools/build_all.sh`](./tools/build_all.sh) も用意している。GitHub
 Releases に上げる署名付きリリース APK は `--release` で生成できる。
+
+## ビルド
+
+通常はトップレベルのスクリプト一本でフルパイプラインが回る:
+
+```bash
+# デバッグ APK（既定）
+./tools/build_all.sh
+
+# 署名付きリリース APK（GitHub Releases 用）
+./tools/build_all.sh --release
+
+# Godot の実体パスが既定（~/.local/bin/...）と違う場合
+GODOT=~/bin/godot ./tools/build_all.sh
+```
+
+スクリプトの内訳は次の 4 工程:
+
+1. **Rust デスクトップ** — `cargo build --release` で
+   `libshogi_core.so` を作り `native/bin/linux/x86_64/` に配置。
+2. **Rust Android** — `cargo ndk` で `arm64-v8a` 向けにクロス
+   コンパイルし `native/bin/android/` に出力。`cargo-ndk` と
+   Android NDK 28.1（既定 `~/Android/Sdk/ndk/28.1.13356709`、
+   `ANDROID_NDK_HOME` で上書き可）が必要。
+3. **フォントサブセット** — `tools/build_font_subsets.py` で
+   `scripts/`・`scenes/`・`.tres` 内の日本語文字を走査し、APK に同梱
+   する subset OTF を再生成。UI 文字列を追加したら必ず通すこと
+   （`--skip-fonts` で省略可だが、未収録文字は端末で豆腐になる）。
+4. **Godot エクスポート** — `Android arm64` プリセットで APK
+   （または `--aab` で AAB）を `build/seishingakuen-{debug,release}-v<version>.apk`
+   として出力。
+
+主なフラグ:
+
+| フラグ | 効果 |
+|---|---|
+| `--release` | 署名付きリリース APK を出力（`.android-release-pass` とキーストアが必要） |
+| `--aab` | Play Store 用 AAB（実質未使用、配布は GitHub Releases サイドロードのみ） |
+| `--test` | Rust ビルド後に `cargo test`（単体 + パリティ + perft）を実行 |
+| `--skip-desktop` / `--skip-android` / `--skip-fonts` / `--skip-apk` | 該当工程を飛ばす |
+
+リリース署名は `export_presets.cfg` に書かず、以下の経路で渡している:
+
+- キーストア本体: 既定 `~/.local/share/godot/keystores/seishingakuen-release.keystore`
+  （`GODOT_ANDROID_KEYSTORE_RELEASE_PATH` で上書き）
+- パスワード: リポジトリ直下の `.android-release-pass`（1 行、gitignore 済み）
+- エイリアス: 既定 `seishingakuen`（`GODOT_ANDROID_KEYSTORE_RELEASE_USER` で上書き）
+
+Android 初期セットアップ（NDK の入手、キーストア生成、`export_presets.cfg`
+の編集）は [`docs/android-build.md`](./docs/android-build.md) を参照。
 
 ## ドキュメント
 
