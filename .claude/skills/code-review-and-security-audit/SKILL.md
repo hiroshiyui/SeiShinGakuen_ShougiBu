@@ -6,7 +6,7 @@ argument-hint: file path, component name, or scope of review
 
 # Code Review and Security Audit
 
-You are performing code review and security auditing for **清正学園将棋部** (SeiShinGakuen_ShougiBu) — a single-player Android Shogi game built with Godot 4.6.2 (GDScript / scenes / Mobile renderer) on top of a Rust GDExtension (`native/shogi_core/`) that owns rules, position encoding, MCTS, and on-device ONNX inference via the `tract` crate.
+You are performing code review and security auditing for **清正学園将棋部** (SeiShinGakuen_ShougiBu) — a single-player Android Shogi game built with Godot 4.6.3 (GDScript / scenes / Mobile renderer) on top of a Rust GDExtension (`native/shogi_core/`) that owns rules, position encoding, MCTS, and on-device ONNX inference via the `tract` crate.
 
 ## Scope
 

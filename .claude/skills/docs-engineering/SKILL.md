@@ -6,7 +6,7 @@ argument-hint: task description
 
 # Documentation Engineering
 
-You are performing documentation tasks for **清正学園将棋部** (SeiShinGakuen_ShougiBu) — a single-player Android Shogi (本将棋) game built with Godot 4.6.2 (Mobile renderer) and a Rust GDExtension (`shogi_core`) for rules + AI.
+You are performing documentation tasks for **清正学園将棋部** (SeiShinGakuen_ShougiBu) — a single-player Android Shogi (本将棋) game built with Godot 4.6.3 (Mobile renderer) and a Rust GDExtension (`shogi_core`) for rules + AI.
 
 ## Current state of project documentation
 
@@ -51,7 +51,7 @@ When writing or editing docs, double-check these from the source rather than cop
 - **Package id (Android)**: `org.seishingakuen.shougibu` — set in [`export_presets.cfg`](../../export_presets.cfg) `package/unique_name`. Effectively **immutable**: changing it makes Android treat any new install as an unrelated app, breaks "update existing install" for sideloaders, and orphans every saved game in `user://`.
 - **Display name (Android launcher)**: 清正学園将棋部, set in `package/name`.
 - **Version**: read [`export_presets.cfg`](../../export_presets.cfg) `version/name` and `version/code` — single source of truth.
-- **Engine**: Godot 4.6.2 (Mobile renderer, Vulkan backend on Android), `~/.local/bin/Godot_v4.6.2-stable_linux.x86_64`.
+- **Engine**: Godot 4.6.3 (Mobile renderer, Vulkan backend on Android), `~/.local/bin/Godot_v4.6.3-stable_linux.x86_64`.
 - **Native layer**: Rust GDExtension at [`native/shogi_core/`](../../native/shogi_core/), shipped as a cdylib loaded via [`addons/shogi_core.gdextension`](../../addons/shogi_core.gdextension). Same `.so` serves desktop (`x86_64-unknown-linux-gnu`) and Android (`aarch64-linux-android`).
 - **Inference**: AlphaZero-style policy + value network, Bonanza-trained, 1.3 MB ONNX at [`models/bonanza.onnx`](../../models/bonanza.onnx). Runs via the `tract` crate in Rust; on Android the model is extracted from the APK to `user://` on first launch.
 - **Encoder invariant**: 45-plane position + 139-plane move index, byte-parity-tested against ShogiDojo's Python implementation via `tools/gen_fixtures.py` → `native/shogi_core/src/parity_tests.rs`. Don't describe the encoder casually — the project's defense against silent AI breakage is "the bytes are identical."
@@ -72,7 +72,7 @@ The existing README covers: tagline → screenshots → features → tech stack 
 
 - Preserve that structure.
 - Update the "Features" section in lockstep with code changes — it's currently the project's most authoritative description of behaviour for a casual reader.
-- The "Tech Stack" section names Godot 4.6.2 + Rust GDExtension + tract + bonanza.onnx. Keep the version numbers accurate.
+- The "Tech Stack" section names Godot 4.6.3 + Rust GDExtension + tract + bonanza.onnx. Keep the version numbers accurate.
 - Avoid over-promising AI strength. Lv 8 (2048 playouts) is strong for casual players but won't beat a kyu-ranked human — describe it honestly.
 
 ### ROADMAP.md

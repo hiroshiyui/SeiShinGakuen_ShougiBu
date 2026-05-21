@@ -6,7 +6,7 @@ How to build the Android APK for 清正学園将棋部.
 
 1. **Android SDK + NDK** — this repo assumes:
    - SDK: `~/Android/Sdk`
-   - NDK: `~/Android/Sdk/ndk/28.1.13356709`
+   - NDK: `~/Android/Sdk/ndk/29.0.14206865`
 
 2. **Rust target** — `aarch64-linux-android` (already pinned in
    `native/shogi_core/rust-toolchain.toml`, installed on first `cargo ndk`).
@@ -16,11 +16,11 @@ How to build the Android APK for 清正学園将棋部.
    cargo install cargo-ndk
    ```
 
-4. **Godot export templates** for the exact engine version (4.6.2-stable):
+4. **Godot export templates** for the exact engine version (4.6.3-stable):
    - Open Godot editor
    - Project → Export → *Manage Export Templates*
    - Click **Download and Install** — fetches a ~800 MB `.tpz` to
-     `~/.local/share/godot/export_templates/4.6.2.stable/`
+     `~/.local/share/godot/export_templates/4.6.3.stable/`
 
 5. **Godot editor settings** (user-local, not in repo):
    - Editor → Editor Settings → *Export → Android*
@@ -45,7 +45,7 @@ How to build the Android APK for 清正学園将棋部.
 
 ```bash
 cd native/shogi_core
-ANDROID_NDK_HOME=~/Android/Sdk/ndk/28.1.13356709 \
+ANDROID_NDK_HOME=~/Android/Sdk/ndk/29.0.14206865 \
   cargo ndk --platform 24 -t arm64-v8a \
   --output-dir ../../native/bin/android \
   build --release
@@ -57,7 +57,7 @@ Output lands at `native/bin/android/arm64-v8a/libshogi_core.so`
 ## Build the APK
 
 ```bash
-~/.local/bin/Godot_v4.6.2-stable_linux.x86_64 \
+~/.local/bin/Godot_v4.6.3-stable_linux.x86_64 \
   --headless --path . \
   --export-debug "Android arm64" build/seishingakuen-debug.apk
 ```

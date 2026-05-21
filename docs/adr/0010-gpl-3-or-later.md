@@ -24,7 +24,7 @@ Choosing a license for 0.3.0 needed to balance:
   be GPL-compatible:
   | Component | License | Compatible? |
   |---|---|---|
-  | Godot 4.6.2 (engine) | MIT | ✅ |
+  | Godot 4.6.3 (engine) | MIT | ✅ |
   | godot-rust / gdext | MPL-2.0 | ✅ (one-way: MPL → GPL) |
   | tract (`tract-onnx`) | MIT or Apache-2.0 | ✅ |
   | Other Rust crates | MIT / Apache-2.0 | ✅ |

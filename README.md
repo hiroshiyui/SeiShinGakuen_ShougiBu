@@ -55,28 +55,28 @@ arm64-v8a 向け APK のビルド・インストールに対応している。�
 
 前提:
 
-- **Godot 4.6.2（Linux x86_64, Standard 版）** —
-  [godotengine.org/download/archive/4.6.2-stable](https://godotengine.org/download/archive/4.6.2-stable/)
+- **Godot 4.6.3（Linux x86_64, Standard 版）** —
+  [godotengine.org/download/archive/4.6.3-stable](https://godotengine.org/download/archive/4.6.3-stable/)
   から zip を取得し、実体を `~/.local/bin/` に展開する。
 
   ```bash
   curl -L -o /tmp/godot.zip \
-    https://github.com/godotengine/godot/releases/download/4.6.2-stable/Godot_v4.6.2-stable_linux.x86_64.zip
+    https://github.com/godotengine/godot/releases/download/4.6.3-stable/Godot_v4.6.3-stable_linux.x86_64.zip
   unzip /tmp/godot.zip -d ~/.local/bin/
-  chmod +x ~/.local/bin/Godot_v4.6.2-stable_linux.x86_64
+  chmod +x ~/.local/bin/Godot_v4.6.3-stable_linux.x86_64
   ```
 
   短い名前で呼び出したい場合はシンボリックリンクを張っておくと便利:
 
   ```bash
-  ln -s ~/.local/bin/Godot_v4.6.2-stable_linux.x86_64 ~/.local/bin/godot
+  ln -s ~/.local/bin/Godot_v4.6.3-stable_linux.x86_64 ~/.local/bin/godot
   ```
 
   これで `godot --editor --path .` のように起動できる
   （`~/.local/bin` が PATH に通っていることが前提）。
   [`tools/build_all.sh`](./tools/build_all.sh) には
   `GODOT=~/.local/bin/godot` のように環境変数で実体パスを渡せる。
-  別の場所に置きたい場合（例: `~/bin/Godot_v4.6.2-stable_linux.x86_64`
+  別の場所に置きたい場合（例: `~/bin/Godot_v4.6.3-stable_linux.x86_64`
   → `~/bin/godot`）も同じ要領。
 
 - **Rust 1.93** — [rustup](https://rustup.rs/) で導入する。バージョンは
@@ -101,7 +101,7 @@ cp native/shogi_core/target/release/libshogi_core.so \
    native/bin/linux/x86_64/
 
 # 2. プロジェクトを開く
-~/.local/bin/Godot_v4.6.2-stable_linux.x86_64 --editor --path .
+~/.local/bin/Godot_v4.6.3-stable_linux.x86_64 --editor --path .
 ```
 
 ### テスト
@@ -111,7 +111,7 @@ cp native/shogi_core/target/release/libshogi_core.so \
 cargo test --manifest-path native/shogi_core/Cargo.toml
 
 # GDScript: FFI 経由のルール検証フィクスチャ
-~/.local/bin/Godot_v4.6.2-stable_linux.x86_64 \
+~/.local/bin/Godot_v4.6.3-stable_linux.x86_64 \
   --headless -s res://scripts/tests/rules_tests.gd
 ```
 
@@ -124,7 +124,7 @@ cargo test --manifest-path native/shogi_core/Cargo.toml
 参照。設定済みであれば以下のコマンドで完結する。
 
 ```bash
-~/.local/bin/Godot_v4.6.2-stable_linux.x86_64 \
+~/.local/bin/Godot_v4.6.3-stable_linux.x86_64 \
   --headless --path . \
   --export-debug "Android arm64" build/seishingakuen-debug.apk
 ~/Android/Sdk/platform-tools/adb install -r build/seishingakuen-debug.apk
@@ -156,7 +156,7 @@ GODOT=~/bin/godot ./tools/build_all.sh
    `libshogi_core.so` を作り `native/bin/linux/x86_64/` に配置。
 2. **Rust Android** — `cargo ndk` で `arm64-v8a` 向けにクロス
    コンパイルし `native/bin/android/` に出力。`cargo-ndk` と
-   Android NDK 28.1（既定 `~/Android/Sdk/ndk/28.1.13356709`、
+   Android NDK 29.0（既定 `~/Android/Sdk/ndk/29.0.14206865`、
    `ANDROID_NDK_HOME` で上書き可）が必要。
 3. **フォントサブセット** — `tools/build_font_subsets.py` で
    `scripts/`・`scenes/`・`.tres` 内の日本語文字を走査し、APK に同梱

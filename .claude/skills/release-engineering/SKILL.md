@@ -6,7 +6,7 @@ argument-hint: task description
 
 # Release Engineering
 
-You are performing release engineering tasks for **清正学園将棋部** (SeiShinGakuen_ShougiBu) — a single-player Android Shogi game built with Godot 4.6.2 (Mobile renderer) and a Rust GDExtension. Distribution target is **GitHub Releases** (signed APK, sideload). **Google Play is explicitly out of scope** — see ROADMAP Open Questions for the rationale (avoiding Play developer-account dependencies, mandatory privacy-policy URLs, upload-key custody, and the policy-compliance ratchet for a single-player offline game). Don't suggest Play Store steps unless the user reopens that decision.
+You are performing release engineering tasks for **清正学園将棋部** (SeiShinGakuen_ShougiBu) — a single-player Android Shogi game built with Godot 4.6.3 (Mobile renderer) and a Rust GDExtension. Distribution target is **GitHub Releases** (signed APK, sideload). **Google Play is explicitly out of scope** — see ROADMAP Open Questions for the rationale (avoiding Play developer-account dependencies, mandatory privacy-policy URLs, upload-key custody, and the policy-compliance ratchet for a single-player offline game). Don't suggest Play Store steps unless the user reopens that decision.
 
 ## Current state of the project
 
@@ -89,15 +89,15 @@ everything downstream:
 cargo test --manifest-path native/shogi_core/Cargo.toml --release
 
 # 2. GDScript: rules via FFI (check, pin, 二歩, 打ち歩詰め, undo, ...)
-~/.local/bin/Godot_v4.6.2-stable_linux.x86_64 \
+~/.local/bin/Godot_v4.6.3-stable_linux.x86_64 \
   --headless -s res://scripts/tests/rules_tests.gd --path .
 
 # 3. GDScript: character roster + .tres validity
-~/.local/bin/Godot_v4.6.2-stable_linux.x86_64 \
+~/.local/bin/Godot_v4.6.3-stable_linux.x86_64 \
   --headless -s res://scripts/tests/characters_tests.gd --path .
 
 # 4. GDScript: save/resume + prefs + atomic model copy
-~/.local/bin/Godot_v4.6.2-stable_linux.x86_64 \
+~/.local/bin/Godot_v4.6.3-stable_linux.x86_64 \
   --headless -s res://scripts/tests/persistence_tests.gd --path .
 ```
 

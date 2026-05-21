@@ -23,8 +23,8 @@ set -euo pipefail
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$REPO_ROOT"
 
-GODOT="${GODOT:-$HOME/.local/bin/Godot_v4.6.2-stable_linux.x86_64}"
-ANDROID_NDK_HOME="${ANDROID_NDK_HOME:-$HOME/Android/Sdk/ndk/28.1.13356709}"
+GODOT="${GODOT:-$HOME/.local/bin/Godot_v4.6.3-stable_linux.x86_64}"
+ANDROID_NDK_HOME="${ANDROID_NDK_HOME:-$HOME/Android/Sdk/ndk/29.0.14206865}"
 EXPORT_PRESET="Android arm64"
 
 DO_DESKTOP=1

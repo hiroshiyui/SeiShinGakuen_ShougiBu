@@ -154,7 +154,7 @@ def subset(src: Path, dst: Path, text: str, pyftsubset: str) -> None:
 def reimport_godot() -> None:
     godot = os.environ.get(
         "GODOT",
-        str(Path.home() / ".local/bin/Godot_v4.6.2-stable_linux.x86_64"),
+        str(Path.home() / ".local/bin/Godot_v4.6.3-stable_linux.x86_64"),
     )
     if not (os.path.isfile(godot) and os.access(godot, os.X_OK)):
         print(

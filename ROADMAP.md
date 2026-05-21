@@ -28,7 +28,7 @@ MCTS against the Bonanza policy+value network).
 
 | Layer | Technology |
 |---|---|
-| Engine | Godot 4.6.2 (Mobile renderer) |
+| Engine | Godot 4.6.3 (Mobile renderer) |
 | UI / scenes / input | GDScript |
 | Native core | Rust via [`godot-rust` (gdext)](https://github.com/godot-rust/gdext) |
 | NN inference | `ort` crate (ONNX Runtime) — fallback: `tract` (pure Rust) |
@@ -201,7 +201,7 @@ Shipped differently:
 **Done when:** APK installs, game plays a full match vs. AI on a mid-range phone with <3s thinking time per move.
 
 Shipped differently:
-- NDK 28.1 via `cargo-ndk --platform 24 -t arm64-v8a`. Build doc at `docs/android-build.md`.
+- NDK 29.0 via `cargo-ndk --platform 24 -t arm64-v8a`. Build doc at `docs/android-build.md`.
 - APK size: **58 MB**, dominated by `libgodot_android.so` (74 MB raw → compressed), `libshogi_core.so` (14 MB, tract-embedded), and the Fude Goshirae font (18 MB imported). Font-subsetting is the biggest remaining win.
 - **Model packaging:** `bonanza.onnx` is *not* a Godot-recognised resource type, so the default `all_resources` export filter silently dropped it. Export preset now carries `include_filter="*.onnx"`. On first launch `Settings.model_absolute_path()` copies it from `res://` to `user://` (tract mmaps the OS path; it can't open files that live inside the PCK).
 - **Portrait lock:** Godot 4.6's Android export reads `display/window/handheld/orientation` as an `int`, not a string — leaving it as `"portrait"` silently falls back to `0` (landscape). Must be `1`.

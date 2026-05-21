@@ -6,7 +6,7 @@ argument-hint: commit message or description of changes
 
 # Commit and Push
 
-You are committing and pushing code changes for **清正学園将棋部** (SeiShinGakuen_ShougiBu) — a single-player Android Shogi game built with Godot 4.6.2 (Mobile renderer) and a Rust GDExtension for rules + AI.
+You are committing and pushing code changes for **清正学園将棋部** (SeiShinGakuen_ShougiBu) — a single-player Android Shogi game built with Godot 4.6.3 (Mobile renderer) and a Rust GDExtension for rules + AI.
 
 ## Commit Message Convention
 

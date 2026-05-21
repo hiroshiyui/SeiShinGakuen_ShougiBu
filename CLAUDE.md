@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project
 
-**清正学園将棋部** — a mobile Shogi (本将棋) game for Android. Godot 4.6.2
+**清正学園将棋部** — a mobile Shogi (本将棋) game for Android. Godot 4.6.3
 Mobile renderer, Rust GDExtension for rules + AI, AlphaZero-style
 policy+value network (Bonanza) with PUCT MCTS. Single-player vs. AI,
 offline.
@@ -35,7 +35,7 @@ Decisions with rationale: [`docs/adr/`](./docs/adr/).
 
 ## External dependencies
 
-- **Godot engine:** `~/.local/bin/Godot_v4.6.2-stable_linux.x86_64`.
+- **Godot engine:** `~/.local/bin/Godot_v4.6.3-stable_linux.x86_64`.
 - **AI model:** `models/bonanza.onnx` (1.3 MB). On Android,
   `Settings.model_absolute_path()` extracts it from the APK asset dir
   into `user://` on first launch because tract can't open resources
@@ -46,7 +46,7 @@ Decisions with rationale: [`docs/adr/`](./docs/adr/).
   `native/shogi_core/src/parity_tests.rs`. Encoding drift silently
   breaks the AI; don't change encoding logic without regenerating the
   fixtures and running `cargo test`.
-- **Android NDK 28.1** at `~/Android/Sdk/ndk/28.1.13356709`, used
+- **Android NDK 29.0** at `~/Android/Sdk/ndk/29.0.14206865`, used
   through `cargo-ndk` for Android builds.
 
 ## Commands
@@ -55,25 +55,25 @@ Godot is not on PATH — always invoke by full path.
 
 ```bash
 # Open editor
-~/.local/bin/Godot_v4.6.2-stable_linux.x86_64 --editor --path .
+~/.local/bin/Godot_v4.6.3-stable_linux.x86_64 --editor --path .
 
 # Headless smoke run
-~/.local/bin/Godot_v4.6.2-stable_linux.x86_64 --headless --quit-after 60 --path .
+~/.local/bin/Godot_v4.6.3-stable_linux.x86_64 --headless --quit-after 60 --path .
 
 # GDScript tests (rules via FFI)
-~/.local/bin/Godot_v4.6.2-stable_linux.x86_64 \
+~/.local/bin/Godot_v4.6.3-stable_linux.x86_64 \
   --headless -s res://scripts/tests/rules_tests.gd
 
 # GDScript tests (character roster + profile validity)
-~/.local/bin/Godot_v4.6.2-stable_linux.x86_64 \
+~/.local/bin/Godot_v4.6.3-stable_linux.x86_64 \
   --headless -s res://scripts/tests/characters_tests.gd --path .
 
 # GDScript tests (save/resume + prefs + atomic model copy)
-~/.local/bin/Godot_v4.6.2-stable_linux.x86_64 \
+~/.local/bin/Godot_v4.6.3-stable_linux.x86_64 \
   --headless -s res://scripts/tests/persistence_tests.gd --path .
 
 # GDScript tests (opening book content sanity — every USI legal etc.)
-~/.local/bin/Godot_v4.6.2-stable_linux.x86_64 \
+~/.local/bin/Godot_v4.6.3-stable_linux.x86_64 \
   --headless -s res://scripts/tests/opening_book_tests.gd --path .
 ```
 
@@ -90,7 +90,7 @@ cargo test --manifest-path native/shogi_core/Cargo.toml
 
 # Android cross-compile — see docs/android-build.md
 (cd native/shogi_core && \
- ANDROID_NDK_HOME=~/Android/Sdk/ndk/28.1.13356709 \
+ ANDROID_NDK_HOME=~/Android/Sdk/ndk/29.0.14206865 \
  cargo ndk --platform 24 -t arm64-v8a \
  --output-dir ../../native/bin/android build --release)
 ```
