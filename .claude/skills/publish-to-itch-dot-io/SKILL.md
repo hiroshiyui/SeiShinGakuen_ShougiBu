@@ -15,17 +15,6 @@ already been tagged and published there.
 **The upload itself is done by the user in the web UI.** You prepare
 and verify the file, then hand them the checklist.
 
-## Why not butler
-
-itch.io has no REST endpoint for uploads; its CLI, butler, is the only
-automated path. It was tried for 1.0.7 (2026-10-19): the push itself
-took seconds, but the first build on the new `android` channel sat in
-itch.io's server-side processing for 20+ minutes without ever showing
-up (`butler status` kept reporting "No channel found"; a re-push was
-refused with "latest build is still processing"). A manual upload took
-seconds. butler, the SOPS-encrypted API key and `.sops.yaml` were
-removed afterwards. Don't reintroduce butler unless the user asks.
-
 ## Workflow
 
 1. **Resolve the version.** Use the argument if given, otherwise
