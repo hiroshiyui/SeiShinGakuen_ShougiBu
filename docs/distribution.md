@@ -79,4 +79,4 @@ GPL-3.0-or-later。ソースコードと開発履歴は GitHub で公開して�
 1. GitHub Releases に v\<X.Y.Z> をタグ付けで公開（一次配布）。
 2. リリースノートと SHA-256 を `docs/release-notes/<X.Y.Z>.md` に反映。
 3. このドキュメントの「主な特徴」が変わっていれば該当箇所を更新。
-4. itch.io の Edit game でファイルを差し替え、Devlog にバージョン更新を投稿（任意だがフォロワー通知が出る）。
+4. itch.io へ APK をアップロード: `butler push build/seishingakuen-release-v<X.Y.Z>.apk hiroshiyui/seishingakuen-shougibu:android --userversion <X.Y.Z>`（Claude Code では `publish-to-itch-dot-io` スキル）。Devlog にバージョン更新を投稿（任意だがフォロワー通知が出る）。

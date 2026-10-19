@@ -64,6 +64,7 @@ The general shape, in order. Confirm at each step that's user-visible.
 8. **Release commit + tag** — see below.
 9. **Push** only after the user explicitly confirms (`git push origin main && git push origin <X.Y.Z>`).
 10. **Publish a GitHub Release** with the APK + `.idsig` attached — see "GitHub Release" below.
+11. **Optionally mirror to itch.io** once the GitHub Release is live — use the `publish-to-itch-dot-io` skill (butler push to `hiroshiyui/seishingakuen-shougibu:android`).
 
 ### Git Conventions
 
