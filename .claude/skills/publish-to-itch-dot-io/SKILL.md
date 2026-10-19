@@ -1,65 +1,30 @@
 ---
 name: publish-to-itch-dot-io
-description: Upload the signed release APK to the itch.io page (hiroshiyui/seishingakuen-shougibu) with butler. Use when the user asks to publish / push / upload a release to itch.io, or after a GitHub Release when they want itch.io updated too.
+description: Walk the user through uploading the signed release APK to the itch.io page (hiroshiyui/seishingakuen-shougibu) by hand in the web UI. Use when the user asks to publish / upload a release to itch.io, or after a GitHub Release when they want itch.io updated too.
 argument-hint: optional version (defaults to version/name in export_presets.cfg)
 ---
 
 # Publish to itch.io
 
-You are uploading a release of **清正学園将棋部** to its itch.io page,
-<https://hiroshiyui.itch.io/seishingakuen-shougibu>. itch.io is a
+You are helping publish a release of **清正学園将棋部** on its itch.io
+page, <https://hiroshiyui.itch.io/seishingakuen-shougibu>. itch.io is a
 **secondary** channel: GitHub Releases is the primary one (see
 `release-engineering`), so itch.io only ever gets an APK that has
 already been tagged and published there.
 
-itch.io has no web/REST endpoint for uploading builds. The only
-supported path is **butler**, itch.io's CLI, which pushes to a
-*channel* of the game page.
+**The upload itself is done by the user in the web UI.** You prepare
+and verify the file, then hand them the checklist.
 
-## Fixed facts
+## Why not butler
 
-| What | Value |
-|---|---|
-| butler target | `hiroshiyui/seishingakuen-shougibu:android` |
-| Channel name | `android` — the name makes itch.io tag the upload with the Android platform automatically. Don't rename it; a new channel name creates a second, separate download on the page. |
-| Artefact | `build/seishingakuen-release-v<X.Y.Z>.apk` only. Don't push the `.idsig` — it's only meaningful next to the APK on GitHub Releases. |
-| `--userversion` | `<X.Y.Z>`, same as the git tag and `version/name` in `export_presets.cfg`. |
-
-## Prerequisites
-
-1. **butler installed.** Check with `butler -V`. If missing, install it
-   into `~/.local/bin` (already on PATH here):
-   ```bash
-   d=$(mktemp -d) && \
-   curl -fL -o "$d/butler.zip" https://broth.itch.zone/butler/linux-amd64/LATEST/archive/default && \
-   unzip -o "$d/butler.zip" -d "$d/butler" && \
-   install -m 755 "$d/butler/butler" ~/.local/bin/butler && \
-   install -m 644 "$d"/butler/*.so ~/.local/bin/ 2>/dev/null; butler -V
-   ```
-   (Downloaded archive is untrusted data — unpack it in its own temp
-   dir, as above, not in the repo.)
-2. **API key in SOPS.** The itch.io API key lives SOPS-encrypted in
-   `secrets/itch.sops.yml` (GPG, rule in `.sops.yaml`; shape in
-   `secrets/itch.sops.yml.example`). Check it exists. If not, the user
-   creates it **in their own terminal** — `sops edit` opens `$EDITOR`,
-   which doesn't work through Claude Code, and the plaintext key must
-   never pass through this conversation:
-   ```bash
-   sops edit secrets/itch.sops.yml   # add: butler_api_key: <key>
-   ```
-   Don't use `butler login`; the SOPS file is the single source.
-
-   Feed the key to butler only via the environment of the one command,
-   so it's never printed, written to disk, or echoed:
-   ```bash
-   BUTLER_API_KEY="$(sops decrypt --extract '["butler_api_key"]' secrets/itch.sops.yml)" \
-     butler <subcommand> ...
-   ```
-   Never `cat`/`echo` the decrypted value, never `sops decrypt` the whole
-   file to stdout, and never write the key into the repo, a skill, a
-   script, or a commit. If decryption fails (gpg-agent can't prompt for
-   the passphrase), ask the user to unlock the key, e.g. by running
-   `! sops decrypt --extract '["butler_api_key"]' secrets/itch.sops.yml >/dev/null`.
+itch.io has no REST endpoint for uploads; its CLI, butler, is the only
+automated path. It was tried for 1.0.7 (2026-10-19): the push itself
+took seconds, but the first build on the new `android` channel sat in
+itch.io's server-side processing for 20+ minutes without ever showing
+up (`butler status` kept reporting "No channel found"; a re-push was
+refused with "latest build is still processing"). A manual upload took
+seconds. butler, the SOPS-encrypted API key and `.sops.yaml` were
+removed afterwards. Don't reintroduce butler unless the user asks.
 
 ## Workflow
 
@@ -80,47 +45,29 @@ supported path is **butler**, itch.io's CLI, which pushes to a
    If it says `Android Debug` or the digest differs, **stop**.
    Also confirm it matches what's on GitHub: download the release asset
    with `gh release download <X.Y.Z> -p '*.apk' -D <scratch dir>` and
-   compare `sha256sum`. A mismatch means the local build was redone
-   after publishing — push the GitHub copy instead, never a different
-   binary under the same version.
-4. **Dry run**, then show the user what will happen:
-   ```bash
-   BUTLER_API_KEY="$(sops decrypt --extract '["butler_api_key"]' secrets/itch.sops.yml)" \
-     butler push --dry-run build/seishingakuen-release-v<X.Y.Z>.apk \
-     hiroshiyui/seishingakuen-shougibu:android --userversion <X.Y.Z>
-   BUTLER_API_KEY="$(sops decrypt --extract '["butler_api_key"]' secrets/itch.sops.yml)" \
-     butler status hiroshiyui/seishingakuen-shougibu:android
-   ```
-5. **Confirm with the user before the real push** — it's public as soon
-   as processing finishes.
-6. **Push:**
-   ```bash
-   BUTLER_API_KEY="$(sops decrypt --extract '["butler_api_key"]' secrets/itch.sops.yml)" \
-     butler push build/seishingakuen-release-v<X.Y.Z>.apk \
-     hiroshiyui/seishingakuen-shougibu:android --userversion <X.Y.Z>
-   ```
-7. **Verify:** `butler status hiroshiyui/seishingakuen-shougibu:android` (same `BUTLER_API_KEY` prefix)
-   until the build shows as processed with version `<X.Y.Z>`.
-8. **Hand off the manual steps** (no API exists for these):
-   - Optional Devlog post on itch.io announcing `<X.Y.Z>` — followers
-     get notified. The Japanese highlights in
-     `docs/release-notes/<X.Y.Z>.md` are a ready source.
-   - If the feature list changed, update the page text from
-     `docs/distribution.md` in Edit game.
-
-## First push only
-
-Earlier releases were uploaded by hand in the web UI, so the first
-`butler push` adds a *second* file next to the old manual upload.
-Tell the user to delete the old manual upload in Edit game → Uploads
-after the push is processed (and check the butler upload is marked
-Android). After that, every push just replaces the `android` channel.
+   compare `sha256sum`. On a mismatch, tell the user to upload the
+   GitHub copy instead — never a different binary under the same
+   version.
+4. **Hand the user this checklist** (itch.io → Edit game → Uploads),
+   with the absolute path to the APK filled in:
+   1. **Upload files** → `~/MyProjects/SeiShinGakuen_ShougiBu/build/seishingakuen-release-v<X.Y.Z>.apk`.
+      Upload the APK only, not the `.idsig`.
+   2. Keep the type **Executable** and tick **Android**.
+   3. On the previous version's file, tick **Hide this file and prevent
+      it from being downloaded** (older files stay hidden, not deleted,
+      so their download counts survive).
+   4. **Save**.
+   5. Optional: post a Devlog announcing `<X.Y.Z>` — followers get
+      notified. The Japanese highlights in
+      `docs/release-notes/<X.Y.Z>.md` are a ready source.
+   6. If the feature list changed, update the page text from
+      `docs/distribution.md`.
+5. If the user shares a screenshot of the Uploads section afterwards,
+   check: exactly one visible APK, it's `<X.Y.Z>`, Android ticked.
 
 ## Don'ts
 
-- Don't push to itch.io before the GitHub Release exists.
-- Don't push a debug-signed APK — sideloaders who got the release cert
-  from GitHub couldn't update over it.
-- Don't reuse `--userversion` for a different binary.
-- Don't add other channels (`windows`, `linux`, …) — the game is
-  Android-only.
+- Don't publish to itch.io before the GitHub Release exists.
+- Don't hand over a debug-signed APK — sideloaders who got the release
+  cert from GitHub couldn't update over it.
+- Don't add uploads for other platforms — the game is Android-only.

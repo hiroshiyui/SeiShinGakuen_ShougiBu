@@ -1,8 +1,0 @@
-# SOPS configuration — defines which keys encrypt which files.
-#
-# Encrypted files are `*.sops.yml` under secrets/ (e.g. the itch.io
-# butler API key used by the publish-to-itch-dot-io skill). For more
-# operators, list their fingerprints comma-separated.
-creation_rules:
-  - path_regex: (^|/)secrets/.*\.sops\.yml$
-    pgp: "37A45B21B45EA42EBE6CE74C9F353471AF05D276"
