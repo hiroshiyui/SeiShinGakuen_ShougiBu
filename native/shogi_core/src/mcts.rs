@@ -8,7 +8,7 @@
 //! The tree is stored as an arena (`Vec<Node>` + `usize` indices) to sidestep
 //! borrow-checker pain with recursive tree mutation.
 
-use rand::Rng;
+use rand::RngExt;
 
 use crate::board::Board;
 use crate::encode::encode_position;
@@ -324,7 +324,7 @@ pub fn all_legal_moves(board: &mut Board) -> Vec<Move> {
 }
 
 // --- Gamma(α, 1) via Marsaglia-Tsang for α >= 1, fallback sqrt trick for α < 1
-fn sample_gamma<R: Rng + ?Sized>(rng: &mut R, alpha: f32) -> f32 {
+fn sample_gamma<R: RngExt + ?Sized>(rng: &mut R, alpha: f32) -> f32 {
     if alpha >= 1.0 {
         return sample_gamma_geq1(rng, alpha);
     }
@@ -333,7 +333,7 @@ fn sample_gamma<R: Rng + ?Sized>(rng: &mut R, alpha: f32) -> f32 {
     g * u.powf(1.0 / alpha)
 }
 
-fn sample_gamma_geq1<R: Rng + ?Sized>(rng: &mut R, alpha: f32) -> f32 {
+fn sample_gamma_geq1<R: RngExt + ?Sized>(rng: &mut R, alpha: f32) -> f32 {
     let d = alpha - 1.0 / 3.0;
     let c = 1.0 / (9.0 * d).sqrt();
     loop {
@@ -355,7 +355,7 @@ fn sample_gamma_geq1<R: Rng + ?Sized>(rng: &mut R, alpha: f32) -> f32 {
     }
 }
 
-fn sample_standard_normal<R: Rng + ?Sized>(rng: &mut R) -> f32 {
+fn sample_standard_normal<R: RngExt + ?Sized>(rng: &mut R) -> f32 {
     // Box-Muller
     let u1: f32 = rng.random_range(1e-9..1.0);
     let u2: f32 = rng.random();

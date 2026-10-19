@@ -24,7 +24,7 @@
 
 use std::collections::HashMap;
 
-use rand::Rng;
+use rand::RngExt;
 use serde_json::Value;
 
 use crate::board::Board;

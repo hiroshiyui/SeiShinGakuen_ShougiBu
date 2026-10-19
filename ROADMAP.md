@@ -265,9 +265,10 @@ exposed in the menu but untuned. Playouts/sec on arm64 is the next
 thing to benchmark when we tune difficulty.
 
 ### GDExtension ABI stability
-`godot = "0.2.4"` pinned in `native/shogi_core/Cargo.toml`. Godot 4.6
-GDExtension API is stable across 4.6.x; rebuild on any Godot minor
-bump. `.gdextension` manifest declares `compatibility_minimum = 4.3`.
+`godot = "0.5"` (resolved 0.5.5) pinned in `native/shogi_core/Cargo.toml`. Godot 4.7
+GDExtension API is stable across 4.7.x; rebuild on any Godot minor
+bump. `.gdextension` manifest declares `compatibility_minimum = 4.6`
+(godot-rust 0.5 targets the 4.6 GDExtension API by default).
 
 ### Rule edge cases
 - 千日手 perpetual-check: detected in

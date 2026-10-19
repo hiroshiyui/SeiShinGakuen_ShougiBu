@@ -13,7 +13,7 @@ use crate::encode::{NUM_FILES, NUM_INPUT_CHANNELS, NUM_RANKS};
 use crate::move_index::{NUM_MOVE_PLANES, NUM_SQUARES};
 
 pub struct NeuralNet {
-    model: RunnableModel<TypedFact, Box<dyn TypedOp>, TypedModel>,
+    model: Arc<TypedRunnableModel>,
 }
 
 impl NeuralNet {
@@ -46,8 +46,8 @@ impl NeuralNet {
         let outputs = self.model.run(tvec!(input.into()))?;
         // Model outputs (policy_logits (1,139,9,9), value (1,1)); order is
         // preserved from the ONNX graph definition.
-        let policy = outputs[0].to_array_view::<f32>()?;
-        let value = outputs[1].to_array_view::<f32>()?;
+        let policy = outputs[0].to_plain_array_view::<f32>()?;
+        let value = outputs[1].to_plain_array_view::<f32>()?;
         let policy_vec: Vec<f32> = policy.as_slice().unwrap_or(&[]).to_vec();
         debug_assert_eq!(policy_vec.len(), NUM_MOVE_PLANES * NUM_SQUARES);
         let v = value.iter().copied().next().unwrap_or(0.0);

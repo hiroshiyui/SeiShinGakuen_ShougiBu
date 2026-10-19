@@ -55,12 +55,12 @@ impl ShogiCore {
 
     #[func]
     fn to_sfen(&self) -> GString {
-        sfen::to_sfen(&self.board).into()
+        sfen::to_sfen(&self.board).as_str().into()
     }
 
     #[func]
     fn position_key(&self) -> GString {
-        sfen::position_key(&self.board).into()
+        sfen::position_key(&self.board).as_str().into()
     }
 
     #[func]
@@ -77,7 +77,7 @@ impl ShogiCore {
     fn move_log_kifu_lines(&self) -> PackedStringArray {
         let mut arr = PackedStringArray::new();
         for s in kifu::log_to_lines(&self.board) {
-            arr.push(&GString::from(s));
+            arr.push(&GString::from(s.as_str()));
         }
         arr
     }
@@ -94,7 +94,9 @@ impl ShogiCore {
                     out.push(v);
                 }
             }
-            Err(e) => godot_warn!("parse_kif: {}", e),
+            Err(e) => {
+                godot_warn!("parse_kif: {}", e);
+            }
         }
         out
     }
@@ -107,6 +109,7 @@ impl ShogiCore {
             &gote_name.to_string(),
             &started_at.to_string(),
         )
+        .as_str()
         .into()
     }
 
@@ -147,15 +150,15 @@ impl ShogiCore {
         let Some(piece) = self.board.piece_at(Square::new(file as i8, rank as i8)) else {
             return Variant::nil();
         };
-        let mut d = Dictionary::new();
+        let mut d = VarDictionary::new();
         d.set("kind", piece.kind as i64);
         d.set("is_gote", piece.color.is_gote());
         d.to_variant()
     }
 
     #[func]
-    fn hand(&self, is_gote: bool) -> Dictionary {
-        let mut d = Dictionary::new();
+    fn hand(&self, is_gote: bool) -> VarDictionary {
+        let mut d = VarDictionary::new();
         for (&k, &n) in self.board.hand(Color::from_gote(is_gote)) {
             d.set(k as i64, n as i64);
         }
@@ -202,7 +205,7 @@ impl ShogiCore {
     }
 
     #[func]
-    fn apply_move(&mut self, move_dict: Dictionary) -> bool {
+    fn apply_move(&mut self, move_dict: VarDictionary) -> bool {
         let Some(mv) = dict_to_move(&move_dict) else { return false };
         if !self.board.apply_move(mv) {
             return false;
@@ -221,13 +224,13 @@ impl ShogiCore {
     // --- rules --------------------------------------------------------------
 
     #[func]
-    fn legal_moves_from(&mut self, file: i64, rank: i64) -> Array<Dictionary> {
+    fn legal_moves_from(&mut self, file: i64, rank: i64) -> Array<VarDictionary> {
         let moves = legal_moves_from(&mut self.board, Square::new(file as i8, rank as i8));
         moves.into_iter().map(move_to_dict).collect()
     }
 
     #[func]
-    fn legal_drops(&mut self, kind: i64) -> Array<Dictionary> {
+    fn legal_drops(&mut self, kind: i64) -> Array<VarDictionary> {
         let Some(k) = Kind::from_u8(kind as u8) else { return Array::new() };
         let moves = legal_drops(&mut self.board, k);
         moves.into_iter().map(move_to_dict).collect()
@@ -273,7 +276,7 @@ impl ShogiCore {
         pieces_in_opponent_camp(&self.board, Color::from_gote(is_gote)) as i64
     }
 
-    /// Returns a Dictionary describing whether `is_gote` may declare
+    /// Returns a VarDictionary describing whether `is_gote` may declare
     /// 入玉宣言 win at the current position. Shape:
     ///   { ok: bool,
     ///     reason: String,            # one of: "ok" / "king_not_entered" /
@@ -282,10 +285,10 @@ impl ShogiCore {
     ///     points_have: i64, points_need: i64,    # always populated
     ///     pieces_have: i64, pieces_need: i64 }   # always populated
     #[func]
-    fn can_declare_jishogi(&self, is_gote: bool) -> Dictionary {
+    fn can_declare_jishogi(&self, is_gote: bool) -> VarDictionary {
         let color = Color::from_gote(is_gote);
         let result = can_declare_jishogi(&self.board, color);
-        let mut d = Dictionary::new();
+        let mut d = VarDictionary::new();
         let (ok, reason) = match &result {
             DeclareResult::Ok => (true, "ok"),
             DeclareResult::KingNotEntered => (false, "king_not_entered"),
@@ -340,7 +343,7 @@ impl ShogiCore {
     }
 
     /// Run MCTS from the current position and return the best move as a
-    /// `Dictionary` (same shape as `legal_moves_from`). Returns `null` if
+    /// `VarDictionary` (same shape as `legal_moves_from`). Returns `null` if
     /// no model is loaded or the search found no legal moves.
     ///
     /// This is synchronous and will block for the duration of the search.
@@ -351,7 +354,7 @@ impl ShogiCore {
     /// (prior probability, 0..1). Cheap (~few ms) so safe to call on the
     /// main thread. Empty if no model / no legal moves.
     #[func]
-    fn suggest_moves(&mut self, top_k: i64) -> Array<Dictionary> {
+    fn suggest_moves(&mut self, top_k: i64) -> Array<VarDictionary> {
         let Some(nn) = self.nn.as_ref() else {
             godot_warn!("suggest_moves called before load_model");
             return Array::new();
@@ -405,7 +408,7 @@ impl ShogiCore {
     /// the current player's perspective — search-backed, not policy-only).
     /// Blocks for the duration of the search — call from a Godot `Thread`.
     #[func]
-    fn suggest_moves_mcts(&mut self, top_k: i64, playouts: i64) -> Array<Dictionary> {
+    fn suggest_moves_mcts(&mut self, top_k: i64, playouts: i64) -> Array<VarDictionary> {
         let Some(nn) = self.nn.as_ref() else {
             godot_warn!("suggest_moves_mcts called before load_model");
             return Array::new();
@@ -488,8 +491,8 @@ impl ShogiCore {
 
 // --- move <-> dict conversions ---------------------------------------------
 
-fn move_to_dict(mv: Move) -> Dictionary {
-    let mut d = Dictionary::new();
+fn move_to_dict(mv: Move) -> VarDictionary {
+    let mut d = VarDictionary::new();
     match mv {
         Move::Board { from, to, promote } => {
             d.set("from", Vector2i::new(from.file as i32, from.rank as i32));
@@ -504,7 +507,7 @@ fn move_to_dict(mv: Move) -> Dictionary {
     d
 }
 
-fn dict_to_move(d: &Dictionary) -> Option<Move> {
+fn dict_to_move(d: &VarDictionary) -> Option<Move> {
     if let Some(v) = d.get("drop_kind") {
         let kind = Kind::from_u8(v.try_to::<i64>().ok()? as u8)?;
         let to: Vector2i = d.get("to")?.try_to().ok()?;
