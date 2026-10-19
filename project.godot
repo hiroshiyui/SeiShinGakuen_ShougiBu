@@ -14,7 +14,7 @@ config/name="清正学園将棋部"
 config/version="1.0.5"
 run/main_scene="res://scenes/MainMenu.tscn"
 config/quit_on_go_back=false
-config/features=PackedStringArray("4.6", "Mobile")
+config/features=PackedStringArray("4.7", "Mobile")
 config/icon="res://icon.png"
 
 [autoload]

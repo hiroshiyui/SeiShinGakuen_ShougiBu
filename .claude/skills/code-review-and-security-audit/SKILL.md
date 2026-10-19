@@ -6,7 +6,7 @@ argument-hint: file path, component name, or scope of review
 
 # Code Review and Security Audit
 
-You are performing code review and security auditing for **清正学園将棋部** (SeiShinGakuen_ShougiBu) — a single-player Android Shogi game built with Godot 4.6.3 (GDScript / scenes / Mobile renderer) on top of a Rust GDExtension (`native/shogi_core/`) that owns rules, position encoding, MCTS, and on-device ONNX inference via the `tract` crate.
+You are performing code review and security auditing for **清正学園将棋部** (SeiShinGakuen_ShougiBu) — a single-player Android Shogi game built with Godot 4.7.2 (GDScript / scenes / Mobile renderer) on top of a Rust GDExtension (`native/shogi_core/`) that owns rules, position encoding, MCTS, and on-device ONNX inference via the `tract` crate.
 
 ## Scope
 
@@ -48,7 +48,7 @@ Things you **don't** need to audit (don't waste time):
 
 ## Review Checklist
 
-### GDScript side (Godot 4.6 / Mobile renderer)
+### GDScript side (Godot 4.7 / Mobile renderer)
 
 - **Thread safety with `_core`.** Any new call to `_core.*` from the main thread must be gated by checking `_thinking` and `_teacher_thinking` (or by being outside `_process` / signal handlers that can fire mid-search). The pattern `_thinking = true` before `Thread.start(...)` and clearing it on completion is non-negotiable.
 - **Thread cleanup on scene change.** `_back_to_title()` / `_on_quit_confirmed()` must `wait_to_finish()` live worker threads before `change_scene_to_file`. Abandoning a `Thread` JoinHandle leaks.
