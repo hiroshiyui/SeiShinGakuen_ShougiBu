@@ -8,6 +8,20 @@ All notable changes to this project. Format follows
 
 ## [Unreleased]
 
+## [1.0.7] — 2026-10-19
+
+### Added
+- 確認ダイアログ (成り・投了・対局終了・入玉宣言・アプリ終了・
+  棋譜削除) と棋譜一覧の表示中、背景をぼかして暗くするように。
+
+### Fixed
+- Android 12 以降の起動画面でアイコンの背景が抜け、アリスと
+  テリーだけが浮いて見えていた問題。アダプティブアイコンの前景に
+  背景を合成して解消。
+
+[Full release notes](./docs/release-notes/1.0.7.md) ·
+[GitHub Release](https://github.com/hiroshiyui/SeiShinGakuen_ShougiBu/releases/tag/1.0.7)
+
 ## [1.0.6] — 2026-10-19
 
 ### Changed
@@ -308,7 +322,8 @@ First public release.
 [Full release notes](./docs/release-notes/0.1.1.md) ·
 [GitHub Release](https://github.com/hiroshiyui/SeiShinGakuen_ShougiBu/releases/tag/0.1.1)
 
-[Unreleased]: https://github.com/hiroshiyui/SeiShinGakuen_ShougiBu/compare/1.0.6...HEAD
+[Unreleased]: https://github.com/hiroshiyui/SeiShinGakuen_ShougiBu/compare/1.0.7...HEAD
+[1.0.7]: https://github.com/hiroshiyui/SeiShinGakuen_ShougiBu/compare/1.0.6...1.0.7
 [1.0.6]: https://github.com/hiroshiyui/SeiShinGakuen_ShougiBu/compare/1.0.5...1.0.6
 [1.0.5]: https://github.com/hiroshiyui/SeiShinGakuen_ShougiBu/compare/1.0.4...1.0.5
 [1.0.4]: https://github.com/hiroshiyui/SeiShinGakuen_ShougiBu/compare/1.0.3...1.0.4
