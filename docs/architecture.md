@@ -61,7 +61,7 @@ is in service of them.
                          │  {drop_kind, to}; packed move log is
                          │  a PackedInt32Array (one i32/move).
 ┌────────────────────────┴────────────────────────────────────┐
-│ Native core — Rust (cdylib via gdext 0.2.4)                 │
+│ Native core — Rust (cdylib via gdext 0.5.5)                 │
 │      native/shogi_core/src/                                 │
 │        lib.rs       ShogiCore class, #[func] API surface    │
 │        board.rs     mailbox [Option<Piece>; 81] + hands +   │
@@ -74,7 +74,7 @@ is in service of them.
 │                     parse + per-move i32 pack/unpack        │
 │        encode.rs    (45,9,9) position tensor                │
 │        move_index.rs (139,9,9) move ↔ index                 │
-│        nn.rs        tract RunnableModel wrapper             │
+│        nn.rs        tract TypedRunnableModel wrapper        │
 │        mcts.rs      single-threaded PUCT + Dirichlet noise  │
 │                     + top_k_root_children() for analysis    │
 └────────────────────────┬────────────────────────────────────┘
@@ -88,7 +88,7 @@ is in service of them.
 ```
 
 Only two hard lines: GDScript ↔ Rust (via gdext FFI) and Rust ↔ ONNX
-(via `tract::RunnableModel::run`). Everything inside each layer is free
+(via `TypedRunnableModel::run`). Everything inside each layer is free
 to refactor.
 
 ## Data flow: one move
@@ -175,7 +175,8 @@ rewinding `_core` in place: [ADR-0008](./adr/0008-review-mode-scratch-core.md).
   `move_index.rs` — those are pinned to training data format.
 - **New ShogiCore API** — add `#[func]` to
   [`lib.rs`](../native/shogi_core/src/lib.rs). Moves cross the boundary
-  as `Dictionary` keyed by string; integer `Kind` passes through (our
+  as an untyped `VarDictionary` (godot-rust 0.5's name for Godot's
+  `Dictionary`) keyed by string; integer `Kind` passes through (our
   `Kind` enum discriminants match GDScript's `Piece.Kind`).
 - **Persistent session state** — add to
   [`scripts/autoload/Settings.gd`](../scripts/autoload/Settings.gd) and

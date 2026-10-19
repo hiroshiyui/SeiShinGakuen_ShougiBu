@@ -79,7 +79,7 @@ arm64-v8a 向け APK のビルド・インストールに対応している。�
   別の場所に置きたい場合（例: `~/bin/Godot_v4.7.2-stable_linux.x86_64`
   → `~/bin/godot`）も同じ要領。
 
-- **Rust 1.93** — [rustup](https://rustup.rs/) で導入する。バージョンは
+- **Rust 1.99.1** — [rustup](https://rustup.rs/) で導入する。バージョンは
   `native/shogi_core/rust-toolchain.toml` で固定しているので、初回
   `cargo` 実行時に rustup が自動で取得する。
 

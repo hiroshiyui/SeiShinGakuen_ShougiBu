@@ -71,7 +71,7 @@ Things you **don't** need to audit (don't waste time):
 - **Terminal handling.** `nodes[idx].terminal_value` short-circuits expansion. New backup logic must respect it; double-counting a terminal causes the search to over-prefer or under-prefer mating lines.
 - **Allocation discipline.** `Searcher::nodes` is a `Vec<Node>` arena. Long searches grow it monotonically; that's intentional. Don't introduce per-playout heap allocations.
 - **Error paths.** `nn.forward(...)` returns `Result`; failures are swallowed (`Err(_) => 0.0`) so a transient inference error doesn't kill a playout. Don't escalate these to panics — the search is best-effort.
-- **`#[func]` boundary contracts.** Methods that GDScript calls must (a) accept Godot-native types (`i64`, `f64`, `Variant`, `Array`, `Dictionary`) on the boundary, (b) handle "no model loaded" via `godot_warn!` + a sensible fallback (empty Array, `Variant::nil()`), (c) never panic on a recoverable input.
+- **`#[func]` boundary contracts.** Methods that GDScript calls must (a) accept Godot-native types (`i64`, `f64`, `Variant`, `Array`, `VarDictionary`) on the boundary, (b) handle "no model loaded" via `godot_warn!` + a sensible fallback (empty Array, `Variant::nil()`), (c) never panic on a recoverable input.
 
 ### FFI / cross-language hazards
 
@@ -99,7 +99,7 @@ Things you **don't** need to audit (don't waste time):
 - **Orientation** is locked to portrait; Android reports orientation as an int (see `docs/android-gotchas.md`).
 - **Touch double-fire.** Some input handlers in `Square.gd` / `HandPiece.gd` already guard against `InputEventScreenTouch` + `InputEventMouseButton` both firing on Android. New input handlers must handle both branches consistently.
 - **`include_filter="*.onnx"`.** The model is included via the export preset's `include_filter`; if a new model is added, the filter needs updating.
-- **Adaptive icons.** `assets/branding/icon_launcher_{192,432}.png` ship via `export_presets.cfg`'s `launcher_icons/*`. Adding a monochrome variant later means another file + another preset entry.
+- **Adaptive icons.** `assets/branding/icon_launcher_192.png` (legacy composite), `icon_launcher_432.png` (transparent adaptive foreground — the 将棋部 students) and `icon_launcher_bg_432.png` (adaptive background — classroom shogi board) ship via `export_presets.cfg`'s `launcher_icons/*`. Foreground content must stay inside the central 66dp (264px of 432) safe zone. Adding a monochrome variant later means another file + another preset entry.
 - **Safe-area insets.** `_apply_safe_area` reads `DisplayServer.get_display_safe_area()` and only applies vertical insets (horizontal cutouts cause off-centre layout in portrait). New layout code that reads safe area should follow the same pattern.
 
 ### Code smells worth flagging

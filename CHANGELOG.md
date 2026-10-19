@@ -8,6 +8,17 @@ All notable changes to this project. Format follows
 
 ## [Unreleased]
 
+### Changed
+- アプリアイコンを刷新。将棋部の中村アリスとテリー・クラークを
+  教室の将棋盤の前に配置したデザインに変更。Android アダプティブ
+  アイコンを前景 (`icon_launcher_432.png`、透過) と背景
+  (`icon_launcher_bg_432.png`) の 2 レイヤーに分離し、マスク形状に
+  関わらず二人の顔がセーフゾーン内に収まるようにした。
+- ビルドツールチェーンと依存関係を更新: Godot 4.7.2、Android NDK
+  30.0、Rust 1.99.1、godot-rust 0.5.5、tract-onnx 0.23、rand 0.10。
+  GDExtension の `compatibility_minimum` は 4.6 に引き上げ
+  (godot-rust 0.5 が 4.6 の GDExtension API を対象とするため)。
+
 ## [1.0.4] — 2026-04-29
 
 ### Fixed

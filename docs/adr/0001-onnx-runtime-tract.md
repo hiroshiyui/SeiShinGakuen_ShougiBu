@@ -60,4 +60,5 @@ a second larger model whose inference cost dominates.
 ## See also
 
 - `native/shogi_core/src/nn.rs` — the wrapper.
-- `native/shogi_core/Cargo.toml` — `tract-onnx = "0.21"`.
+- `native/shogi_core/Cargo.toml` — `tract-onnx = "0.23"` (originally `0.21`; the
+  0.23 bump changed `into_runnable()` to return `Arc<TypedRunnableModel>`).
