@@ -8,6 +8,8 @@ All notable changes to this project. Format follows
 
 ## [Unreleased]
 
+## [1.0.6] — 2026-10-19
+
 ### Changed
 - アプリアイコンを刷新。将棋部の中村アリスとテリー・クラークを
   教室の将棋盤の前に配置したデザインに変更。Android アダプティブ
@@ -18,6 +20,9 @@ All notable changes to this project. Format follows
   30.0、Rust 1.99.1、godot-rust 0.5.5、tract-onnx 0.23、rand 0.10。
   GDExtension の `compatibility_minimum` は 4.6 に引き上げ
   (godot-rust 0.5 が 4.6 の GDExtension API を対象とするため)。
+
+[Full release notes](./docs/release-notes/1.0.6.md) ·
+[GitHub Release](https://github.com/hiroshiyui/SeiShinGakuen_ShougiBu/releases/tag/1.0.6)
 
 ## [1.0.5] — 2026-05-12
 
@@ -303,7 +308,8 @@ First public release.
 [Full release notes](./docs/release-notes/0.1.1.md) ·
 [GitHub Release](https://github.com/hiroshiyui/SeiShinGakuen_ShougiBu/releases/tag/0.1.1)
 
-[Unreleased]: https://github.com/hiroshiyui/SeiShinGakuen_ShougiBu/compare/1.0.5...HEAD
+[Unreleased]: https://github.com/hiroshiyui/SeiShinGakuen_ShougiBu/compare/1.0.6...HEAD
+[1.0.6]: https://github.com/hiroshiyui/SeiShinGakuen_ShougiBu/compare/1.0.5...1.0.6
 [1.0.5]: https://github.com/hiroshiyui/SeiShinGakuen_ShougiBu/compare/1.0.4...1.0.5
 [1.0.4]: https://github.com/hiroshiyui/SeiShinGakuen_ShougiBu/compare/1.0.3...1.0.4
 [1.0.3]: https://github.com/hiroshiyui/SeiShinGakuen_ShougiBu/compare/1.0.2...1.0.3
