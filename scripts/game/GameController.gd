@@ -104,6 +104,8 @@ func _ready() -> void:
 	# tap on mobile). Give players a clear way to dismiss the post-game
 	# dialog without re-matching by adding a sibling cancel button.
 	_gameover_dialog.add_cancel_button("閉じる")
+	for d: Window in [_promo_dialog, _gameover_dialog, _quit_dialog, _jishogi_info_dialog]:
+		ModalBlur.attach(d)
 	_undo_btn.pressed.connect(_on_undo)
 	_exit_btn.pressed.connect(_on_exit_pressed)
 	_jishogi_btn.pressed.connect(_on_jishogi_pressed)

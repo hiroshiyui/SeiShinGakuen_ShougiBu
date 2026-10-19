@@ -1,6 +1,13 @@
-[gd_scene load_steps=3 format=3]
+[gd_scene load_steps=5 format=3]
 
 [ext_resource type="Script" path="res://scripts/MoveHistoryDialog.gd" id="1_mh"]
+[ext_resource type="Shader" path="res://assets/shaders/backdrop_blur.gdshader" id="2_blur"]
+
+[sub_resource type="ShaderMaterial" id="2_blur_mat"]
+shader = ExtResource("2_blur")
+shader_parameter/amount = 1.0
+shader_parameter/blur_lod = 3.0
+shader_parameter/tint = Color(0, 0, 0, 0.55)
 
 [sub_resource type="StyleBoxFlat" id="1_panel"]
 bg_color = Color(0.10, 0.08, 0.06, 0.96)
@@ -28,9 +35,9 @@ mouse_filter = 0
 script = ExtResource("1_mh")
 
 [node name="Backdrop" type="ColorRect" parent="."]
+material = SubResource("2_blur_mat")
 anchor_right = 1.0
 anchor_bottom = 1.0
-color = Color(0, 0, 0, 0.55)
 
 [node name="MarginContainer" type="MarginContainer" parent="."]
 anchor_right = 1.0

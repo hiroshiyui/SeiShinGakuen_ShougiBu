@@ -32,6 +32,7 @@ func _ready() -> void:
 	_settings_btn.pressed.connect(_on_settings_pressed)
 	_kifu_library_btn.pressed.connect(_on_kifu_library_pressed)
 	_quit_dialog.confirmed.connect(_on_quit_confirmed)
+	ModalBlur.attach(_quit_dialog)
 	_title.gui_input.connect(_on_title_gui_input)
 	_ensure_default_character()
 	_refresh_opponent_label()

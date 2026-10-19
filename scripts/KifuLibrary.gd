@@ -15,6 +15,7 @@ var _pending_delete_path: String = ""
 func _ready() -> void:
 	_back_btn.pressed.connect(_on_back)
 	_delete_dialog.confirmed.connect(_on_delete_confirmed)
+	ModalBlur.attach(_delete_dialog)
 	_refresh()
 
 var _back_handled_frame: int = -1
