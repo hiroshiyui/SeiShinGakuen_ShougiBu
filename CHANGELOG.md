@@ -19,6 +19,26 @@ All notable changes to this project. Format follows
   GDExtension の `compatibility_minimum` は 4.6 に引き上げ
   (godot-rust 0.5 が 4.6 の GDExtension API を対象とするため)。
 
+## [1.0.5] — 2026-05-12
+
+### Fixed
+- 対局画面で成り選択ダイアログや棋譜ダイアログを Android のバック
+  ジェスチャで閉じた際、ダイアログを隠すだけでキャンセル側の後処理が
+  走っていなかった問題。1.0.4 で `_handle_back()` がポップアップを
+  明示的に閉じるようになったが、`hide()` だけでは `canceled` 相当の
+  ハンドラが呼ばれず、成り選択の保留状態などが残っていた。成り選択は
+  `_on_promo_canceled()`、棋譜ダイアログは `_on_history_closed()` を
+  呼ぶようにし、バックで閉じた場合も OK ではなくキャンセルとして
+  扱うよう統一。
+
+### Added
+- プライバシーポリシー (日英併記、
+  [`docs/privacy-policy.md`](./docs/privacy-policy.md))。本作は
+  ネットワーク権限を持たず、広告・トラッキング・アナリティクス・
+  外部 SDK を一切含まないことを明記。
+
+[GitHub Release](https://github.com/hiroshiyui/SeiShinGakuen_ShougiBu/releases/tag/1.0.5)
+
 ## [1.0.4] — 2026-04-29
 
 ### Fixed
@@ -283,7 +303,10 @@ First public release.
 [Full release notes](./docs/release-notes/0.1.1.md) ·
 [GitHub Release](https://github.com/hiroshiyui/SeiShinGakuen_ShougiBu/releases/tag/0.1.1)
 
-[Unreleased]: https://github.com/hiroshiyui/SeiShinGakuen_ShougiBu/compare/1.0.2...HEAD
+[Unreleased]: https://github.com/hiroshiyui/SeiShinGakuen_ShougiBu/compare/1.0.5...HEAD
+[1.0.5]: https://github.com/hiroshiyui/SeiShinGakuen_ShougiBu/compare/1.0.4...1.0.5
+[1.0.4]: https://github.com/hiroshiyui/SeiShinGakuen_ShougiBu/compare/1.0.3...1.0.4
+[1.0.3]: https://github.com/hiroshiyui/SeiShinGakuen_ShougiBu/compare/1.0.2...1.0.3
 [1.0.2]: https://github.com/hiroshiyui/SeiShinGakuen_ShougiBu/compare/1.0.1...1.0.2
 [1.0.1]: https://github.com/hiroshiyui/SeiShinGakuen_ShougiBu/compare/1.0.0...1.0.1
 [1.0.0]: https://github.com/hiroshiyui/SeiShinGakuen_ShougiBu/compare/0.5.0...1.0.0
