@@ -8,6 +8,23 @@ All notable changes to this project. Format follows
 
 ## [Unreleased]
 
+## [1.0.8] — 2026-10-23
+
+### Changed
+- AI モデルを Bonanza v2 (10 ブロック × 128 フィルタ、約 12 MB) に
+  刷新。旧モデルとの直接対局で 208 勝 0 敗。推論コスト増に合わせ
+  各 Lv の探索回数 (playouts) を 8〜256 に調整し直した。
+
+### Fixed
+- 1.0.6 / 1.0.7 で AI の初手が「考え中」のまま進まなくなっていた
+  不具合。godot-rust 0.5 が別スレッドからの呼び出しを致命的エラーに
+  するようになったため、`experimental-threads` を有効化して解消。
+- アプリ更新で新しいモデルが同梱されても、初回起動時に展開した古い
+  コピーを使い続けてしまう問題。サイズ不一致なら再展開する。
+
+[Full release notes](./docs/release-notes/1.0.8.md) ·
+[GitHub Release](https://github.com/hiroshiyui/SeiShinGakuen_ShougiBu/releases/tag/1.0.8)
+
 ## [1.0.7] — 2026-10-19
 
 ### Added
@@ -322,7 +339,8 @@ First public release.
 [Full release notes](./docs/release-notes/0.1.1.md) ·
 [GitHub Release](https://github.com/hiroshiyui/SeiShinGakuen_ShougiBu/releases/tag/0.1.1)
 
-[Unreleased]: https://github.com/hiroshiyui/SeiShinGakuen_ShougiBu/compare/1.0.7...HEAD
+[Unreleased]: https://github.com/hiroshiyui/SeiShinGakuen_ShougiBu/compare/1.0.8...HEAD
+[1.0.8]: https://github.com/hiroshiyui/SeiShinGakuen_ShougiBu/compare/1.0.7...1.0.8
 [1.0.7]: https://github.com/hiroshiyui/SeiShinGakuen_ShougiBu/compare/1.0.6...1.0.7
 [1.0.6]: https://github.com/hiroshiyui/SeiShinGakuen_ShougiBu/compare/1.0.5...1.0.6
 [1.0.5]: https://github.com/hiroshiyui/SeiShinGakuen_ShougiBu/compare/1.0.4...1.0.5
