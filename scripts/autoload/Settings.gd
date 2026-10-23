@@ -320,10 +320,25 @@ func model_absolute_path() -> String:
 	if OS.has_feature("editor"):
 		return ProjectSettings.globalize_path(res_path)
 	var user_path: String = "user://%s" % res_path.get_file()
-	if not FileAccess.file_exists(user_path):
+	if _needs_extract(res_path, user_path):
 		if not _atomic_copy_resource(res_path, user_path):
 			return ""
 	return ProjectSettings.globalize_path(user_path)
+
+# True when the user:// copy is missing or stale. "Stale" is decided
+# by byte length: an app update that ships a different model under the
+# same filename (v1 1.3 MB → v2 12 MB) must not keep serving the old
+# extracted copy forever. Length is cheap and sufficient — two
+# different trained networks with identical ONNX byte length is not a
+# case worth hashing 12 MB on every launch for.
+func _needs_extract(src_path: String, dst_path: String) -> bool:
+	if not FileAccess.file_exists(dst_path):
+		return true
+	var src: FileAccess = FileAccess.open(src_path, FileAccess.READ)
+	var dst: FileAccess = FileAccess.open(dst_path, FileAccess.READ)
+	if src == null or dst == null:
+		return true
+	return src.get_length() != dst.get_length()
 
 # Atomic-ish copy of a res:// resource to a user:// destination.
 # Writes <dst>.tmp first, then renames. If the process is killed

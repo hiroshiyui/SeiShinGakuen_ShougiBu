@@ -41,6 +41,8 @@ func _initialize() -> void:
 		_test_atomic_copy_byte_for_byte)
 	_run("atomic copy fails cleanly on missing source",
 		_test_atomic_copy_missing_source)
+	_run("model extraction re-runs when user:// copy is stale",
+		_test_needs_extract_detects_stale_copy)
 
 	_clean()
 	if _fails > 0:
@@ -232,6 +234,25 @@ func _test_atomic_copy_byte_for_byte() -> String:
 		return "size mismatch: %d vs %d" % [src_bytes.size(), dst_bytes.size()]
 	if src_bytes != dst_bytes:
 		return "byte content differs from source"
+	return ""
+
+func _test_needs_extract_detects_stale_copy() -> String:
+	if FileAccess.file_exists(_DUMMY_DST):
+		DirAccess.remove_absolute(_DUMMY_DST)
+	if not _settings._needs_extract("res://project.godot", _DUMMY_DST):
+		return "missing destination should need extraction"
+	_settings._atomic_copy_resource("res://project.godot", _DUMMY_DST)
+	if _settings._needs_extract("res://project.godot", _DUMMY_DST):
+		return "fresh identical copy should not need extraction"
+	# Simulate an app update shipping a different-sized model under the
+	# same filename: the existing user:// copy must be considered stale.
+	var f := FileAccess.open(_DUMMY_DST, FileAccess.WRITE)
+	f.store_buffer(PackedByteArray([1, 2, 3]))
+	f.close()
+	var stale: bool = _settings._needs_extract("res://project.godot", _DUMMY_DST)
+	DirAccess.remove_absolute(_DUMMY_DST)
+	if not stale:
+		return "size-mismatched copy should need extraction"
 	return ""
 
 func _test_atomic_copy_missing_source() -> String:
