@@ -81,7 +81,7 @@ is in service of them.
                          │  ONNX forward pass, single batch
 ┌────────────────────────┴────────────────────────────────────┐
 │ Model — Bonanza (tract-onnx)                                │
-│      models/bonanza.onnx (1.3 MB)                           │
+│      models/bonanza.onnx (12 MB, v2 10×128)                 │
 │      Input (1, 45, 9, 9) → policy (1, 139, 9, 9) +          │
 │      value (1, 1)                                           │
 └─────────────────────────────────────────────────────────────┘

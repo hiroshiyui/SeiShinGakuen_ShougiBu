@@ -36,7 +36,7 @@ Decisions with rationale: [`docs/adr/`](./docs/adr/).
 ## External dependencies
 
 - **Godot engine:** `~/.local/bin/Godot_v4.7.2-stable_linux.x86_64`.
-- **AI model:** `models/bonanza.onnx` (1.3 MB). On Android,
+- **AI model:** `models/bonanza.onnx` (12 MB, Bonanza v2 10×128). On Android,
   `Settings.model_absolute_path()` extracts it from the APK asset dir
   into `user://` on first launch because tract can't open resources
   inside the PCK.

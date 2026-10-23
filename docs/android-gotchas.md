@@ -140,7 +140,7 @@ item_rect_changed.connect(func():
 - `libshogi_core.so` (Rust + tract, stripped) — 14 MB raw.
 - AI-generated artwork (backgrounds, character portraits, app icon) —
   combined a few MB once Godot imports them to compressed textures.
-- ONNX model — 1.3 MB.
+- ONNX model — 12 MB (Bonanza v2; v1 was 1.3 MB).
 - Vendored Japanese fonts (subset) — Fude Goshirae 175 KB +
   Noto Serif JP Medium/Bold ~270 KB each + M PLUS 2 ~91 KB.
 
