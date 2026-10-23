@@ -188,6 +188,37 @@ errors out.
    --output-dir ../../native/bin/android build --release)
 ```
 
+## AI never moves — "考え中" forever after upgrading godot-rust
+
+**Symptom:** the first AI move never arrives; the game sits on 考え中.
+`adb logcat godot:V '*:S'` shows:
+```
+ERROR: [panic …/godot-ffi-0.5.5/src/binding/single_threaded.rs:140]
+  attempted to access binding from different thread than main thread;
+  this is UB - use the "experimental-threads" feature.
+SCRIPT ERROR: Bug: Invalid call error code 1337.
+   at: GameController._run_ai_think
+WARNING: AI returned no move
+```
+Desktop and the headless test suites are unaffected because they call
+`ShogiCore` from the main thread only.
+
+**Cause:** `GameController` runs `think_sampled` / `suggest_moves_mcts`
+on a Godot `Thread`. godot-rust 0.4 only warned about cross-thread
+binding access in debug builds; 0.5 (upgraded in c3f845a, shipped in
+1.0.6) makes it a hard panic unless the crate opts in. The panic is
+caught at the FFI boundary, the call returns null, and the GDScript
+side treats that as "no legal move". Both 1.0.6 and 1.0.7 shipped
+with this bug; 1.0.8 fixed it.
+
+**Fix:** enable the feature in `native/shogi_core/Cargo.toml`:
+```toml
+godot = { version = "0.5", features = ["experimental-threads"] }
+```
+Keep it when bumping godot-rust. Any smoke test of a new godot-rust
+version must include an actual AI move on the device — the test gate
+can't catch this.
+
 ## Debug log filter for Godot
 
 `adb logcat` floods with system noise. Godot prints to the `godot` tag:
