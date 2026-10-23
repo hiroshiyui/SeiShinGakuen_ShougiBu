@@ -16,16 +16,22 @@ const MAX_LEVEL := 8
 # geometrically (deeper search = stronger play); temperature decays from
 # very-random at Lv1 to greedy at Lv8 so weaker levels actually make
 # plausible-looking mistakes instead of just playing slower.
+#
+# Budgets are sized for Bonanza v2 (10×128 residual net, ~5 ms per
+# forward pass on desktop, several times that on arm64). The v1 ladder
+# topped out at 2048 playouts; v2 is ~8× more expensive per playout but
+# beat v1 208–0 at equal budgets, so the ladder was cut to keep Lv 8
+# inside a few seconds per move while still being far stronger overall.
 const LEVEL_PARAMS := [
 	{},                                              # 0 unused (1-indexed)
-	{playouts = 16,   temperature = 2.0},  # Lv 1
-	{playouts = 32,   temperature = 1.5},  # Lv 2
-	{playouts = 64,   temperature = 1.2},  # Lv 3
-	{playouts = 128,  temperature = 0.8},  # Lv 4
-	{playouts = 256,  temperature = 0.5},  # Lv 5
-	{playouts = 512,  temperature = 0.3},  # Lv 6
-	{playouts = 1024, temperature = 0.1},  # Lv 7
-	{playouts = 2048, temperature = 0.0},  # Lv 8
+	{playouts = 8,    temperature = 2.0},  # Lv 1
+	{playouts = 16,   temperature = 1.5},  # Lv 2
+	{playouts = 32,   temperature = 1.2},  # Lv 3
+	{playouts = 64,   temperature = 0.8},  # Lv 4
+	{playouts = 96,   temperature = 0.5},  # Lv 5
+	{playouts = 128,  temperature = 0.3},  # Lv 6
+	{playouts = 192,  temperature = 0.1},  # Lv 7
+	{playouts = 256,  temperature = 0.0},  # Lv 8
 ]
 
 # Display names for each strength tier, shown on the main-title level

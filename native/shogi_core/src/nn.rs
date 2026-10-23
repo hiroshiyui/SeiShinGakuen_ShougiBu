@@ -1,9 +1,9 @@
 //! ONNX inference via `tract` (pure-Rust, no C++ runtime dep).
 //!
-//! The Bonanza network is tiny (~1.3 MB) and tract handles its ops natively,
-//! so we trade a bit of inference throughput for zero shared-library plumbing
-//! on Android. Session load time is ~50 ms on desktop; per-call forward-pass
-//! on an idle CPU is ~2 ms.
+//! The Bonanza network is small (v2: 10×128 residual, ~12 MB) and tract
+//! handles its ops natively, so we trade a bit of inference throughput for
+//! zero shared-library plumbing on Android. Session load time is ~25 ms on
+//! desktop; per-call forward-pass on an idle CPU is ~5 ms (v1 was ~0.7 ms).
 
 use std::path::Path;
 
@@ -55,3 +55,32 @@ impl NeuralNet {
     }
 }
 
+
+#[cfg(test)]
+mod bench {
+    use super::*;
+    use std::time::Instant;
+
+    /// Rough forward-pass latency for a model given via `SHOGI_MODEL`.
+    /// Ignored by default; run with
+    /// `SHOGI_MODEL=../../models/bonanza.onnx cargo test --release -- --ignored nn_forward_latency --nocapture`.
+    #[test]
+    #[ignore]
+    fn nn_forward_latency() {
+        let path = std::env::var("SHOGI_MODEL").expect("SHOGI_MODEL not set");
+        let t0 = Instant::now();
+        let net = NeuralNet::load(Path::new(&path)).expect("load");
+        let load_ms = t0.elapsed().as_secs_f64() * 1e3;
+        let planes = vec![0.0f32; NUM_INPUT_CHANNELS * NUM_RANKS * NUM_FILES];
+        for _ in 0..5 {
+            net.forward(&planes).unwrap();
+        }
+        let n = 100;
+        let t1 = Instant::now();
+        for _ in 0..n {
+            net.forward(&planes).unwrap();
+        }
+        let per_ms = t1.elapsed().as_secs_f64() * 1e3 / n as f64;
+        println!("{path}: load {load_ms:.1} ms, forward {per_ms:.2} ms");
+    }
+}
