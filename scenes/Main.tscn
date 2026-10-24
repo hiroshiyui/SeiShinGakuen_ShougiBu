@@ -88,7 +88,7 @@ unique_name_in_owner = true
 
 [node name="TeacherRow" type="HBoxContainer" parent="Layout"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 56)
+custom_minimum_size = Vector2(0, 72)
 
 [node name="LeftSpacer" type="Control" parent="Layout/TeacherRow"]
 unique_name_in_owner = true
@@ -96,7 +96,7 @@ size_flags_horizontal = 3
 
 [node name="TeacherButton" type="Button" parent="Layout/TeacherRow"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 52)
+custom_minimum_size = Vector2(0, 72)
 text = "加藤先生！教えてください！"
 icon = ExtResource("7_teacher")
 theme_override_font_sizes/font_size = 22
@@ -132,7 +132,7 @@ unique_name_in_owner = true
 theme_override_constants/separation = 2
 
 [node name="StatusBar" type="HBoxContainer" parent="Layout"]
-custom_minimum_size = Vector2(0, 56)
+custom_minimum_size = Vector2(0, 72)
 theme_override_constants/separation = 12
 
 [node name="StatusLabel" type="Label" parent="Layout/StatusBar"]

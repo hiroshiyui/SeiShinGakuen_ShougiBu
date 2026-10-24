@@ -61,7 +61,7 @@ theme_override_font_sizes/font_size = 32
 
 [node name="BackButton" type="Button" parent="Root/HeaderPanel/Header"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(140, 56)
+custom_minimum_size = Vector2(140, 72)
 text = "戻る"
 theme_override_font_sizes/font_size = 22
 

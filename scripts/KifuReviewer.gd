@@ -332,6 +332,6 @@ func _find_q_for_move(top: Array, target: Dictionary) -> float:
 func _refit_board() -> void:
 	var vw := get_viewport().get_visible_rect().size.x
 	var vh := get_viewport().get_visible_rect().size.y
-	var reserved: float = 56.0 + 72.0 + 72.0 + 40.0 + 64.0 + 32.0
+	var reserved: float = 72.0 + 72.0 + 72.0 + 40.0 + 72.0 + 32.0  # header, hands×2, status, nav, pad
 	var side: float = clamp(min(vw - 40.0, vh - reserved), 240.0, 1600.0)
 	_board_view.custom_minimum_size = Vector2(side, side)

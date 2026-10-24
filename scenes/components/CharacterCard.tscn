@@ -47,7 +47,7 @@ mouse_filter = 2
 theme_override_colors/font_color = Color(0.95, 0.82, 0.45, 1)
 theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
 theme_override_constants/outline_size = 4
-theme_override_font_sizes/font_size = 18
+theme_override_font_sizes/font_size = 22
 
 [node name="PortraitHolder" type="Control" parent="Holder/VBox"]
 size_flags_horizontal = 3
@@ -90,4 +90,4 @@ mouse_filter = 2
 theme_override_colors/font_color = Color(0.98, 0.98, 0.98, 1)
 theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
 theme_override_constants/outline_size = 4
-theme_override_font_sizes/font_size = 18
+theme_override_font_sizes/font_size = 20

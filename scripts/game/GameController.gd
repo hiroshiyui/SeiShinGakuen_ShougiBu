@@ -147,9 +147,10 @@ func _refit_board_smooth(panel_visible_override: Variant = null) -> void:
 func _compute_board_side(panel_visible_override: Variant = null) -> float:
 	const GUTTER := 4.0        # breathing room inside BoardHolder
 	const LAYOUT_H := 12.0     # must match EXTRA_H in _apply_safe_area
-	# Hands (2×72) + status bar (40) + fixed breathing pad (16). TeacherRow
-	# and SuggestionsPanel are measured live since they toggle visibility.
-	var base: float = 72.0 + 72.0 + 56.0 + 16.0
+	# Hands (2×72) + status bar (72, ≈41 dp tap height) + fixed breathing
+	# pad (16). TeacherRow and SuggestionsPanel are measured live since
+	# they toggle visibility.
+	var base: float = 72.0 + 72.0 + 72.0 + 16.0
 	var teacher_visible := _teacher_row != null and _teacher_row.visible
 	var panel_visible: bool
 	if panel_visible_override == null:
@@ -178,7 +179,7 @@ func _apply_board_side(side: float, animate: bool) -> void:
 	if _board_resize_tween != null and _board_resize_tween.is_valid():
 		_board_resize_tween.kill()
 	var target := Vector2(side, side)
-	if not animate:
+	if not animate or Settings.reduce_motion:
 		_board_view.custom_minimum_size = target
 		_place_check_banner.call_deferred()
 		return
@@ -466,7 +467,10 @@ func _on_hand_tapped(kind: int, is_gote: bool) -> void:
 
 func _try_select_board(key: Vector2i) -> void:
 	var piece = _core.piece_at(key.x, key.y)
-	if piece == null or bool(piece["is_gote"]) != _core.side_to_move_gote():
+	if piece == null:
+		return
+	if bool(piece["is_gote"]) != _core.side_to_move_gote():
+		_reject_tap(key)
 		return
 	var moves: Array = _core.legal_moves_from(key.x, key.y)
 	if moves.is_empty():
@@ -498,6 +502,7 @@ func _handle_board_target(to: Vector2i) -> void:
 		if Vector2i(m["to"]) == to:
 			candidates.append(m)
 	if candidates.is_empty():
+		_reject_tap(to)
 		return
 	var has_promo := false
 	var has_plain := false
@@ -529,6 +534,13 @@ func _handle_drop_target(to: Vector2i) -> void:
 		if Vector2i(m["to"]) == to:
 			_commit_move(m)
 			return
+	_reject_tap(to)
+
+# Visual + haptic "no" for a tap the rules refused. Both channels so it
+# still registers with sound off or in bright sunlight.
+func _reject_tap(key: Vector2i) -> void:
+	_board_view.flash_invalid(key)
+	Input.vibrate_handheld(20)
 
 func _prompt_promotion() -> void:
 	var to: Vector2i = Vector2i(_pending_move["to"])
@@ -596,7 +608,7 @@ func _commit_move(m: Dictionary) -> void:
 		var landed = _core.piece_at(to_key.x, to_key.y)
 		if landed != null:
 			var text := PieceScript.kanji_for(int(landed["kind"]), bool(landed["is_gote"]))
-			_board_view.animate_move(from_key, to_key, text, bool(landed["is_gote"]))
+			_board_view.animate_move(from_key, to_key, text, bool(landed["is_gote"]), Settings.anim(0.22))
 	if OS.has_feature("mobile"):
 		Input.vibrate_handheld(50)
 	_check_end_state()
@@ -918,7 +930,7 @@ func _show_suggestions_panel() -> void:
 	_refit_board_smooth.bind(true).call_deferred()
 	_suggestions_tween = create_tween()
 	_suggestions_tween.tween_property(
-		_suggestions_panel, "modulate:a", 1.0, _SUGGESTIONS_FADE)
+		_suggestions_panel, "modulate:a", 1.0, Settings.anim(_SUGGESTIONS_FADE))
 
 func _format_suggestion(m: Dictionary) -> String:
 	var win_rate: float = float(m.get("win_rate", m.get("score", 0.0)))
@@ -969,7 +981,7 @@ func _close_suggestions(animate_board: bool = true) -> void:
 		_suggestions_tween.kill()
 	_suggestions_tween = create_tween()
 	_suggestions_tween.tween_property(
-		_suggestions_panel, "modulate:a", 0.0, _SUGGESTIONS_FADE)
+		_suggestions_panel, "modulate:a", 0.0, Settings.anim(_SUGGESTIONS_FADE))
 	_suggestions_tween.tween_callback(_finalize_close_suggestions)
 	# Run the board zoom AFTER the panel is fully hidden. Tweening the
 	# board's custom_minimum_size while the panel still occupies its VBox
@@ -989,7 +1001,7 @@ func _finalize_close_suggestions() -> void:
 # zoom compete for attention. Called fire-and-forget from _commit_move;
 # the body resumes when the timer fires.
 func _zoom_back_after_slide() -> void:
-	await get_tree().create_timer(0.28).timeout
+	await get_tree().create_timer(Settings.anim(0.28) + 0.02).timeout
 	if not is_inside_tree():
 		return
 	_refit_board_smooth()

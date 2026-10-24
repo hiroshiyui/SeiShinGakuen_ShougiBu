@@ -1,6 +1,7 @@
 extends Control
 
 @onready var _sound: CheckButton = %SoundToggle
+@onready var _motion: CheckButton = %MotionToggle
 @onready var _teacher_side: OptionButton = %TeacherSideSelect
 @onready var _back: Button = %BackButton
 
@@ -10,6 +11,8 @@ const _TEACHER_LEFT_ID := 1
 func _ready() -> void:
 	_sound.button_pressed = Settings.sound_enabled
 	_sound.toggled.connect(_on_sound_toggled)
+	_motion.button_pressed = Settings.reduce_motion
+	_motion.toggled.connect(func(pressed: bool): Settings.set_reduce_motion(pressed))
 
 	_teacher_side.clear()
 	_teacher_side.add_item("右側", _TEACHER_RIGHT_ID)

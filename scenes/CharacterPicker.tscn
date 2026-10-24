@@ -130,12 +130,12 @@ theme_override_constants/separation = 12
 
 [node name="BackButton" type="Button" parent="Root/Buttons"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(160, 64)
+custom_minimum_size = Vector2(160, 72)
 text = "戻る"
 theme_override_font_sizes/font_size = 28
 
 [node name="ConfirmButton" type="Button" parent="Root/Buttons"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(200, 64)
+custom_minimum_size = Vector2(200, 72)
 text = "決定"
 theme_override_font_sizes/font_size = 28

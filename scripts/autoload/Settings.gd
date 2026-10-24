@@ -93,6 +93,9 @@ func _set_storage_paths_for_test(save: String, prefs: String) -> void:
 var teacher_side: String = "right"  # "left" or "right"
 var selected_character_id: String = ""  # empty = no character picked yet (first launch)
 var sound_enabled: bool = true
+# Accessibility: collapse decorative tweens (board zoom, piece slide,
+# panel fades) to instant. Feedback flashes stay — they carry meaning.
+var reduce_motion: bool = false
 
 const CHARACTERS_DIR := "res://assets/characters"
 
@@ -123,6 +126,18 @@ func set_sound_enabled(enabled: bool) -> void:
 		return
 	sound_enabled = enabled
 	_save_prefs()
+
+func set_reduce_motion(enabled: bool) -> void:
+	if enabled == reduce_motion:
+		return
+	reduce_motion = enabled
+	_save_prefs()
+
+# Duration helper for decorative animations: 0 when reduce_motion is on.
+# A zero-length Tween still fires `finished`, so callers that await it
+# keep working.
+func anim(duration: float) -> float:
+	return 0.0 if reduce_motion else duration
 
 func set_selected_character_id(cid: String) -> void:
 	if cid == selected_character_id:
@@ -205,6 +220,7 @@ func _load_prefs() -> void:
 	selected_character_id = str(cfg.get_value("ai", "character_id", ""))
 	ai_level = clamp_level(int(cfg.get_value("ai", "level", ai_level)))
 	sound_enabled = bool(cfg.get_value("audio", "sound_enabled", true))
+	reduce_motion = bool(cfg.get_value("ui", "reduce_motion", false))
 
 func _save_prefs() -> void:
 	var cfg := ConfigFile.new()
@@ -212,6 +228,7 @@ func _save_prefs() -> void:
 	cfg.set_value("ai", "character_id", selected_character_id)
 	cfg.set_value("ai", "level", ai_level)
 	cfg.set_value("audio", "sound_enabled", sound_enabled)
+	cfg.set_value("ui", "reduce_motion", reduce_motion)
 	var err: int = cfg.save(PREFS_PATH)
 	if err != OK:
 		push_warning("save_prefs: ConfigFile.save returned %d" % err)

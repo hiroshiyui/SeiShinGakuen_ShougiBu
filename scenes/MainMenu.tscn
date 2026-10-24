@@ -69,7 +69,7 @@ theme_override_fonts/font = ExtResource("3_mplus2")
 
 [node name="ModeSelect" type="OptionButton" parent="Layout/Center/Panel/Box"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 48)
+custom_minimum_size = Vector2(0, 72)
 
 [node name="OpponentLabel" type="Label" parent="Layout/Center/Panel/Box"]
 text = "対戦相手"
@@ -78,7 +78,7 @@ theme_override_fonts/font = ExtResource("3_mplus2")
 
 [node name="OpponentButton" type="Button" parent="Layout/Center/Panel/Box"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 48)
+custom_minimum_size = Vector2(0, 72)
 text = "選んでください"
 
 [node name="Spacer" type="Control" parent="Layout/Center/Panel/Box"]
@@ -86,26 +86,26 @@ custom_minimum_size = Vector2(0, 8)
 
 [node name="SettingsButton" type="Button" parent="Layout/Center/Panel/Box"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 48)
+custom_minimum_size = Vector2(0, 72)
 text = "設定"
 theme_override_font_sizes/font_size = 24
 
 [node name="ResumeButton" type="Button" parent="Layout/Center/Panel/Box"]
 unique_name_in_owner = true
 visible = false
-custom_minimum_size = Vector2(0, 56)
+custom_minimum_size = Vector2(0, 72)
 text = "続きから"
 theme_override_font_sizes/font_size = 24
 
 [node name="KifuLibraryButton" type="Button" parent="Layout/Center/Panel/Box"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 48)
+custom_minimum_size = Vector2(0, 72)
 text = "棋譜検討"
 theme_override_font_sizes/font_size = 24
 
 [node name="StartButton" type="Button" parent="Layout/Center/Panel/Box"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 56)
+custom_minimum_size = Vector2(0, 72)
 text = "新規対局"
 theme_override_font_sizes/font_size = 24
 

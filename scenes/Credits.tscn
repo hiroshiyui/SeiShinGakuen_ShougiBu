@@ -67,12 +67,12 @@ theme_override_fonts/font = ExtResource("3_mplus2")
 
 [node name="HideButton" type="Button" parent="Layout/HeaderPanel/Header"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(120, 48)
+custom_minimum_size = Vector2(120, 72)
 text = "隠す"
 
 [node name="BackButton" type="Button" parent="Layout/HeaderPanel/Header"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(120, 48)
+custom_minimum_size = Vector2(120, 72)
 text = "戻る"
 
 [node name="ScrollPanel" type="PanelContainer" parent="Layout"]

@@ -70,7 +70,23 @@ theme_override_fonts/font = ExtResource("3_mplus2")
 
 [node name="SoundToggle" type="CheckButton" parent="Layout/Center/Panel/Box/SoundRow"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 40)
+custom_minimum_size = Vector2(0, 72)
+accessibility_name = "効果音"
+
+[node name="MotionRow" type="HBoxContainer" parent="Layout/Center/Panel/Box"]
+theme_override_constants/separation = 16
+
+[node name="MotionLabel" type="Label" parent="Layout/Center/Panel/Box/MotionRow"]
+text = "アニメーションを減らす"
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.92, 0.92, 0.92, 1)
+theme_override_font_sizes/font_size = 28
+theme_override_fonts/font = ExtResource("3_mplus2")
+
+[node name="MotionToggle" type="CheckButton" parent="Layout/Center/Panel/Box/MotionRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 72)
+accessibility_name = "アニメーションを減らす"
 
 [node name="TeacherSideLabel" type="Label" parent="Layout/Center/Panel/Box"]
 text = "先生ボタンの位置"
@@ -80,13 +96,13 @@ theme_override_fonts/font = ExtResource("3_mplus2")
 
 [node name="TeacherSideSelect" type="OptionButton" parent="Layout/Center/Panel/Box"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 44)
+custom_minimum_size = Vector2(0, 72)
 
 [node name="Spacer" type="Control" parent="Layout/Center/Panel/Box"]
 custom_minimum_size = Vector2(0, 12)
 
 [node name="BackButton" type="Button" parent="Layout/Center/Panel/Box"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 56)
+custom_minimum_size = Vector2(0, 72)
 text = "戻る"
 theme_override_font_sizes/font_size = 24

@@ -92,7 +92,7 @@ text = ""
 horizontal_alignment = 1
 autowrap_mode = 3
 theme_override_colors/font_color = Color(0.98, 0.85, 0.45, 1)
-theme_override_font_sizes/font_size = 18
+theme_override_font_sizes/font_size = 22
 
 [node name="ButtonRow" type="HBoxContainer" parent="MarginContainer/Panel/VBox"]
 alignment = 2
@@ -100,18 +100,18 @@ theme_override_constants/separation = 12
 
 [node name="ShareButton" type="Button" parent="MarginContainer/Panel/VBox/ButtonRow"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(160, 56)
+custom_minimum_size = Vector2(160, 72)
 text = "保存"
 theme_override_font_sizes/font_size = 22
 
 [node name="BackToLiveButton" type="Button" parent="MarginContainer/Panel/VBox/ButtonRow"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(180, 56)
+custom_minimum_size = Vector2(180, 72)
 text = "現在に戻る"
 theme_override_font_sizes/font_size = 22
 
 [node name="CloseButton" type="Button" parent="MarginContainer/Panel/VBox/ButtonRow"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(140, 56)
+custom_minimum_size = Vector2(140, 72)
 text = "閉じる"
 theme_override_font_sizes/font_size = 22

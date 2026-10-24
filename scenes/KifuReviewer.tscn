@@ -33,7 +33,7 @@ theme_override_constants/separation = 8
 script = ExtResource("6_safe")
 
 [node name="HeaderRow" type="HBoxContainer" parent="Layout"]
-custom_minimum_size = Vector2(0, 56)
+custom_minimum_size = Vector2(0, 72)
 theme_override_constants/separation = 12
 
 [node name="FilenameLabel" type="Label" parent="Layout/HeaderRow"]
@@ -49,13 +49,13 @@ theme_override_fonts/font = ExtResource("5_mplus2")
 
 [node name="AnalyzeButton" type="Button" parent="Layout/HeaderRow"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(140, 48)
+custom_minimum_size = Vector2(140, 72)
 text = "解析"
 theme_override_font_sizes/font_size = 22
 
 [node name="BackButton" type="Button" parent="Layout/HeaderRow"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(120, 48)
+custom_minimum_size = Vector2(120, 72)
 text = "戻る"
 theme_override_font_sizes/font_size = 22
 
@@ -98,30 +98,34 @@ theme_override_constants/outline_size = 6
 theme_override_font_sizes/font_size = 30
 
 [node name="NavRow" type="HBoxContainer" parent="Layout"]
-custom_minimum_size = Vector2(0, 64)
+custom_minimum_size = Vector2(0, 72)
 alignment = 1
 theme_override_constants/separation = 8
 
 [node name="FirstButton" type="Button" parent="Layout/NavRow"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(72, 56)
+accessibility_name = "最初の局面へ"
+custom_minimum_size = Vector2(72, 72)
 text = "<<"
 theme_override_font_sizes/font_size = 22
 
 [node name="PrevButton" type="Button" parent="Layout/NavRow"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(72, 56)
+accessibility_name = "一手戻る"
+custom_minimum_size = Vector2(72, 72)
 text = "<"
 theme_override_font_sizes/font_size = 22
 
 [node name="NextButton" type="Button" parent="Layout/NavRow"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(72, 56)
+accessibility_name = "一手進む"
+custom_minimum_size = Vector2(72, 72)
 text = ">"
 theme_override_font_sizes/font_size = 22
 
 [node name="LastButton" type="Button" parent="Layout/NavRow"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(72, 56)
+accessibility_name = "最後の局面へ"
+custom_minimum_size = Vector2(72, 72)
 text = ">>"
 theme_override_font_sizes/font_size = 22

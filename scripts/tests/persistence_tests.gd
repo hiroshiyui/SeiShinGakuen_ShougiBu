@@ -35,6 +35,8 @@ func _initialize() -> void:
 		_test_select_character_idempotent)
 	_run("sound_enabled defaults to true and round-trips through prefs",
 		_test_sound_enabled_roundtrip)
+	_run("reduce_motion defaults to false and round-trips through prefs",
+		_test_reduce_motion_roundtrip)
 	_run("atomic copy writes destination, leaves no .tmp",
 		_test_atomic_copy_no_tmp_leak)
 	_run("atomic copy preserves byte content",
@@ -195,6 +197,22 @@ func _test_sound_enabled_roundtrip() -> String:
 		return "sound_enabled did not survive prefs round-trip: %s" % fresh.sound_enabled
 	# Restore for following tests on the shared _settings instance.
 	_settings.set_sound_enabled(true)
+	return ""
+
+func _test_reduce_motion_roundtrip() -> String:
+	if _settings.reduce_motion != false:
+		return "default reduce_motion was not false"
+	if _settings.anim(0.5) != 0.5:
+		return "anim() altered duration while reduce_motion off"
+	_settings.set_reduce_motion(true)
+	if _settings.anim(0.5) != 0.0:
+		return "anim() did not zero duration while reduce_motion on"
+	var fresh := _SettingsScript.new()
+	fresh._set_storage_paths_for_test(_TEST_SAVE, _TEST_PREFS)
+	fresh._load_prefs()
+	if fresh.reduce_motion != true:
+		return "reduce_motion did not survive prefs round-trip"
+	_settings.set_reduce_motion(false)
 	return ""
 
 # --- atomic resource copy -----------------------------------------------

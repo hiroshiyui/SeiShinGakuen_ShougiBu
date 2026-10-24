@@ -29,6 +29,11 @@ func _ready() -> void:
 func visual_global_rect() -> Rect2:
 	return _background.get_global_rect()
 
+func flash_invalid(key: Vector2i) -> void:
+	var sq: SquareScript = _squares.get(key)
+	if sq != null:
+		sq.flash_invalid()
+
 func _on_resized() -> void:
 	var s := size
 	# Match the 0.04 MARGIN_PERCENT in BoardBackground.gd
