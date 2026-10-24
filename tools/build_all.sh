@@ -17,6 +17,9 @@
 #                    of scope — so this flag is rarely used; left in for
 #                    completeness.
 #   --test           run `cargo test` (unit + parity + perft) after Rust build
+#   --linux          also build the portable Linux .so (x86_64 + arm64) in
+#                    the glibc-2.31 container via tools/build_linux_native.sh
+#                    (AppImage prerequisite; see docs/adr for rationale)
 
 set -euo pipefail
 
@@ -32,6 +35,7 @@ DO_ANDROID=1
 DO_FONTS=1
 DO_APK=1
 DO_TEST=0
+DO_LINUX=0
 RELEASE=0
 AAB=0
 
@@ -50,8 +54,9 @@ for arg in "$@"; do
         # rarely needed.
         --aab)          AAB=1; RELEASE=1 ;;
         --test)         DO_TEST=1 ;;
+        --linux)        DO_LINUX=1 ;;
         -h|--help)
-            sed -n '2,16p' "$0"; exit 0 ;;
+            sed -n '2,22p' "$0"; exit 0 ;;
         *) echo "unknown flag: $arg" >&2; exit 2 ;;
     esac
 done
@@ -91,6 +96,14 @@ if (( DO_ANDROID )); then
       cargo ndk --platform 24 -t arm64-v8a \
         --output-dir ../../native/bin/android \
         build --release )
+fi
+
+# --- Portable Linux Rust (x86_64 + arm64, containerised) ---
+# Replaces the host-linked x86_64 .so from the desktop step with the
+# glibc-2.31 build, so what gets packaged is what was tested.
+if (( DO_LINUX )); then
+    log "Building portable Linux libshogi_core.so (x86_64 + arm64)"
+    ./tools/build_linux_native.sh --arch all
 fi
 
 # --- Font subsets ---

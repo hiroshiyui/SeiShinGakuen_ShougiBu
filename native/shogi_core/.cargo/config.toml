@@ -1,0 +1,5 @@
+# Cross-linker for the portable Linux arm64 build (AppImage target).
+# Debian/Ubuntu: `apt install gcc-aarch64-linux-gnu`. The containerised
+# build (tools/Containerfile.linux-builder) sets the same thing via env.
+[target.aarch64-unknown-linux-gnu]
+linker = "aarch64-linux-gnu-gcc"
