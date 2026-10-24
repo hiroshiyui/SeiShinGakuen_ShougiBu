@@ -1,0 +1,14 @@
+[Desktop Entry]
+Type=Application
+Name=清正学園将棋部
+Name[en]=SeiShinGakuen Shougibu
+GenericName=将棋
+GenericName[en]=Shogi
+Comment=清正学園将棋部の部員たちと将棋を指す、一人用の本将棋ゲーム
+Comment[en]=Single-player Shogi against the SeiShinGakuen shogi club
+Exec=seishingakuen
+Icon=seishingakuen
+Terminal=false
+Categories=Game;BoardGame;
+Keywords=shogi;将棋;
+StartupWMClass=seishingakuen
