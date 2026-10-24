@@ -241,6 +241,16 @@ Shipped differently:
 - [x] **加藤先生 avatar on the teacher button.** 48×48 circular alpha-masked WebP (north-cropped from the source so the face stays in frame) renders before "加藤先生！教えてください！" via `Button.icon`. Pre-sized at the source so no `expand_icon` / `icon_max_width` gymnastics needed.
 - [x] **入玉宣言 — in-game declaration button + 持将棋 / AI auto-declare.** Rust grows `pieces_in_opponent_camp(color)` and `can_declare_jishogi(color) → DeclareResult` (Ok / KingNotEntered / InCheck / InsufficientPieces{have,need} / InsufficientPoints{have,need}). Asymmetric thresholds: 28 points for sente, 27 for gote (matching 日本将棋連盟 / 柿木将棋 official rules — the one-point delta compensates for first-move advantage). 10-piece minimum (excluding the king) in the opponent's promotion zone. Exposed to GDScript as `ShogiCore.can_declare_jishogi(is_gote) → Dictionary` so the UI gets `{ok, reason, points_have, points_need, pieces_have, pieces_need}` in one call. In-game 入玉宣言 button appears in the StatusBar when the side-to-move's king has entered the opponent's camp on a human turn; tap → either ends the game with `入玉宣言 — N の勝ち` or pops an info dialog explaining the deficit (`持ち点が足りません (15点 / 必要 28点)` / `敵陣の自駒が足りません (8枚 / 必要 10枚)` / `玉が王手にかかっているため宣言できません`). `_check_end_state` runs the same check after every commit so the AI auto-declares on its turn when qualified, and 持将棋 (both sides qualify) ends in a draw.
 
+### Phase 8 — Linux desktop (AppImage) ✅
+**Deliverable:** x86_64 and aarch64 AppImages attached to every GitHub Release alongside the APK. 2026-10-24.
+
+- [x] Portable `libshogi_core.so` for `x86_64-unknown-linux-gnu` + `aarch64-unknown-linux-gnu`, built in a Debian bullseye (glibc 2.31) podman container — `tools/build_linux_native.sh`, `tools/Containerfile.linux-builder`. glibc ceiling enforced with `objdump -T`.
+- [x] `Linux x86_64` / `Linux arm64` export presets, embedded PCK, same include filters as Android. `linuxbsd`-only window override 540×960 so the portrait project fits a 1080p desktop.
+- [x] `tools/build_appimage.sh` — AppDir + `appimagetool`, aarch64 via `--runtime-file`; tooling pinned by SHA-256 in `tools/appimage/appimage.lock`. `tools/build_all.sh --linux` runs the whole chain including a headless smoke run.
+- [x] arm64 verified under `qemu-aarch64` binfmt (headless boot of the extracted AppDir in an arm64 container). Real hardware untested.
+
+Shipped differently: no Flatpak / Snap / tarball — AppImage only. itch.io remains Android-only; Linux files are GitHub Releases only. See [ADR-0011](./docs/adr/0011-linux-appimage-secondary-target.md) and [`docs/linux-build.md`](./docs/linux-build.md).
+
 ---
 
 ## 5. Key Technical Decisions & Risks
@@ -305,6 +315,7 @@ bump. `.gdextension` manifest declares `compatibility_minimum = 4.6`
 | `v0.4-ai-desktop` | End of Phase 5 |
 | `v0.5-android` | End of Phase 6 — first shippable APK |
 | `v1.0` | End of Phase 7 |
+| `1.0.10`+ | Phase 8 — first release carrying Linux AppImages |
 
 ---
 
@@ -315,7 +326,7 @@ bump. `.gdextension` manifest declares `compatibility_minimum = 4.6`
 - [x] ~~In-game 入玉 claim button (currently detection-only).~~ — shipped 2026-04-28. `ShogiCore.can_declare_jishogi(is_gote)` returns `{ok, reason, points_have, points_need, pieces_have, pieces_need}`; `GameController._on_jishogi_pressed` ends the game on Ok and explains the deficit otherwise. AI auto-declares from `_check_end_state` when its side qualifies; 持将棋 fires the draw path when both sides qualify simultaneously. Asymmetric 28/27 thresholds, 10-piece minimum (excl. king), official-rule conformant.
 - [x] ~~App icon + main-menu art — source or commission?~~ — AI-generated in-house, both icon (`assets/branding/`) and backgrounds (`assets/backgrounds/`) plus the 8 character portraits (`assets/characters/**/neutral.webp`). 2026-04-27.
 - [x] ~~Cloud save / cross-device persistence?~~ — explicitly skipped to stay free of Google Play services dependencies. Players who uninstall lose `user://prefs.cfg` + `user://saved_game.cfg`; that's the trade-off. 2026-04-27.
-- [x] ~~Play Store distribution or sideload only?~~ — sideload only via signed APK on GitHub Releases. Play Store is explicitly out of scope; we don't want the Google Play ecosystem dependencies (developer account, policy compliance, mandatory privacy URL, upload-key custody) for a single-player offline game. AAB target left in `tools/build_all.sh --aab` for completeness but unused. 2026-04-27.
+- [x] ~~Play Store distribution or sideload only?~~ — sideload only via signed APK on GitHub Releases. Play Store is explicitly out of scope; we don't want the Google Play ecosystem dependencies (developer account, policy compliance, mandatory privacy URL, upload-key custody) for a single-player offline game. AAB target left in `tools/build_all.sh --aab` for completeness but unused. 2026-04-27. **Amended 2026-10-24:** Linux desktop builds ship as AppImages on GitHub Releases (Phase 8, ADR-0011); still no app store of any kind.
 - [ ] Any telemetry (crash reporting)? Default: none.
 - [ ] UI string centralisation (e.g. `Strings.gd`) — currently strings live inline. Deferred until we internationalise or until the font subsetter's grep becomes unwieldy.
 

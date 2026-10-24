@@ -9,6 +9,10 @@
 | GitHub Releases | https://github.com/hiroshiyui/SeiShinGakuen_ShougiBu/releases | 技術寄りユーザー、開発者 | 一次配布。SHA-256 ハッシュとリリースノート全文を併載。 |
 | itch.io | https://hiroshiyui.itch.io/seishingakuen-shougibu | 海外含む indie / Godot コミュニティ | プラットフォームタグ `Android`、日本語ページ。 |
 
+Linux デスクトップ版（AppImage、x86_64 / aarch64）は **GitHub Releases
+のみ**で配布する。署名は無く、`.sha256` ファイルで整合性を確認する。
+itch.io への Linux アップロードは当面行わない（ADR-0011）。
+
 このドキュメントは itch.io 出品時にコピー＆ペーストするための原稿を
 集約している。リリース毎にここを更新してから itch.io に反映する運用
 を想定。
@@ -19,7 +23,7 @@
 
 - **タイトル**: 清正学園将棋部
 - **キャッチコピー（80 字以内）**: オフラインで遊べる本将棋。AlphaZero 系 AI と 8 人の対戦相手。
-- **対応プラットフォーム**: Android 7.0 (API 24) 以降 / arm64-v8a
+- **対応プラットフォーム**: Android 7.0 (API 24) 以降 / arm64-v8a。Linux (glibc 2.31 以降、x86_64 / aarch64) は GitHub Releases のみ
 - **言語**: 日本語
 - **ライセンス**: GPL-3.0-or-later
 - **価格**: ¥0（無料配布）
@@ -76,7 +80,7 @@ GPL-3.0-or-later。ソースコードと開発履歴は GitHub で公開して�
 
 ## リリース毎の運用
 
-1. GitHub Releases に v\<X.Y.Z> をタグ付けで公開（一次配布）。
+1. GitHub Releases に v\<X.Y.Z> をタグ付けで公開（一次配布）。APK と `.idsig` に加え、`seishingakuen-v<X.Y.Z>-x86_64.AppImage` / `-aarch64.AppImage` とそれぞれの `.sha256` を添付する。
 2. リリースノートと SHA-256 を `docs/release-notes/<X.Y.Z>.md` に反映。
 3. このドキュメントの「主な特徴」が変わっていれば該当箇所を更新。
 4. itch.io の Edit game → Uploads で新しい APK をアップロード（Android にチェック）、旧バージョンは「Hide this file」で非表示にする（Claude Code では `publish-to-itch-dot-io` スキルが手順を案内）。Devlog にバージョン更新を投稿（任意だがフォロワー通知が出る）。
