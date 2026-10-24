@@ -1,4 +1,4 @@
-[gd_scene load_steps=10 format=3]
+[gd_scene load_steps=11 format=3]
 
 [ext_resource type="Script" path="res://scripts/game/GameController.gd" id="1_gc"]
 [ext_resource type="PackedScene" path="res://scenes/game/Board.tscn" id="2_board"]
@@ -8,6 +8,7 @@
 [ext_resource type="PackedScene" path="res://scenes/MoveHistoryDialog.tscn" id="6_history"]
 [ext_resource type="Texture2D" path="res://assets/ui/teacher_icon_katou.webp" id="7_teacher"]
 [ext_resource type="FontFile" path="res://assets/fonts/m-plus-2/MPLUS2-Regular.otf" id="8_mplus2"]
+[ext_resource type="FontFile" path="res://assets/fonts/noto-serif-jp/NotoSerifCJKjp-Bold.otf" id="9_bold"]
 
 [sub_resource type="ShaderMaterial" id="1_round_mat"]
 shader = ExtResource("5_round")
@@ -167,14 +168,12 @@ text = "投了"
 [node name="ThinkingLabel" type="Label" parent="."]
 unique_name_in_owner = true
 visible = false
-anchor_left = 0.5
-anchor_top = 0.96
-anchor_right = 0.5
-anchor_bottom = 0.96
-offset_left = -80.0
-offset_right = 80.0
-offset_top = -28.0
+offset_right = 110.0
+offset_bottom = 28.0
+mouse_filter = 2
 theme_override_colors/font_color = Color(0.85, 0.9, 1, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 6
 theme_override_font_sizes/font_size = 20
 theme_override_fonts/font = ExtResource("8_mplus2")
 text = "思考中…"
@@ -183,28 +182,27 @@ horizontal_alignment = 1
 [node name="CheckBanner" type="Label" parent="."]
 unique_name_in_owner = true
 visible = false
-anchor_left = 0.5
-anchor_top = 0.02
-anchor_right = 0.5
-anchor_bottom = 0.02
-offset_left = -60.0
-offset_right = 60.0
-offset_bottom = 36.0
-theme_override_colors/font_color = Color(1, 0.25, 0.2, 1)
-theme_override_font_sizes/font_size = 28
+offset_right = 160.0
+offset_bottom = 52.0
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.9, 0.1, 0.08, 1)
+theme_override_colors/font_outline_color = Color(1, 1, 1, 1)
+theme_override_constants/outline_size = 14
+theme_override_font_sizes/font_size = 34
+theme_override_fonts/font = ExtResource("9_bold")
 text = "王手！"
 horizontal_alignment = 1
+vertical_alignment = 1
 
 [node name="ReviewBanner" type="Button" parent="."]
 unique_name_in_owner = true
 visible = false
 anchor_left = 0.5
-anchor_top = 0.08
 anchor_right = 0.5
-anchor_bottom = 0.08
 offset_left = -200.0
 offset_right = 200.0
-offset_bottom = 56.0
+offset_top = 16.0
+offset_bottom = 72.0
 theme_override_font_sizes/font_size = 22
 text = "棋譜閲覧中 — タップで現在に戻る"
 

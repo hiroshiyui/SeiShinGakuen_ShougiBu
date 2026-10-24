@@ -180,12 +180,36 @@ func _apply_board_side(side: float, animate: bool) -> void:
 	var target := Vector2(side, side)
 	if not animate:
 		_board_view.custom_minimum_size = target
+		_place_check_banner.call_deferred()
 		return
 	_board_resize_tween = create_tween()
 	_board_resize_tween.set_trans(Tween.TRANS_SINE)
 	_board_resize_tween.set_ease(Tween.EASE_OUT)
 	_board_resize_tween.tween_property(
 		_board_view, "custom_minimum_size", target, _BOARD_RESIZE_DURATION)
+	_board_resize_tween.tween_callback(_place_check_banner)
+
+# The 王手 banner is a root-level overlay (so it never perturbs the VBox)
+# but is positioned relative to the board: centred horizontally, sitting
+# just above the shogi-ban's top edge. Anchoring it to the screen top put
+# it under the front-camera cutout on devices like the Pixel 8a.
+# ThinkingLabel follows the same scheme, right-aligned to the board's
+# top-right corner so it never collides with the StatusBar buttons.
+func _place_check_banner() -> void:
+	if _board_view == null:
+		return
+	const GAP := 4.0
+	var board_rect: Rect2 = _board_view.get_global_rect()
+	if _check_banner.visible:
+		var banner_size: Vector2 = _check_banner.size
+		_check_banner.global_position = Vector2(
+			board_rect.position.x + (board_rect.size.x - banner_size.x) * 0.5,
+			board_rect.position.y - banner_size.y - GAP)
+	if _thinking_label.visible:
+		var think_size: Vector2 = _thinking_label.size
+		_thinking_label.global_position = Vector2(
+			board_rect.end.x - think_size.x,
+			board_rect.position.y - think_size.y - GAP)
 
 # Inset Layout so GoteHand / StatusBar don't sit under the Android
 # status bar, gesture-nav bar, or rounded-corner cutouts. The math
@@ -194,6 +218,12 @@ func _apply_board_side(side: float, animate: bool) -> void:
 # shared with KifuLibrary / KifuReviewer.
 func _apply_safe_area() -> void:
 	Settings.apply_safe_area_to(_layout)
+	# ReviewBanner is a root-level overlay outside Layout, so it must
+	# honour the status-bar / camera-cutout inset itself.
+	var insets: Rect2 = Settings.safe_area_insets(get_viewport_rect().size)
+	const BANNER_H := 56.0
+	_review_banner.offset_top = insets.position.y
+	_review_banner.offset_bottom = insets.position.y + BANNER_H
 
 func _load_ai_if_needed() -> void:
 	if Settings.mode == Settings.Mode.H_VS_H:
@@ -278,12 +308,14 @@ func _maybe_start_ai_turn() -> void:
 	if book_move != null:
 		_thinking = true  # so _refresh_all disables player input
 		_thinking_label.visible = true
+		_place_check_banner.call_deferred()
 		_undo_btn.disabled = true
 		_teacher_btn.disabled = true
 		_run_book_move_with_pause(book_move)
 		return
 	_thinking = true
 	_thinking_label.visible = true
+	_place_check_banner.call_deferred()
 	_undo_btn.disabled = true
 	_teacher_btn.disabled = true
 	var playouts: int = int(params["playouts"])
@@ -345,6 +377,8 @@ func _refresh_all() -> void:
 	var mover := "後手" if side_gote else "先手"
 	var in_check: bool = view_core.is_check()
 	_check_banner.visible = in_check and not _game_over and not _in_review
+	if _check_banner.visible or _thinking_label.visible:
+		_place_check_banner.call_deferred()
 	if _in_review:
 		var review_ply: int = int(_review_core.move_log_size())
 		var live_ply: int = int(_core.move_log_size())
@@ -817,6 +851,7 @@ func _on_teacher_pressed() -> void:
 	_teacher_thinking = true
 	_thinking_label.text = "先生が考え中..."
 	_thinking_label.visible = true
+	_place_check_banner.call_deferred()
 	_undo_btn.disabled = true
 	_teacher_btn.disabled = true
 	var playouts: int = int(Settings.level_params(Settings.ai_level)["playouts"])
