@@ -8,6 +8,28 @@ All notable changes to this project. Format follows
 
 ## [Unreleased]
 
+## [1.0.9] — 2026-10-24
+
+### Added
+- 「アニメーションを減らす」設定。盤の拡大縮小・駒のスライド・
+  候補手パネルのフェードを即時にする。
+- 盤の各マスとボタンに読み上げ名を付与 (スクリーンリーダー対応の
+  第一歩)。
+
+### Changed
+- 全画面のボタン・トグル・一覧行を 72 px 以上に、棋譜一覧や候補手の
+  文字を 24 px に拡大。盤面の大きさは据え置き。
+- 選択中の駒は金色の枠、移動可能なマスは緑の点で表示し、色だけに
+  頼らない合図に。無効なタップには赤いフラッシュと短い振動。
+- 「王手！」「思考中…」を盤の直上に配置し、太字 + 縁取りで表示。
+
+### Fixed
+- 着手時の振動が VIBRATE 権限不足で黙って失敗していた問題。
+- 「王手！」がパンチホールカメラに隠れる問題 (Pixel 8a など)。
+
+[Full release notes](./docs/release-notes/1.0.9.md) ·
+[GitHub Release](https://github.com/hiroshiyui/SeiShinGakuen_ShougiBu/releases/tag/1.0.9)
+
 ## [1.0.8] — 2026-10-23
 
 ### Changed
@@ -339,7 +361,8 @@ First public release.
 [Full release notes](./docs/release-notes/0.1.1.md) ·
 [GitHub Release](https://github.com/hiroshiyui/SeiShinGakuen_ShougiBu/releases/tag/0.1.1)
 
-[Unreleased]: https://github.com/hiroshiyui/SeiShinGakuen_ShougiBu/compare/1.0.8...HEAD
+[Unreleased]: https://github.com/hiroshiyui/SeiShinGakuen_ShougiBu/compare/1.0.9...HEAD
+[1.0.9]: https://github.com/hiroshiyui/SeiShinGakuen_ShougiBu/compare/1.0.8...1.0.9
 [1.0.8]: https://github.com/hiroshiyui/SeiShinGakuen_ShougiBu/compare/1.0.7...1.0.8
 [1.0.7]: https://github.com/hiroshiyui/SeiShinGakuen_ShougiBu/compare/1.0.6...1.0.7
 [1.0.6]: https://github.com/hiroshiyui/SeiShinGakuen_ShougiBu/compare/1.0.5...1.0.6
