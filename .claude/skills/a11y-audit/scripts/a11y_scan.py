@@ -12,6 +12,8 @@ mechanical a11y leads:
   * icon-only buttons with no text / tooltip_text / accessibility_name
   * overlays anchored to the screen edge with fractional anchors
   * VIBRATE permission missing from the Android export preset
+  * the same font-size / button-size overrides in .gd files, for rows
+    that are built in code and never appear in a scene
 
 Everything reported is a lead to confirm in context, not a verdict —
 containers can stretch nodes past their minimum size.
@@ -131,6 +133,33 @@ def scan_scene(path: Path, target_px: float, floor_px: float, font_px: float, fi
                                      msg="icon-only button with no text / tooltip_text / accessibility_name — TalkBack reads nothing"))
 
 
+GD_FONT_RE = re.compile(r'add_theme_font_size_override\(\s*"font_size"\s*,\s*(\d+(?:\.\d+)?)\s*\)')
+GD_MIN_RE = re.compile(r'custom_minimum_size\s*=\s*Vector2\(\s*([-\d.]+)\s*,\s*([-\d.]+)\s*\)')
+
+
+def scan_gdscript(path: Path, target_px: float, floor_px: float, font_px: float, findings: list):
+    """Rows and buttons built in code (KifuLibrary, 先生モード suggestions)
+    never appear in a .tscn, so also grep .gd files for the same overrides."""
+    text = path.read_text(encoding="utf-8")
+    rel = str(path.relative_to(REPO)) if path.is_relative_to(REPO) else str(path)
+    for ln, line in enumerate(text.splitlines(), 1):
+        m = GD_FONT_RE.search(line)
+        if m and float(m.group(1)) < font_px:
+            fs = float(m.group(1))
+            findings.append(dict(kind="font-size", severity="warn" if fs < font_px - 5 else "info",
+                                 where=f"{rel}:{ln}",
+                                 msg=f"code-side font_size override {fs:.0f} px is below the {font_px:.0f} px body floor"))
+        m = GD_MIN_RE.search(line)
+        if m and ("btn" in line or "button" in line.lower()):
+            judged = [float(d) for d in (m.group(1), m.group(2)) if float(d) > 0]
+            if judged and min(judged) < floor_px:
+                findings.append(dict(kind="touch-target", severity="warn", where=f"{rel}:{ln}",
+                                     msg=f"code-built button custom_minimum_size {m.group(1)}×{m.group(2)} px; short side < {floor_px:.0f} px floor"))
+            elif judged and min(judged) < target_px:
+                findings.append(dict(kind="touch-target", severity="info", where=f"{rel}:{ln}",
+                                     msg=f"code-built button custom_minimum_size {m.group(1)}×{m.group(2)} px; meets the floor but not the {target_px:.0f} px ideal"))
+
+
 def scan_export_preset(findings: list):
     cfg = REPO / "export_presets.cfg"
     if not cfg.exists():
@@ -163,6 +192,10 @@ def main() -> int:
     for f in files:
         scan_scene(f, args.target_px, args.floor_px, args.font_px, findings)
     if not args.paths:
+        for g in sorted((REPO / "scripts").rglob("*.gd")):
+            if "tests" in g.parts:
+                continue
+            scan_gdscript(g, args.target_px, args.floor_px, args.font_px, findings)
         scan_export_preset(findings)
 
     if args.no_info:
