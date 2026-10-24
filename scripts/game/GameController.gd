@@ -909,9 +909,9 @@ func _populate_suggestions(suggestions: Array) -> void:
 		child.queue_free()
 	for m in suggestions:
 		var btn := Button.new()
-		btn.custom_minimum_size = Vector2(0, 36)
+		btn.custom_minimum_size = Vector2(0, 56)
 		btn.alignment = HORIZONTAL_ALIGNMENT_LEFT
-		btn.add_theme_font_size_override("font_size", 22)
+		btn.add_theme_font_size_override("font_size", 24)
 		btn.text = _format_suggestion(m)
 		btn.pressed.connect(_on_suggestion_tapped.bind(m))
 		_suggestions_list.add_child(btn)

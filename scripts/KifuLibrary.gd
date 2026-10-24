@@ -93,16 +93,16 @@ func _build_row(entry: Dictionary) -> Control:
 	var open_btn := Button.new()
 	open_btn.text = "%s\n%s" % [entry.name, _format_mtime(entry.mtime)]
 	open_btn.alignment = HORIZONTAL_ALIGNMENT_LEFT
-	open_btn.custom_minimum_size = Vector2(0, 64)
+	open_btn.custom_minimum_size = Vector2(0, 88)
 	open_btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	open_btn.add_theme_font_size_override("font_size", 18)
+	open_btn.add_theme_font_size_override("font_size", 24)
 	open_btn.pressed.connect(_on_open.bind(entry.path))
 	row.add_child(open_btn)
 
 	var del_btn := Button.new()
 	del_btn.text = "削除"
-	del_btn.custom_minimum_size = Vector2(96, 64)
-	del_btn.add_theme_font_size_override("font_size", 18)
+	del_btn.custom_minimum_size = Vector2(110, 88)
+	del_btn.add_theme_font_size_override("font_size", 24)
 	del_btn.pressed.connect(_on_delete_request.bind(entry.path))
 	row.add_child(del_btn)
 

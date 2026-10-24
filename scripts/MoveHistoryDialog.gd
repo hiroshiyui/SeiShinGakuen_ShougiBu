@@ -55,8 +55,8 @@ func show_with(lines: PackedStringArray, live_ply: int) -> void:
 			var btn := Button.new()
 			btn.text = lines[i]
 			btn.alignment = HORIZONTAL_ALIGNMENT_LEFT
-			btn.custom_minimum_size = Vector2(0, 56)
-			btn.add_theme_font_size_override("font_size", 22)
+			btn.custom_minimum_size = Vector2(0, 72)
+			btn.add_theme_font_size_override("font_size", 24)
 			if ply == _live_ply:
 				btn.add_theme_color_override("font_color", Color(0.98, 0.85, 0.45, 1))
 			btn.pressed.connect(_on_row_pressed.bind(ply))
