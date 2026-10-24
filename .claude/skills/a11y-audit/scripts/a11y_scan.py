@@ -5,7 +5,8 @@ Reads .tscn files (text format) and export_presets.cfg and reports
 mechanical a11y leads:
 
   * interactive nodes whose custom_minimum_size short side is below the
-    touch-target threshold (default 84 Godot px ≈ 48 dp on a 412 dp phone)
+    project floor (warn, default 72 Godot px ≈ 41 dp) or below the Material
+    ideal (info, default 84 px ≈ 48 dp on a 412 dp phone)
   * font_size overrides below the body-text floor (default 26 px)
   * text drawn as a root-level overlay with no outline
   * icon-only buttons with no text / tooltip_text / accessibility_name
@@ -70,7 +71,7 @@ def num(v: str | None):
         return None
 
 
-def scan_scene(path: Path, target_px: float, font_px: float, findings: list):
+def scan_scene(path: Path, target_px: float, floor_px: float, font_px: float, findings: list):
     text = path.read_text(encoding="utf-8")
     rel = str(path.relative_to(REPO)) if path.is_relative_to(REPO) else str(path)
 
@@ -89,9 +90,12 @@ def scan_scene(path: Path, target_px: float, font_px: float, findings: list):
                 w, h = v
                 # 0 on an axis means "let the container decide"; only judge axes that are set.
                 judged = [d for d in (w, h) if d > 0]
-                if judged and min(judged) < target_px:
+                if judged and min(judged) < floor_px:
                     findings.append(dict(kind="touch-target", severity="warn", where=where,
-                                         msg=f"{ntype} custom_minimum_size {w:.0f}×{h:.0f} px; short side < {target_px:.0f} px (≈48 dp). Check whether its container stretches it."))
+                                         msg=f"{ntype} custom_minimum_size {w:.0f}×{h:.0f} px; short side < {floor_px:.0f} px (≈41 dp project floor). Check whether its container stretches it."))
+                elif judged and min(judged) < target_px:
+                    findings.append(dict(kind="touch-target", severity="info", where=where,
+                                         msg=f"{ntype} custom_minimum_size {w:.0f}×{h:.0f} px; meets the {floor_px:.0f} px floor but not the {target_px:.0f} px (48 dp) ideal"))
 
         # 2. Font size overrides
         fs = num(p.get("theme_override_font_sizes/font_size"))
@@ -142,7 +146,8 @@ def scan_export_preset(findings: list):
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("paths", nargs="*", help=".tscn files or directories (default: scenes/)")
-    ap.add_argument("--target-px", type=float, default=84.0, help="touch-target short-side threshold in Godot px (default 84 ≈ 48 dp)")
+    ap.add_argument("--target-px", type=float, default=84.0, help="touch-target ideal in Godot px; below this is info (default 84 ≈ 48 dp)")
+    ap.add_argument("--floor-px", type=float, default=72.0, help="touch-target hard floor in Godot px; below this is warn (default 72 ≈ 41 dp, the size the project settled on so chrome never shrinks the board)")
     ap.add_argument("--font-px", type=float, default=26.0, help="body text floor in px (default 26, the theme default)")
     ap.add_argument("--json", action="store_true", help="emit JSON")
     ap.add_argument("--no-info", action="store_true", help="hide info-level leads")
@@ -156,7 +161,7 @@ def main() -> int:
 
     findings: list[dict] = []
     for f in files:
-        scan_scene(f, args.target_px, args.font_px, findings)
+        scan_scene(f, args.target_px, args.floor_px, args.font_px, findings)
     if not args.paths:
         scan_export_preset(findings)
 

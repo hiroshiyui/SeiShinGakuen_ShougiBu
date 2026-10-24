@@ -22,7 +22,11 @@ floor, so never override below it for anything a player must read.
 
 - Every `Button`, `TextureButton`, `OptionButton`, `CheckBox` and every
   `Control` with a `gui_input` tap handler (`Square.gd`, hand piece
-  slots) must present a hit area ≥ 84 px on its short side.
+  slots) should present a hit area ≥ 84 px on its short side. The
+  project floor settled on 2026-10-24 is **72 px (≈41 dp)**: it is the
+  largest height that leaves the board width-limited on 16:9 phones,
+  so chrome never steals board size. Below 72 is a defect; 72–84 is
+  acceptable and only worth raising if the row has slack.
 - Containers can stretch a node past its `custom_minimum_size`; check
   `size_flags_*`. A `0, 56` button in an `HBoxContainer` with
   `size_flags_vertical = 3` inside a tall row may be fine. One in a
