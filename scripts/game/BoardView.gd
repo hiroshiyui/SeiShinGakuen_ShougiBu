@@ -10,6 +10,7 @@ const PieceViewScene := preload("res://scenes/game/PieceView.tscn")
 
 @onready var _grid: GridContainer = %GridMargin/Grid
 @onready var _margin_container: MarginContainer = %GridMargin
+@onready var _background: Control = $BoardBackground
 
 var _squares: Dictionary = {}
 var _selected_key: Vector2i = Vector2i.ZERO
@@ -20,6 +21,13 @@ func _ready() -> void:
 	resized.connect(_on_resized)
 	_build_grid()
 	_on_resized()
+
+# Global rect of the wooden board as actually drawn. The AspectRatio-
+# Container itself can be wider/taller than the fitted child, so callers
+# positioning overlays flush to the shogi-ban must use this, not
+# get_global_rect() on the BoardView.
+func visual_global_rect() -> Rect2:
+	return _background.get_global_rect()
 
 func _on_resized() -> void:
 	var s := size

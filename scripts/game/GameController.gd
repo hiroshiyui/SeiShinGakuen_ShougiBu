@@ -198,18 +198,30 @@ func _apply_board_side(side: float, animate: bool) -> void:
 func _place_check_banner() -> void:
 	if _board_view == null:
 		return
-	const GAP := 4.0
-	var board_rect: Rect2 = _board_view.get_global_rect()
+	var board_rect: Rect2 = _board_view.visual_global_rect()
 	if _check_banner.visible:
-		var banner_size: Vector2 = _check_banner.size
-		_check_banner.global_position = Vector2(
-			board_rect.position.x + (board_rect.size.x - banner_size.x) * 0.5,
-			board_rect.position.y - banner_size.y - GAP)
+		_place_above_board(_check_banner, board_rect, HORIZONTAL_ALIGNMENT_CENTER)
 	if _thinking_label.visible:
-		var think_size: Vector2 = _thinking_label.size
-		_thinking_label.global_position = Vector2(
-			board_rect.end.x - think_size.x,
-			board_rect.position.y - think_size.y - GAP)
+		_place_above_board(_thinking_label, board_rect, HORIZONTAL_ALIGNMENT_RIGHT)
+
+# Shrink `node` to its content size (so the alignment edge is the text's
+# real edge, not a stale/oversized box) and park it just above the
+# board, flush to the requested edge. Using get_combined_minimum_size()
+# instead of `size` matters because this runs via call_deferred right
+# after a text/visibility change, before the Control has re-laid out.
+func _place_above_board(node: Control, board_rect: Rect2, align: int) -> void:
+	const GAP := 4.0
+	var sz: Vector2 = node.get_combined_minimum_size()
+	node.size = sz
+	var x: float
+	match align:
+		HORIZONTAL_ALIGNMENT_LEFT:
+			x = board_rect.position.x
+		HORIZONTAL_ALIGNMENT_RIGHT:
+			x = board_rect.end.x - sz.x
+		_:
+			x = board_rect.position.x + (board_rect.size.x - sz.x) * 0.5
+	node.global_position = Vector2(x, board_rect.position.y - sz.y - GAP)
 
 # Inset Layout so GoteHand / StatusBar don't sit under the Android
 # status bar, gesture-nav bar, or rounded-corner cutouts. The math
