@@ -17,9 +17,11 @@
 #                    of scope — so this flag is rarely used; left in for
 #                    completeness.
 #   --test           run `cargo test` (unit + parity + perft) after Rust build
-#   --linux          also build the portable Linux .so (x86_64 + arm64) in
-#                    the glibc-2.31 container via tools/build_linux_native.sh
-#                    (AppImage prerequisite; see docs/adr for rationale)
+#   --linux          Linux desktop pipeline: portable .so (x86_64 + arm64)
+#                    in the glibc-2.31 container, Godot export of both
+#                    "Linux <arch>" presets, then AppImages via
+#                    tools/build_appimage.sh. Independent of the Android
+#                    flags; combine with --skip-apk for Linux-only runs.
 
 set -euo pipefail
 
@@ -188,6 +190,22 @@ if (( DO_APK )); then
     fi
 
     log "Done: $OUT ($(du -h "$OUT" | cut -f1))"
+fi
+
+# --- Linux export + AppImage ---
+# Runs after fonts so the subsets are current. Exports both presets
+# (release template; there's no signing on Linux) and packs them. The
+# x86_64 binary gets a headless smoke run — proves the embedded PCK,
+# the .so and the gdextension wiring load outside the editor.
+if (( DO_LINUX )); then
+    for arch in x86_64 arm64; do
+        mkdir -p "build/linux/$arch"
+        log "Exporting Linux $arch → build/linux/$arch/seishingakuen"
+        "$GODOT" --headless --path . --export-release "Linux $arch"             "build/linux/$arch/seishingakuen"
+    done
+    log "Headless smoke run of the x86_64 export"
+    timeout 120 build/linux/x86_64/seishingakuen --headless --quit-after 60         || { echo "x86_64 Linux export failed to run headless" >&2; exit 1; }
+    ./tools/build_appimage.sh --arch all
 fi
 
 log "Pipeline finished."
