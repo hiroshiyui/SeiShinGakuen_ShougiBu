@@ -1,4 +1,4 @@
-[gd_scene load_steps=11 format=3]
+[gd_scene load_steps=12 format=3]
 
 [ext_resource type="Script" path="res://scripts/game/GameController.gd" id="1_gc"]
 [ext_resource type="PackedScene" path="res://scenes/game/Board.tscn" id="2_board"]
@@ -9,6 +9,7 @@
 [ext_resource type="Texture2D" path="res://assets/ui/teacher_icon_katou.webp" id="7_teacher"]
 [ext_resource type="FontFile" path="res://assets/fonts/m-plus-2/MPLUS2-Regular.otf" id="8_mplus2"]
 [ext_resource type="FontFile" path="res://assets/fonts/noto-serif-jp/NotoSerifCJKjp-Bold.otf" id="9_bold"]
+[ext_resource type="FontFile" path="res://assets/fonts/mochiy-pop-one/MochiyPopOne-Regular.ttf" id="12_mochiy"]
 
 [sub_resource type="ShaderMaterial" id="1_round_mat"]
 shader = ExtResource("5_round")
@@ -189,7 +190,7 @@ theme_override_colors/font_color = Color(0.9, 0.1, 0.08, 1)
 theme_override_colors/font_outline_color = Color(1, 1, 1, 1)
 theme_override_constants/outline_size = 14
 theme_override_font_sizes/font_size = 34
-theme_override_fonts/font = ExtResource("9_bold")
+theme_override_fonts/font = ExtResource("12_mochiy")
 text = "王手！"
 horizontal_alignment = 1
 vertical_alignment = 1

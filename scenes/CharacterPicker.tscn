@@ -1,8 +1,9 @@
-[gd_scene load_steps=5 format=3]
+[gd_scene load_steps=6 format=3]
 
 [ext_resource type="Script" path="res://scripts/CharacterPicker.gd" id="1_pick"]
 [ext_resource type="Texture2D" path="res://assets/backgrounds/in_game_bg.webp" id="2_bg"]
 [ext_resource type="FontFile" path="res://assets/fonts/m-plus-2/MPLUS2-Regular.otf" id="3_mplus2"]
+[ext_resource type="FontFile" path="res://assets/fonts/mochiy-pop-one/MochiyPopOne-Regular.ttf" id="4_mochiy"]
 
 [sub_resource type="StyleBoxFlat" id="1_panel"]
 bg_color = Color(0, 0, 0, 0.5)
@@ -90,8 +91,11 @@ theme_override_constants/separation = 6
 [node name="DisplayName" type="Label" parent="Root/DetailPanel/DetailRow/Info"]
 unique_name_in_owner = true
 text = "—"
+theme_override_fonts/font = ExtResource("4_mochiy")
 theme_override_font_sizes/font_size = 44
 theme_override_colors/font_color = Color(0.98, 0.98, 0.98, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 10
 
 [node name="LevelStrength" type="Label" parent="Root/DetailPanel/DetailRow/Info"]
 unique_name_in_owner = true

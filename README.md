@@ -205,6 +205,7 @@ Android 初期セットアップ（NDK の入手、キーストア生成、`expo
 - [`assets/fonts/fude-goshirae/`](./assets/fonts/fude-goshirae/) — 筆ごしらえ、駒文字専用。SIL OFL 1.1。
 - [`assets/fonts/noto-serif-jp/`](./assets/fonts/noto-serif-jp/) — Noto Serif JP、UI 本文。SIL OFL 1.1。
 - [`assets/fonts/m-plus-2/`](./assets/fonts/m-plus-2/) — M PLUS 2 Regular、UI ラベル / バージョン表示。SIL OFL 1.1。
+- [`assets/fonts/mochiy-pop-one/`](./assets/fonts/mochiy-pop-one/) — Mochiy Pop One、タイトル / 見出し / 対戦相手名の表示用。SIL OFL 1.1。
 
 AI モデル `models/bonanza.onnx`（Bonanza v2、10 ブロック × 128 フィルタ、約 12 MB）は姉妹プロジェクト
 [ShogiDojo](https://github.com/hiroshiyui/ShogiDojo/) からコピーしたもの。再学習はそちらで行う。

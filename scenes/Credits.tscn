@@ -1,9 +1,10 @@
-[gd_scene load_steps=7 format=3]
+[gd_scene load_steps=8 format=3]
 
 [ext_resource type="Script" path="res://scripts/Credits.gd" id="1_credits"]
 [ext_resource type="Texture2D" path="res://assets/backgrounds/credits_bg.webp" id="2_bg"]
 [ext_resource type="FontFile" path="res://assets/fonts/m-plus-2/MPLUS2-Regular.otf" id="3_mplus2"]
 [ext_resource type="Script" path="res://scripts/SafeAreaLayout.gd" id="4_safe"]
+[ext_resource type="FontFile" path="res://assets/fonts/mochiy-pop-one/MochiyPopOne-Regular.ttf" id="4_mochiy"]
 
 [sub_resource type="StyleBoxFlat" id="1_panel"]
 bg_color = Color(0, 0, 0, 0.55)
@@ -62,8 +63,8 @@ vertical_alignment = 1
 theme_override_font_sizes/font_size = 28
 theme_override_colors/font_color = Color(0.98, 0.98, 0.98, 1)
 theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
-theme_override_constants/outline_size = 6
-theme_override_fonts/font = ExtResource("3_mplus2")
+theme_override_constants/outline_size = 8
+theme_override_fonts/font = ExtResource("4_mochiy")
 
 [node name="HideButton" type="Button" parent="Layout/HeaderPanel/Header"]
 unique_name_in_owner = true
@@ -111,6 +112,7 @@ Bonanza policy + value network
 [font_size=22][b]フォント[/b][/font_size]
 [color=#a4c8ff]Noto Serif JP[/color] (SIL OFL 1.1) — Google Noto Project
 [color=#a4c8ff]M PLUS 2 Regular[/color] (SIL OFL 1.1) — coz-m / MPLUS_FONTS
+[color=#a4c8ff]Mochiy Pop One[/color] (SIL OFL 1.1) — fontdasu / Mochiypop
 [color=#a4c8ff]筆ごしらえ (Fude Goshirae)[/color] (SIL OFL 1.1) — booth.pm/ja/items/7797956
 
 [font_size=22][b]謝辞[/b][/font_size]

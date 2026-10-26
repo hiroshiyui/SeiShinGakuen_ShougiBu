@@ -1,7 +1,8 @@
-[gd_scene load_steps=5 format=3]
+[gd_scene load_steps=6 format=3]
 
 [ext_resource type="Script" path="res://scripts/MoveHistoryDialog.gd" id="1_mh"]
 [ext_resource type="Shader" path="res://assets/shaders/backdrop_blur.gdshader" id="2_blur"]
+[ext_resource type="FontFile" path="res://assets/fonts/mochiy-pop-one/MochiyPopOne-Regular.ttf" id="5_mochiy"]
 
 [sub_resource type="ShaderMaterial" id="2_blur_mat"]
 shader = ExtResource("2_blur")
@@ -59,9 +60,10 @@ theme_override_constants/separation = 12
 [node name="TitleLabel" type="Label" parent="MarginContainer/Panel/VBox/Header"]
 text = "棋譜"
 size_flags_horizontal = 3
+theme_override_fonts/font = ExtResource("5_mochiy")
 theme_override_colors/font_color = Color(0.98, 0.85, 0.45, 1)
 theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
-theme_override_constants/outline_size = 6
+theme_override_constants/outline_size = 8
 theme_override_font_sizes/font_size = 32
 
 [node name="HSep" type="HSeparator" parent="MarginContainer/Panel/VBox"]

@@ -1,8 +1,9 @@
-[gd_scene load_steps=6 format=3]
+[gd_scene load_steps=7 format=3]
 
 [ext_resource type="Script" path="res://scripts/MainMenu.gd" id="1_mm"]
 [ext_resource type="Texture2D" path="res://assets/backgrounds/main_title_bg.webp" id="2_bg"]
 [ext_resource type="FontFile" path="res://assets/fonts/m-plus-2/MPLUS2-Regular.otf" id="3_mplus2"]
+[ext_resource type="FontFile" path="res://assets/fonts/mochiy-pop-one/MochiyPopOne-Regular.ttf" id="4_mochiy"]
 [ext_resource type="Script" path="res://scripts/SafeAreaLayout.gd" id="4_safe"]
 
 [sub_resource type="StyleBoxFlat" id="1_panel"]
@@ -57,6 +58,7 @@ unique_name_in_owner = true
 text = "清正学園将棋部"
 horizontal_alignment = 1
 mouse_filter = 0
+theme_override_fonts/font = ExtResource("4_mochiy")
 theme_override_font_sizes/font_size = 48
 theme_override_colors/font_color = Color(0.98, 0.98, 0.98, 1)
 theme_override_colors/font_outline_color = Color(0, 0, 0, 1)

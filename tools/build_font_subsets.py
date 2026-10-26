@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Reproducible font subsetter for the repo's vendored fonts.
 
-Reads the `*-full.otf` sources under `assets/fonts/**/` and emits tiny
+Reads the `*-full.otf` / `*-full.ttf` sources under `assets/fonts/**/` and emits tiny
 subsets alongside them at the canonical filenames referenced by
 `assets/themes/ui.tres` and by `scripts/game/Square.gd`. The full files
 are source-only and excluded from the APK via `export_presets.cfg`'s
@@ -205,6 +205,14 @@ def main() -> int:
     subset(
         REPO_ROOT / "assets/fonts/m-plus-2/MPLUS2-Regular-full.otf",
         REPO_ROOT / "assets/fonts/m-plus-2/MPLUS2-Regular.otf",
+        ui_text,
+        pyftsubset,
+    )
+    # Display face for the app title, screen headings, character names
+    # and the 王手 banner — names come from .tres, so use the full set.
+    subset(
+        REPO_ROOT / "assets/fonts/mochiy-pop-one/MochiyPopOne-Regular-full.ttf",
+        REPO_ROOT / "assets/fonts/mochiy-pop-one/MochiyPopOne-Regular.ttf",
         ui_text,
         pyftsubset,
     )
