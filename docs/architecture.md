@@ -193,8 +193,12 @@ rewinding `_core` in place: [ADR-0008](./adr/0008-review-mode-scratch-core.md).
   [`mcts.rs`](../native/shogi_core/src/mcts.rs).
 - **New UI font** — subset pipeline in
   [`tools/build_font_subsets.py`](../tools/build_font_subsets.py); add
-  the `-full.otf` original under `assets/fonts/`, keep the subset under
-  the canonical filename. The script re-scans strings automatically.
+  the `-full.otf` / `-full.ttf` original under `assets/fonts/`, keep the
+  subset under the canonical filename, and add a `subset(...)` call to
+  the script. The script re-scans strings automatically. Current roles:
+  Fude Goshirae = piece kanji, Noto Serif JP = body text / buttons,
+  M PLUS 2 = secondary labels, Mochiy Pop One = title / screen
+  headings / opponent name / 王手 banner.
 - **New visual asset (ComfyUI output, illustrations, icons)** — drop
   under the folder that matches its role: `assets/backgrounds/` for
   gutter / full-screen decoration, `assets/ui/` for button/icon art,

@@ -142,7 +142,8 @@ item_rect_changed.connect(func():
   combined a few MB once Godot imports them to compressed textures.
 - ONNX model — 12 MB (Bonanza v2; v1 was 1.3 MB).
 - Vendored Japanese fonts (subset) — Fude Goshirae 175 KB +
-  Noto Serif JP Medium/Bold ~270 KB each + M PLUS 2 ~91 KB.
+  Noto Serif JP Medium/Bold ~290 KB each + M PLUS 2 ~94 KB +
+  Mochiy Pop One (title / headings) ~113 KB.
 
 **Cheap wins (already taken):**
 - Font subsetting via `tools/build_font_subsets.py` — Fude Goshirae
@@ -247,4 +248,23 @@ need avoiding, so the horizontal safe-area term is spurious.
 
 **Fix:** apply safe-area insets **only vertically** (top / bottom).
 Keep a small fixed `EXTRA_H` on both sides for aesthetic breathing
-room. See `_apply_safe_area` in `scripts/game/GameController.gd`.
+room. See `Settings.safe_area_insets` in `scripts/autoload/Settings.gd`.
+
+## Bottom edge sits under the gesture / navigation bar
+
+**Symptom:** the status row, dialog buttons or the version badge hug
+the very bottom of the screen and collide with the gesture pill /
+3-button navigation bar, while the top correctly clears the camera
+cutout.
+
+**Cause:** `screen/immersive_mode=true` hides the navigation bar, and
+`DisplayServer.get_display_safe_area()` then only reports the display
+cutout (top). The bottom inset collapses to the fixed `EXTRA_BOTTOM`
+pad — Android never tells Godot how tall the hidden bar is.
+
+**Fix:** `Settings.safe_area_insets` takes
+`max(reported bottom, 48 dp × screen DPI / 160)` on Android before
+adding the pad, so the bottom always reserves a navigation-bar-sized
+band (3-button height; the gesture zone is smaller). Every fullscreen
+screen goes through that helper, so don't hand-roll inset math in a
+new scene.
