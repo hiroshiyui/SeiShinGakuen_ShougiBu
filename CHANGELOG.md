@@ -8,6 +8,21 @@ All notable changes to this project. Format follows
 
 ## [Unreleased]
 
+## [1.0.10] — 2026-10-26
+
+### Changed
+- タイトル・各画面の見出し・対戦相手名・「王手！」を丸みのある
+  ポップ体 Mochiy Pop One (SIL OFL 1.1) で表示。見出しには黒の
+  縁取りを追加。本文やボタンの書体は従来どおり。
+
+### Fixed
+- 画面下端にナビゲーションバー相当の余白を確保。没入モードでは
+  OS がジェスチャー領域を安全領域として報告しないため、ボタンや
+  手番表示が下端に寄りすぎていた。
+
+[Full release notes](./docs/release-notes/1.0.10.md) ·
+[GitHub Release](https://github.com/hiroshiyui/SeiShinGakuen_ShougiBu/releases/tag/1.0.10)
+
 ## [1.0.9] — 2026-10-24
 
 ### Added
@@ -361,7 +376,8 @@ First public release.
 [Full release notes](./docs/release-notes/0.1.1.md) ·
 [GitHub Release](https://github.com/hiroshiyui/SeiShinGakuen_ShougiBu/releases/tag/0.1.1)
 
-[Unreleased]: https://github.com/hiroshiyui/SeiShinGakuen_ShougiBu/compare/1.0.9...HEAD
+[Unreleased]: https://github.com/hiroshiyui/SeiShinGakuen_ShougiBu/compare/1.0.10...HEAD
+[1.0.10]: https://github.com/hiroshiyui/SeiShinGakuen_ShougiBu/compare/1.0.9...1.0.10
 [1.0.9]: https://github.com/hiroshiyui/SeiShinGakuen_ShougiBu/compare/1.0.8...1.0.9
 [1.0.8]: https://github.com/hiroshiyui/SeiShinGakuen_ShougiBu/compare/1.0.7...1.0.8
 [1.0.7]: https://github.com/hiroshiyui/SeiShinGakuen_ShougiBu/compare/1.0.6...1.0.7
