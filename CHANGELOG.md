@@ -8,6 +8,15 @@ All notable changes to this project. Format follows
 
 ## [Unreleased]
 
+## [1.0.11] — 2026-10-26
+
+### Fixed
+- 対局中の「棋譜」ダイアログの「保存 / 閉じる」ボタンがジェスチャー
+  領域に重なっていた問題。他の画面と同じ安全領域の余白を適用。
+
+[Full release notes](./docs/release-notes/1.0.11.md) ·
+[GitHub Release](https://github.com/hiroshiyui/SeiShinGakuen_ShougiBu/releases/tag/1.0.11)
+
 ## [1.0.10] — 2026-10-26
 
 ### Changed
@@ -376,7 +385,8 @@ First public release.
 [Full release notes](./docs/release-notes/0.1.1.md) ·
 [GitHub Release](https://github.com/hiroshiyui/SeiShinGakuen_ShougiBu/releases/tag/0.1.1)
 
-[Unreleased]: https://github.com/hiroshiyui/SeiShinGakuen_ShougiBu/compare/1.0.10...HEAD
+[Unreleased]: https://github.com/hiroshiyui/SeiShinGakuen_ShougiBu/compare/1.0.11...HEAD
+[1.0.11]: https://github.com/hiroshiyui/SeiShinGakuen_ShougiBu/compare/1.0.10...1.0.11
 [1.0.10]: https://github.com/hiroshiyui/SeiShinGakuen_ShougiBu/compare/1.0.9...1.0.10
 [1.0.9]: https://github.com/hiroshiyui/SeiShinGakuen_ShougiBu/compare/1.0.8...1.0.9
 [1.0.8]: https://github.com/hiroshiyui/SeiShinGakuen_ShougiBu/compare/1.0.7...1.0.8
