@@ -1,0 +1,1 @@
+Offline Shogi with an AlphaZero-style AI and eight opponents.

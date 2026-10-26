@@ -1,0 +1,22 @@
+Seishin Gakuen Shogi Club (清正学園将棋部) is a single-player Shogi (Japanese chess) game. Everything runs on the device; the app never goes online.
+
+<b>Features</b>
+
+* <b>Complete Shogi rules</b> — check, nifu (double pawn), uchifuzume (pawn-drop mate), sennichite (repetition, including the perpetual-check loss) and nyuugyoku (entering-king, 27-point rule).
+* <b>Offline AI</b> — an AlphaZero-style policy + value network (Bonanza-method trained) runs on-device through a single-threaded PUCT MCTS. Eight strength levels.
+* <b>Eight opponents</b> — club members and teachers from Lv 1 to Lv 8, each with a portrait and a short bio.
+* <b>Teacher mode</b> — tap "Ask Kato-sensei!" during a game to see the top three candidate moves with win rates. You still choose the move yourself.
+* <b>Play experience</b> — multi-step undo, resign, last-move highlight, piece and UI sounds, haptics, save and resume.
+* <b>Kifu save and review</b> — export games as .kif, then replay and analyse them from the title screen. Every move is evaluated by MCTS and tagged ◎ good / △ dubious / × blunder, with a recommended move for blunders.
+* <b>Board</b> — kaya-style wood grain, traditional pentagonal pieces, brush-script piece kanji (Fude Goshirae).
+
+The user interface is in Japanese.
+
+<b>Privacy</b>
+
+No network permission. No ads, tracking or analytics. The AI model runs locally.
+
+<b>License</b>
+
+GPL-3.0-or-later. Source code:
+https://github.com/hiroshiyui/SeiShinGakuen_ShougiBu

@@ -1,0 +1,2 @@
+• New title and heading typeface (Mochiy Pop One).
+• Reserve navigation-bar-sized padding at the bottom edge so buttons stay clear of the gesture area.

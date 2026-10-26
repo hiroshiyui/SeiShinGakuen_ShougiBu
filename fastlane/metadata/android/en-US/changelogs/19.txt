@@ -1,0 +1,1 @@
+• Fix the in-game kifu dialog buttons overlapping the gesture area.
