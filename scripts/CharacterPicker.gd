@@ -98,22 +98,9 @@ func _index_of_level(lvl: int) -> int:
 	return -1
 
 func _apply_safe_area() -> void:
-	const EXTRA_TOP := 12.0
-	const EXTRA_BOTTOM := 12.0
-	const EXTRA_H := 12.0
-	var top := EXTRA_TOP
-	var bottom := EXTRA_BOTTOM
-	var safe: Rect2i = DisplayServer.get_display_safe_area()
-	var screen_size: Vector2i = DisplayServer.screen_get_size()
-	if safe.size != Vector2i.ZERO and screen_size != Vector2i.ZERO:
-		var vp: Vector2 = get_viewport_rect().size
-		var sy: float = vp.y / float(screen_size.y)
-		top += float(safe.position.y) * sy
-		bottom += float(screen_size.y - safe.position.y - safe.size.y) * sy
-	_root.offset_left = EXTRA_H
-	_root.offset_top = top
-	_root.offset_right = -EXTRA_H
-	_root.offset_bottom = -bottom
+	# Shares Settings.safe_area_insets with the other screens so the
+	# top-cutout / bottom-nav-bar clearance stays consistent app-wide.
+	Settings.apply_safe_area_to(_root)
 
 func _on_confirm() -> void:
 	if _highlighted < 0 or _highlighted >= _chars.size():

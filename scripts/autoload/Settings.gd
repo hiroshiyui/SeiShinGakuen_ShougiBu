@@ -257,7 +257,8 @@ func apply_safe_area_to(node: Control) -> void:
 
 # Compute the per-side inset (left, top, right, bottom) a fullscreen
 # Control should apply so content clears the OS status bar / gesture
-# nav / camera cutout. Mirrors GameController._apply_safe_area; pulled
+# nav / camera cutout. Top and bottom are symmetric in spirit: top
+# clears the cutout, bottom clears the (hidden) navigation bar. Mirrors GameController._apply_safe_area; pulled
 # onto Settings so KifuLibrary / KifuReviewer / future fullscreen
 # screens can call the same logic without duplicating code.
 func safe_area_insets(viewport_size: Vector2) -> Rect2:
@@ -268,12 +269,23 @@ func safe_area_insets(viewport_size: Vector2) -> Rect2:
 	var bottom := EXTRA_BOTTOM
 	var left := EXTRA_H
 	var right := EXTRA_H
+	# Physical height of the Android system navigation bar (3-button
+	# mode; the gesture pill zone is smaller). With immersive_mode the
+	# bar is hidden and DisplayServer's safe area only reports the top
+	# camera cutout, so the bottom would otherwise get just EXTRA_BOTTOM
+	# and content ends up under the gesture area. Reserve the bar height
+	# as a floor so the bottom edge mirrors the top's cutout clearance.
+	const NAV_BAR_DP := 48.0
 	var safe: Rect2i = DisplayServer.get_display_safe_area()
 	var screen_size: Vector2i = DisplayServer.screen_get_size()
 	if safe.size != Vector2i.ZERO and screen_size != Vector2i.ZERO and viewport_size.y > 0:
 		var sy: float = viewport_size.y / float(screen_size.y)
 		top += float(safe.position.y) * sy
-		bottom += float(screen_size.y - safe.position.y - safe.size.y) * sy
+		var reported_bottom: float = float(screen_size.y - safe.position.y - safe.size.y)
+		var nav_bar_px: float = 0.0
+		if OS.has_feature("android"):
+			nav_bar_px = NAV_BAR_DP * DisplayServer.screen_get_dpi() / 160.0
+		bottom += maxf(reported_bottom, nav_bar_px) * sy
 	# Horizontal inset stays fixed — Android sometimes reports a non-zero
 	# safe.position.x for gesture nav / foldable hinges that would shift
 	# layouts sideways in portrait mode.
