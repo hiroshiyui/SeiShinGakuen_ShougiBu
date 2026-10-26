@@ -17,6 +17,7 @@ signal share_requested
 @onready var _close_btn: Button = %CloseButton
 @onready var _empty_hint: Label = %EmptyHint
 @onready var _save_status: Label = %SaveStatus
+@onready var _margin: MarginContainer = $MarginContainer
 
 const _SHARE_LABEL := "保存"
 const _SHARE_DONE := "保存しました"
@@ -30,9 +31,22 @@ func _ready() -> void:
 	# panel both stretch as intended.
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	visible = false
+	_apply_safe_area()
+	get_viewport().size_changed.connect(_apply_safe_area)
 	_share_btn.pressed.connect(_on_share_pressed)
 	_back_to_live_btn.pressed.connect(_on_back_to_live)
 	_close_btn.pressed.connect(_on_close)
+
+# The panel is a fullscreen overlay, so its margins must clear the
+# camera cutout at the top and the (hidden) navigation bar at the
+# bottom — otherwise 保存 / 閉じる land inside the gesture zone. Reuse
+# the same inset math as every other fullscreen screen.
+func _apply_safe_area() -> void:
+	var insets: Rect2 = Settings.safe_area_insets(get_viewport_rect().size)
+	_margin.add_theme_constant_override("margin_left", int(insets.position.x) + 4)
+	_margin.add_theme_constant_override("margin_top", int(insets.position.y))
+	_margin.add_theme_constant_override("margin_right", int(insets.size.x) + 4)
+	_margin.add_theme_constant_override("margin_bottom", int(insets.size.y))
 
 # Show the dialog populated with the supplied kifu lines (one per ply,
 # already 1-indexed by the Rust formatter). `live_ply` tells us which
