@@ -102,7 +102,8 @@ hiroshiyui
 
 [font_size=22][b]AI モデル[/b][/font_size]
 Bonanza policy + value network
-学習基盤・参考実装: [color=#a4c8ff]ShogiDojo[/color]
+学習基盤・参考実装: [color=#a4c8ff]ShogiDojo[/color] (GPL-3.0-or-later)
+学習データ: [color=#a4c8ff]Floodgate[/color] 棋譜アーカイブ — shogi-server プロジェクト
 推論ランタイム: [color=#a4c8ff]tract[/color] (ONNX runtime in Rust)
 
 [font_size=22][b]ゲームエンジン[/b][/font_size]

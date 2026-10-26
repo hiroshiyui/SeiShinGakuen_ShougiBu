@@ -208,4 +208,8 @@ Android 初期セットアップ（NDK の入手、キーストア生成、`expo
 - [`assets/fonts/mochiy-pop-one/`](./assets/fonts/mochiy-pop-one/) — Mochiy Pop One、タイトル / 見出し / 対戦相手名の表示用。SIL OFL 1.1。
 
 AI モデル `models/bonanza.onnx`（Bonanza v2、10 ブロック × 128 フィルタ、約 12 MB）は姉妹プロジェクト
-[ShogiDojo](https://github.com/hiroshiyui/ShogiDojo/) からコピーしたもの。再学習はそちらで行う。
+[ShogiDojo](https://github.com/hiroshiyui/ShogiDojo/)（GPL-3.0-or-later）で学習したもので、本リポジトリと同じ
+GPL-3.0-or-later で配布する。学習データは [shogi-server](https://github.com/shogi-server/shogi-server) プロジェクトが
+公開している Floodgate の棋譜アーカイブ（wdoor2011〜2026）。出典の詳細は ShogiDojo の
+[NOTICE.md](https://github.com/hiroshiyui/ShogiDojo/blob/main/NOTICE.md) と [`models/README.md`](./models/README.md) を参照。
+再学習はそちらで行う。
