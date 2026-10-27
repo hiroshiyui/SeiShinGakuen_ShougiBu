@@ -12,3 +12,6 @@ native/bin/
 *.jks
 # Per-project release-signing password (read by tools/build_all.sh --release).
 .android-release-pass
+
+# Downloaded AppImage tooling (appimagetool + runtimes), fetched by the linux-appimage build
+tools/.cache/
