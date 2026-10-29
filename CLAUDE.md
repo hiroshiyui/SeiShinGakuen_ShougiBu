@@ -154,6 +154,10 @@ APK export: [`docs/android-build.md`](./docs/android-build.md).
   and `KifuReviewer` all use it. `GameController` and `CharacterPicker`
   intentionally still roll their own because their inset math is
   intertwined with board-sizing / custom display calculations.
+- **Scene switches go through `SceneTransition.go_to(path)`**, the
+  autoload in `scripts/autoload/SceneTransition.gd`, not
+  `get_tree().change_scene_to_file`. It provides the fade and honours
+  the reduce-motion setting.
 - **App version is read from `application/config/version` in
   `project.godot`.** Single source of truth for the on-screen "v1.0.0"
   badge and any other runtime references; bump alongside

@@ -52,6 +52,9 @@ is in service of them.
 │      safe_area_insets, NOTIFICATION_WM_GO_BACK_REQUEST →    │
 │      ui_cancel synth)                                       │
 │      scripts/autoload/SoundManager.gd                       │
+│      scripts/autoload/SceneTransition.gd (fade-to-black     │
+│      between top-level scenes; owns the only                │
+│      change_scene_to_file call)                             │
 │      scripts/CharacterProfile.gd + .tres data under         │
 │      assets/characters/{teachers,students}/                 │
 └────────────────────────┬────────────────────────────────────┘
@@ -189,6 +192,14 @@ rewinding `_core` in place: [ADR-0008](./adr/0008-review-mode-scratch-core.md).
   as an untyped `VarDictionary` (godot-rust 0.5's name for Godot's
   `Dictionary`) keyed by string; integer `Kind` passes through (our
   `Kind` enum discriminants match GDScript's `Piece.Kind`).
+- **Switching to another top-level scene** — call
+  `SceneTransition.go_to("res://scenes/X.tscn")`, never
+  `get_tree().change_scene_to_file` directly. The autoload fades to
+  black, swaps the scene, waits two frames for the new screen to lay
+  out, and fades back in; it swallows input during the fade and
+  ignores re-entrant calls. `Settings.reduce_motion` turns it into an
+  instant cut. Disable the triggering button first so a double-tap
+  before the overlay appears can't start two switches.
 - **Persistent session state** — add to
   [`scripts/autoload/Settings.gd`](../scripts/autoload/Settings.gd) and
   serialise alongside `save_game` / `load_saved_game`.
