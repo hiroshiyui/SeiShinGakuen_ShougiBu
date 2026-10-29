@@ -91,9 +91,9 @@ func _build_row(entry: Dictionary) -> Control:
 	row.add_theme_constant_override("separation", 8)
 
 	var open_btn := Button.new()
-	open_btn.text = "%s\n%s" % [entry.name, _format_mtime(entry.mtime)]
+	open_btn.text = _describe(entry)
 	open_btn.alignment = HORIZONTAL_ALIGNMENT_LEFT
-	open_btn.custom_minimum_size = Vector2(0, 88)
+	open_btn.custom_minimum_size = Vector2(0, 120)
 	open_btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	open_btn.add_theme_font_size_override("font_size", 24)
 	open_btn.pressed.connect(_on_open.bind(entry.path))
@@ -107,6 +107,105 @@ func _build_row(entry: Dictionary) -> Control:
 	row.add_child(del_btn)
 
 	return row
+
+# Three-line summary for a row:
+#   2026-10-29 18:51
+#   先手 プレイヤー  対  後手 伊藤明 (Lv.4)
+#   詰み 先手の勝ち・42手
+# Header keys come from the KIF we write (開始日時 / 先手 / 後手 / 結果);
+# files from other apps fall back to the file mtime, generic names, and a
+# winner derived from the closing line + ply parity.
+func _describe(entry: Dictionary) -> String:
+	var info := _read_kif_summary(entry.path)
+	var when: String = info.get("started_at", "")
+	if when == "":
+		when = _format_mtime(entry.mtime)
+	var sente: String = info.get("sente", "")
+	var gote: String = info.get("gote", "")
+	if sente == "":
+		sente = "？"
+	if gote == "":
+		gote = "？"
+	var outcome: String = info.get("result", "")
+	var terminator: String = info.get("terminator", "")
+	var plies: int = int(info.get("plies", 0))
+	if outcome == "":
+		outcome = _outcome_from_terminator(terminator, plies)
+	return "%s\n先手 %s  対  後手 %s\n%s・%d手" % [when, sente, gote, outcome, plies]
+
+# Reads only what the row needs. KIF files are a few KB, and the list is
+# rebuilt only on enter / delete, so a full read per file is fine.
+func _read_kif_summary(path: String) -> Dictionary:
+	var out := {}
+	var f := FileAccess.open(path, FileAccess.READ)
+	if f == null:
+		return out
+	var in_moves := false
+	var plies := 0
+	while not f.eof_reached():
+		var line := f.get_line().strip_edges()
+		if line == "" or line.begins_with("#") or line.begins_with("*"):
+			continue
+		if not in_moves:
+			if line.begins_with("手数"):
+				in_moves = true
+			elif line.begins_with("開始日時："):
+				out["started_at"] = _format_kif_datetime(line.trim_prefix("開始日時："))
+			elif line.begins_with("先手："):
+				out["sente"] = line.trim_prefix("先手：")
+			elif line.begins_with("後手："):
+				out["gote"] = line.trim_prefix("後手：")
+			elif line.begins_with("結果："):
+				out["result"] = line.trim_prefix("結果：")
+			continue
+		# Move list: "<ply> <move or terminator> [(time)]".
+		var parts := line.split(" ", false, 1)
+		if parts.size() < 2:
+			continue
+		var body := parts[1].strip_edges()
+		var is_term := false
+		for t in _TERMINATORS:
+			if body.begins_with(t):
+				out["terminator"] = t
+				is_term = true
+				break
+		if is_term:
+			break
+		plies += 1
+	out["plies"] = plies
+	return out
+
+const _TERMINATORS: Array[String] = [
+	"中断", "投了", "詰み", "千日手", "持将棋", "入玉勝ち", "反則勝ち", "反則負け", "不戦勝", "不戦敗",
+]
+
+# Winner for files without a 結果 header. The terminator's ply number
+# is the move that was *not* played, so the last mover is the previous
+# ply: odd plies are 先手's.
+func _outcome_from_terminator(term: String, plies: int) -> String:
+	var last_mover := "先手" if plies % 2 == 1 else "後手"
+	var side_to_move := "後手" if plies % 2 == 1 else "先手"
+	match term:
+		"詰み", "投了", "反則負け", "不戦敗":
+			return "%s %sの勝ち" % [term, last_mover]
+		"入玉勝ち", "反則勝ち", "不戦勝":
+			return "%s %sの勝ち" % [term, side_to_move]
+		"千日手", "持将棋":
+			return "%s 引き分け" % term
+		"中断":
+			return "中断"
+		_:
+			return "対局中"
+
+# "2026/10/29 18:51:14" → "2026-10-29 18:51"; anything else passes through.
+func _format_kif_datetime(raw: String) -> String:
+	var r := raw.strip_edges()
+	var m := r.split(" ", false)
+	if m.size() >= 2:
+		var hm := m[1].split(":")
+		if hm.size() >= 2:
+			return "%s %s:%s" % [m[0].replace("/", "-"), hm[0], hm[1]]
+	return r
 
 func _format_mtime(unix_ts: int) -> String:
 	var dt := Time.get_datetime_dict_from_unix_time(unix_ts)
