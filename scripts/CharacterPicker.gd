@@ -109,12 +109,12 @@ func _on_confirm() -> void:
 	Settings.select_character(_chars[_highlighted])
 	_back_btn.disabled = true
 	_confirm_btn.disabled = true
-	get_tree().change_scene_to_file("res://scenes/MainMenu.tscn")
+	SceneTransition.go_to("res://scenes/MainMenu.tscn")
 
 func _on_back() -> void:
 	_back_btn.disabled = true
 	_confirm_btn.disabled = true
-	get_tree().change_scene_to_file("res://scenes/MainMenu.tscn")
+	SceneTransition.go_to("res://scenes/MainMenu.tscn")
 
 var _back_handled_frame: int = -1
 

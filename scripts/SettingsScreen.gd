@@ -50,4 +50,4 @@ func _on_teacher_side_changed(idx: int) -> void:
 	Settings.set_teacher_side("left" if id == _TEACHER_LEFT_ID else "right")
 
 func _on_back() -> void:
-	get_tree().change_scene_to_file("res://scenes/MainMenu.tscn")
+	SceneTransition.go_to("res://scenes/MainMenu.tscn")

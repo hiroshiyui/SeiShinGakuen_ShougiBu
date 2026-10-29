@@ -836,7 +836,7 @@ func _back_to_title() -> void:
 		_teacher_thread.wait_to_finish()
 	_thinking = false
 	_teacher_thinking = false
-	get_tree().change_scene_to_file("res://scenes/MainMenu.tscn")
+	SceneTransition.go_to("res://scenes/MainMenu.tscn")
 
 func _on_quit_confirmed() -> void:
 	# Ensure any AI worker thread has finished before tearing down the
@@ -855,7 +855,7 @@ func _on_quit_confirmed() -> void:
 	_gameover_text = "投了 — %s の勝ち" % winner
 	_auto_save_kif_message()
 	Settings.clear_saved_game()
-	get_tree().change_scene_to_file("res://scenes/MainMenu.tscn")
+	SceneTransition.go_to("res://scenes/MainMenu.tscn")
 
 # Best-effort attribution of who resigned. In AI modes the human is the
 # only one who can tap 投了, so we attribute to the human side. In H-v-H

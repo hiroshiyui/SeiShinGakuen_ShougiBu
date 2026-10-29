@@ -41,7 +41,7 @@ func _handle_back() -> void:
 	_on_back()
 
 func _on_back() -> void:
-	get_tree().change_scene_to_file("res://scenes/MainMenu.tscn")
+	SceneTransition.go_to("res://scenes/MainMenu.tscn")
 
 # Walk the candidate dirs once, gather every .kif by absolute path, sort
 # newest-first by mtime, render rows. Re-runnable after a delete.
@@ -213,7 +213,7 @@ func _format_mtime(unix_ts: int) -> String:
 
 func _on_open(path: String) -> void:
 	Settings.review_kif_path = path
-	get_tree().change_scene_to_file("res://scenes/KifuReviewer.tscn")
+	SceneTransition.go_to("res://scenes/KifuReviewer.tscn")
 
 func _on_delete_request(path: String) -> void:
 	_pending_delete_path = path

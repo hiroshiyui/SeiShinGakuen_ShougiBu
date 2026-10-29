@@ -108,7 +108,7 @@ func _handle_back() -> void:
 	_pop_back()
 
 func _pop_back() -> void:
-	get_tree().change_scene_to_file("res://scenes/KifuLibrary.tscn")
+	SceneTransition.go_to("res://scenes/KifuLibrary.tscn")
 
 func _set_ply(n: int) -> void:
 	var clamped: int = clamp(n, 0, _packed.size())

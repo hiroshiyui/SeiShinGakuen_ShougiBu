@@ -60,7 +60,7 @@ func _on_title_gui_input(event: InputEvent) -> void:
 	_title_tap_count += 1
 	if _title_tap_count >= _TITLE_TAPS_NEEDED:
 		_title_tap_count = 0
-		get_tree().change_scene_to_file("res://scenes/Credits.tscn")
+		SceneTransition.go_to("res://scenes/Credits.tscn")
 
 # First-run convenience: if nothing is selected yet, pick the character
 # whose level matches Settings.ai_level (default Lv 4 = 伊藤明) so an AI
@@ -114,10 +114,10 @@ func _on_quit_confirmed() -> void:
 	get_tree().quit()
 
 func _on_settings_pressed() -> void:
-	get_tree().change_scene_to_file("res://scenes/SettingsScreen.tscn")
+	SceneTransition.go_to("res://scenes/SettingsScreen.tscn")
 
 func _on_kifu_library_pressed() -> void:
-	get_tree().change_scene_to_file("res://scenes/KifuLibrary.tscn")
+	SceneTransition.go_to("res://scenes/KifuLibrary.tscn")
 
 func _refresh_opponent_label() -> void:
 	var profile := Settings.load_character(Settings.selected_character_id)
@@ -128,7 +128,7 @@ func _refresh_opponent_label() -> void:
 			profile.display_name, profile.level, profile.strength_label]
 
 func _on_opponent_pressed() -> void:
-	get_tree().change_scene_to_file("res://scenes/CharacterPicker.tscn")
+	SceneTransition.go_to("res://scenes/CharacterPicker.tscn")
 
 func _on_start() -> void:
 	Settings.mode = _mode.get_selected_id()
@@ -165,4 +165,4 @@ func _on_resume() -> void:
 func _go_to(scene_path: String) -> void:
 	_start_btn.disabled = true
 	_resume_btn.disabled = true
-	get_tree().change_scene_to_file(scene_path)
+	SceneTransition.go_to(scene_path)
