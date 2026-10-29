@@ -183,8 +183,14 @@ rewinding `_core` in place: [ADR-0008](./adr/0008-review-mode-scratch-core.md).
   serialise alongside `save_game` / `load_saved_game`.
 - **New AI opponent character** — author a `.tres` under
   `assets/characters/{teachers,students}/<id>.tres` instantiating
-  [`CharacterProfile`](../scripts/CharacterProfile.gd) (`level: 1..8`
-  maps to `Settings.LEVEL_PARAMS`'s playouts/temperature pair).
+  [`CharacterProfile`](../scripts/CharacterProfile.gd). The profile's
+  own `playouts` / `temperature` drive MCTS (`Settings.ai_dials()`);
+  `level: 1..8` is for ordering and the fallback ladder in
+  `Settings.LEVEL_PARAMS`. An optional `moods` array of
+  `{weight, playouts, temperature}` is rolled per AI move so a weak
+  character can occasionally play a sharp move — see ADR-0011.
+  Keep playouts at or below 256; that is already a few seconds per
+  move on arm64 with Bonanza v2.
   Drop portraits in the character's `portrait_dir` keyed by expression
   name (`neutral.webp` is required, others fall back to neutral). The
   picker scans the directory at startup via

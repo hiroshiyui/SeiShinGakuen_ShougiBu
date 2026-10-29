@@ -76,6 +76,12 @@ is gone; in its place a single `OpponentButton` opens
   [`Settings.gd`](../../scripts/autoload/Settings.gd) for the
   Android-specific shape.
 
+**Amended by ADR-0011:** the profile's `playouts` / `temperature` now
+drive MCTS directly (they were originally written to the `.tres` but
+`GameController` kept reading `Settings.LEVEL_PARAMS`), and a per-move
+`moods` roll was added on top. `LEVEL_PARAMS` is now a fallback for
+the no-character-selected case only.
+
 ## See also
 
 - [`scripts/CharacterProfile.gd`](../../scripts/CharacterProfile.gd) —
