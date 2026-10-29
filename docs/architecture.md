@@ -141,6 +141,17 @@ the starting position and replays each move with sennichite + check
 tags, so the scratch core is self-consistent at any ply (legal-move
 queries, repetition detection, current-side-to-move all work).
 
+**KIF files** are written by `kifu::to_kif(board, sente, gote,
+started_at, terminator, result)`. GameController calls it from two
+places: the mid-game 棋譜 dialog's 保存 button (empty terminator →
+`中断`, no result) and `_end_game` / the resignation path, which
+auto-save every finished game with the proper closing line (詰み /
+千日手 / 持将棋 / 入玉勝ち / 投了) plus a `結果：` header holding the
+condensed outcome ("詰み 先手の勝ち"). KifuLibrary parses only that
+header plus the move count to build its rows, so it never needs a
+`ShogiCore`; files lacking the header get a winner derived from the
+closing line and ply parity.
+
 KifuReviewer additionally runs **MCTS analysis** on demand: for each
 ply, replay → `suggest_moves_mcts(top_k=32, playouts=128)` →
 extract the actual move's q from the search tree → compare against
