@@ -1094,7 +1094,7 @@ func _export_kif() -> String:
 	# Finished games get the real closing line + a 結果 header so the
 	# 棋譜検討 library can show the outcome; mid-game saves end in 中断.
 	var terminator := _gameover_terminator if _game_over else ""
-	var result := _gameover_text.replace("\n", " ") if _game_over else ""
+	var result := _short_result(_gameover_text) if _game_over else ""
 	var kif: String = String(_core.to_kif(sente_name, gote_name, started_at, terminator, result))
 	var filename := "kifu_%s.kif" % stamp
 	return _save_kif(filename, kif)
@@ -1126,6 +1126,17 @@ func _save_kif(filename: String, body: String) -> String:
 		f.close()
 		return globalized
 	return ""
+
+# Condenses the game-over dialog text into the one-line 結果 header the
+# library shows: drops the parenthetical detail and the spacing around
+# の勝ち, e.g. "詰み\n先手 の勝ち (後手 を詰ました)" → "詰み 先手の勝ち".
+func _short_result(text: String) -> String:
+	var r := text.replace("\n", " ").replace(" — ", " ")
+	var paren := r.find("(")
+	if paren >= 0:
+		r = r.substr(0, paren)
+	r = r.replace(" の勝ち", "の勝ち")
+	return r.strip_edges()
 
 # Sente / Gote labels for KIF export. AI matches map the named side to
 # the chosen character; the human side stays as a generic "プレイヤー".
