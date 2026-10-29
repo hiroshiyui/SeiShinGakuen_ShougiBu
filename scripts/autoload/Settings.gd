@@ -12,24 +12,29 @@ var model_res_path: String = "res://models/bonanza.onnx"
 const MIN_LEVEL := 1
 const MAX_LEVEL := 8
 
-# Strength presets for the menu's Lv1–Lv8 selector. Visit count grows
-# geometrically (deeper search = stronger play); temperature decays from
-# very-random at Lv1 to greedy at Lv8 so weaker levels actually make
-# plausible-looking mistakes instead of just playing slower.
+# Fallback strength ladder, used only when no character profile is
+# selected (first launch before the picker). Normally the selected
+# CharacterProfile's own dials drive play — see ai_dials() below.
+# Visit count grows geometrically (deeper search = stronger play);
+# temperature decays from loose at Lv1 to greedy at Lv8 so weaker
+# levels make plausible-looking mistakes instead of random ones.
 #
 # Budgets are sized for Bonanza v2 (10×128 residual net, ~5 ms per
 # forward pass on desktop, several times that on arm64). The v1 ladder
 # topped out at 2048 playouts; v2 is ~8× more expensive per playout but
 # beat v1 208–0 at equal budgets, so the ladder was cut to keep Lv 8
 # inside a few seconds per move while still being far stronger overall.
+# The floor was raised (Lv1 8→32 playouts, temperature capped at 1.2)
+# because 8 playouts at temperature 2.0 is close to picking a random
+# legal move, which reads as broken rather than beginner-like.
 const LEVEL_PARAMS := [
 	{},                                              # 0 unused (1-indexed)
-	{playouts = 8,    temperature = 2.0},  # Lv 1
-	{playouts = 16,   temperature = 1.5},  # Lv 2
-	{playouts = 32,   temperature = 1.2},  # Lv 3
-	{playouts = 64,   temperature = 0.8},  # Lv 4
-	{playouts = 96,   temperature = 0.5},  # Lv 5
-	{playouts = 128,  temperature = 0.3},  # Lv 6
+	{playouts = 32,   temperature = 1.2},  # Lv 1
+	{playouts = 48,   temperature = 1.0},  # Lv 2
+	{playouts = 64,   temperature = 0.8},  # Lv 3
+	{playouts = 96,   temperature = 0.6},  # Lv 4
+	{playouts = 128,  temperature = 0.4},  # Lv 5
+	{playouts = 160,  temperature = 0.2},  # Lv 6
 	{playouts = 192,  temperature = 0.1},  # Lv 7
 	{playouts = 256,  temperature = 0.0},  # Lv 8
 ]
@@ -53,6 +58,22 @@ func clamp_level(lvl: int) -> int:
 
 func level_params(lvl: int) -> Dictionary:
 	return LEVEL_PARAMS[clamp_level(lvl)]
+
+# Dials for the AI's next move: the selected character's weighted mood
+# roll, or the fixed ladder entry when no character is selected.
+func ai_dials() -> Dictionary:
+	var profile := load_character(selected_character_id)
+	if profile != null:
+		return profile.roll_dials()
+	return level_params(ai_level)
+
+# The selected character's baseline (no mood roll) — for the teacher
+# hint search, which should be steady rather than moody.
+func ai_base_dials() -> Dictionary:
+	var profile := load_character(selected_character_id)
+	if profile != null:
+		return profile.base_dials()
+	return level_params(ai_level)
 
 func level_name(lvl: int) -> String:
 	return LEVEL_NAMES[clamp_level(lvl)]

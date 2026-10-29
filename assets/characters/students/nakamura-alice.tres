@@ -8,8 +8,17 @@ id = "nakamura-alice"
 display_name = "中村アリス"
 portrait_dir = "res://assets/characters/students/nakamura-alice/"
 level = 5
-playouts = 256
-temperature = 0.5
+playouts = 128
+temperature = 0.4
+moods = Array[Dictionary]([{
+"playouts": 128,
+"temperature": 0.4,
+"weight": 0.7
+}, {
+"playouts": 256,
+"temperature": 0.0,
+"weight": 0.3
+}])
 strength_label = "強豪"
 tagline = "将棋部の部長"
 introduction = "清正学園の2年生で将棋部の部長。日本人とイギリス人のハーフだが、幼い頃から父は行方知れずで、母と二人で暮らしている。冷ややかなポーカーフェイスを崩さず、感情を読ませない指し回しで相手を圧倒する。"

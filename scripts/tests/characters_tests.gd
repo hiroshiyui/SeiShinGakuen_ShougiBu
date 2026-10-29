@@ -27,6 +27,7 @@ func _initialize() -> void:
 	_run("each level 1..8 has exactly one character", _test_levels_unique)
 	_run("every profile has non-empty id and display_name", _test_required_fields)
 	_run("playouts > 0 and temperature in [0, 2]", _test_strength_dials)
+	_run("moods well-formed and roll_dials stays in range", _test_moods)
 	_run("portrait_dir points at an existing directory", _test_portrait_dirs)
 	_run("load_character round-trips by id", _test_load_by_id)
 	_run("load_character returns null for unknown id", _test_load_unknown)
@@ -86,6 +87,34 @@ func _test_strength_dials() -> String:
 			return "%s: playouts=%d" % [c.id, c.playouts]
 		if c.temperature < 0.0 or c.temperature > 2.0:
 			return "%s: temperature=%.2f outside [0, 2]" % [c.id, c.temperature]
+	return ""
+
+func _test_moods() -> String:
+	for c in _settings.list_characters():
+		for m in c.moods:
+			if not (m is Dictionary):
+				return "%s: mood entry is not a Dictionary" % c.id
+			if float(m.get("weight", 0.0)) <= 0.0:
+				return "%s: mood weight must be > 0" % c.id
+			if int(m.get("playouts", c.playouts)) <= 0:
+				return "%s: mood playouts <= 0" % c.id
+			if int(m.get("playouts", c.playouts)) > 256:
+				return "%s: mood playouts > 256 (too slow on arm64)" % c.id
+			var t := float(m.get("temperature", c.temperature))
+			if t < 0.0 or t > 2.0:
+				return "%s: mood temperature %.2f outside [0, 2]" % [c.id, t]
+		var seen_variants := {}
+		for _i in range(200):
+			var d: Dictionary = c.roll_dials()
+			if not d.has("playouts") or not d.has("temperature"):
+				return "%s: roll_dials missing keys" % c.id
+			if int(d["playouts"]) <= 0:
+				return "%s: rolled playouts <= 0" % c.id
+			seen_variants[int(d["playouts"])] = true
+		if c.moods.is_empty() and seen_variants.size() != 1:
+			return "%s: no moods but roll varied" % c.id
+		if c.moods.size() > 1 and seen_variants.size() < 2:
+			return "%s: moods never varied across 200 rolls" % c.id
 	return ""
 
 func _test_portrait_dirs() -> String:

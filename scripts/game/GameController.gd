@@ -311,7 +311,9 @@ func _maybe_start_ai_turn() -> void:
 	var stm_gote: bool = _core.side_to_move_gote()
 	if not Settings.side_is_ai(stm_gote):
 		return
-	var params: Dictionary = Settings.level_params(Settings.ai_level)
+	# Rolled fresh each move so a character's "mood" can vary turn to
+	# turn (see CharacterProfile.moods).
+	var params: Dictionary = Settings.ai_dials()
 	var temperature: float = float(params["temperature"])
 	# Try the opening book first — for known positions this skips the
 	# ~150 ms MCTS search entirely and gives the AI varied openings
@@ -878,7 +880,7 @@ func _on_teacher_pressed() -> void:
 	_place_check_banner.call_deferred()
 	_undo_btn.disabled = true
 	_teacher_btn.disabled = true
-	var playouts: int = int(Settings.level_params(Settings.ai_level)["playouts"])
+	var playouts: int = int(Settings.ai_base_dials()["playouts"])
 	_teacher_thread = Thread.new()
 	_teacher_thread.start(_run_teacher_think.bind(playouts))
 

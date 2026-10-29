@@ -8,8 +8,21 @@ id = "suzuki-suzu"
 display_name = "鈴木すず"
 portrait_dir = "res://assets/characters/students/suzuki-suzu/"
 level = 2
-playouts = 32
-temperature = 1.5
+playouts = 48
+temperature = 1.0
+moods = Array[Dictionary]([{
+"playouts": 48,
+"temperature": 1.0,
+"weight": 0.6
+}, {
+"playouts": 96,
+"temperature": 0.4,
+"weight": 0.3
+}, {
+"playouts": 192,
+"temperature": 0.0,
+"weight": 0.1
+}])
 strength_label = "初級"
 tagline = "将棋部の副部長"
 introduction = "清正学園の2年生で将棋部の副部長。実家は自転車店兼修理屋。指し手はまだ初級だが、明るい性格で部員のまとめ役を務め、大親友であり部長の中村アリスを支えている。"
