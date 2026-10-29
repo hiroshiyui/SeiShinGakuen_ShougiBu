@@ -15,6 +15,9 @@ const HandViewScript := preload("res://scripts/game/HandView.gd")
 @onready var _history_dialog: Control = %MoveHistoryDialog
 @onready var _promo_dialog: ConfirmationDialog = %PromotionDialog
 @onready var _gameover_dialog: AcceptDialog = %GameOverDialog
+var _gameover_text: String = ""
+# KIF closing line for the finished game ("" while in progress → 中断).
+var _gameover_terminator: String = ""
 @onready var _undo_btn: Button = %UndoButton
 @onready var _exit_btn: Button = %ExitButton
 @onready var _jishogi_btn: Button = %JishogiButton
@@ -104,6 +107,11 @@ func _ready() -> void:
 	# tap on mobile). Give players a clear way to dismiss the post-game
 	# dialog without re-matching by adding a sibling cancel button.
 	_gameover_dialog.add_cancel_button("閉じる")
+	# The auto-saved KIF path line can be ~90 chars on Android; wrap it
+	# instead of letting the dialog grow past the 720 px viewport.
+	var gameover_label := _gameover_dialog.get_label()
+	gameover_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	gameover_label.custom_minimum_size.x = 560
 	for d: Window in [_promo_dialog, _gameover_dialog, _quit_dialog, _jishogi_info_dialog]:
 		ModalBlur.attach(d)
 	_undo_btn.pressed.connect(_on_undo)
@@ -637,7 +645,7 @@ func _check_end_state() -> void:
 	if bool(_core.is_checkmate()):
 		var loser := "後手" if _core.side_to_move_gote() else "先手"
 		var winner := "先手" if _core.side_to_move_gote() else "後手"
-		_end_game("詰み\n%s の勝ち (%s を詰ました)" % [winner, loser])
+		_end_game("詰み\n%s の勝ち (%s を詰ました)" % [winner, loser], "詰み")
 		return
 	# 手詰まり: side to move has no legal reply but isn't in check. In
 	# practice nearly impossible with drops in play, but if it ever does
@@ -647,17 +655,17 @@ func _check_end_state() -> void:
 	if not bool(_core.has_any_legal_move()):
 		var loser2 := "後手" if _core.side_to_move_gote() else "先手"
 		var winner2 := "先手" if _core.side_to_move_gote() else "後手"
-		_end_game("手詰まり\n%s の勝ち (%s に指す手なし)" % [winner2, loser2])
+		_end_game("手詰まり\n%s の勝ち (%s に指す手なし)" % [winner2, loser2], "詰み")
 		return
 	match str(_core.detect_sennichite()):
 		"draw":
-			_end_game("千日手 — 引き分け")
+			_end_game("千日手 — 引き分け", "千日手")
 			return
 		"sente_loses":
-			_end_game("連続王手の千日手 — 後手の勝ち")
+			_end_game("連続王手の千日手 — 後手の勝ち", "千日手")
 			return
 		"gote_loses":
-			_end_game("連続王手の千日手 — 先手の勝ち")
+			_end_game("連続王手の千日手 — 先手の勝ち", "千日手")
 			return
 	# 持将棋 / AI auto-declaration. Check both sides every commit so a
 	# qualifying position fires the same turn it arises, regardless of
@@ -665,27 +673,44 @@ func _check_end_state() -> void:
 	var sente_ok: bool = bool(_core.can_declare_jishogi(false)["ok"])
 	var gote_ok: bool = bool(_core.can_declare_jishogi(true)["ok"])
 	if sente_ok and gote_ok:
-		_end_game("持将棋 — 引き分け")
+		_end_game("持将棋 — 引き分け", "持将棋")
 		return
 	if _ai_enabled:
 		var ai_is_gote: bool = Settings.ai_plays_gote()
 		var ai_qualifies: bool = (gote_ok if ai_is_gote else sente_ok)
 		if ai_qualifies:
 			var winner := "後手" if ai_is_gote else "先手"
-			_end_game("入玉宣言 — %s の勝ち" % winner)
+			_end_game("入玉宣言 — %s の勝ち" % winner, "入玉勝ち")
 
-func _end_game(text: String) -> void:
+func _end_game(text: String, terminator: String) -> void:
 	_game_over = true
+	_gameover_terminator = terminator
 	_check_banner.visible = false
 	_undo_btn.disabled = true
-	_gameover_dialog.dialog_text = text
-	_gameover_dialog.popup_centered()
+	_gameover_text = text
 	Settings.clear_saved_game()
 	print("[game] %s" % text.replace("\n", " "))
+	# Every finished game is archived to the 棋譜検討 library
+	# automatically; the dialog just reports where it went.
+	_gameover_dialog.dialog_text = "%s\n\n%s" % [text, _auto_save_kif_message()]
+	_gameover_dialog.reset_size()
+	_gameover_dialog.popup_centered()
+
+# Writes the finished game's KIF and returns a one-line status for the
+# player. Requires _game_over so the closing line + 結果 header are set.
+func _auto_save_kif_message() -> String:
+	if int(_core.move_log_size()) == 0:
+		return ""
+	var saved_path := _export_kif()
+	if saved_path == "":
+		return "棋譜の保存に失敗しました"
+	return "棋譜を保存しました：%s" % saved_path.get_file()
 
 func _on_restart() -> void:
 	_core.reset_starting()
 	_game_over = false
+	_gameover_terminator = ""
+	_gameover_text = ""
 	_pending_move = {}
 	_last_move = {}
 	_clear_selection()
@@ -733,7 +758,7 @@ func _on_jishogi_pressed() -> void:
 	var result: Dictionary = _core.can_declare_jishogi(side_gote)
 	if bool(result["ok"]):
 		var winner := "後手" if side_gote else "先手"
-		_end_game("入玉宣言 — %s の勝ち" % winner)
+		_end_game("入玉宣言 — %s の勝ち" % winner, "入玉勝ち")
 		return
 	_jishogi_info_dialog.dialog_text = _jishogi_info_text(result)
 	_jishogi_info_dialog.popup_centered()
@@ -823,6 +848,12 @@ func _on_quit_confirmed() -> void:
 	var resigner := _resignation_side()
 	var winner := "後手" if resigner == "先手" else "先手"
 	print("[game] %s の投了 — %s の勝ち" % [resigner, winner])
+	# A resignation ends the game too: archive it with 投了 as the
+	# closing line so the library shows who won.
+	_game_over = true
+	_gameover_terminator = "投了"
+	_gameover_text = "投了 — %s の勝ち" % winner
+	_auto_save_kif_message()
 	Settings.clear_saved_game()
 	get_tree().change_scene_to_file("res://scenes/MainMenu.tscn")
 
@@ -1040,6 +1071,16 @@ func _on_history_back_to_live() -> void:
 	_exit_review()
 
 func _on_history_share_requested() -> void:
+	var saved_path := _export_kif()
+	if saved_path == "":
+		_history_dialog.show_save_result(false, "保存に失敗しました")
+	else:
+		_history_dialog.show_save_result(true, "保存先：%s" % saved_path)
+
+# Renders the current game to KIF and writes it to disk. Returns the
+# saved path, or "" on failure. Shared by the mid-game 棋譜 dialog's
+# 保存 button and the post-game 棋譜を保存 button.
+func _export_kif() -> String:
 	var sente_name := _player_name_for_side(false)
 	var gote_name := _player_name_for_side(true)
 	# Local time in KIF's canonical YYYY/MM/DD HH:MM:SS format. The export
@@ -1050,13 +1091,13 @@ func _on_history_share_requested() -> void:
 		dt.year, dt.month, dt.day, dt.hour, dt.minute, dt.second]
 	var stamp := "%04d%02d%02d_%02d%02d%02d" % [
 		dt.year, dt.month, dt.day, dt.hour, dt.minute, dt.second]
-	var kif: String = String(_core.to_kif(sente_name, gote_name, started_at))
+	# Finished games get the real closing line + a 結果 header so the
+	# 棋譜検討 library can show the outcome; mid-game saves end in 中断.
+	var terminator := _gameover_terminator if _game_over else ""
+	var result := _gameover_text.replace("\n", " ") if _game_over else ""
+	var kif: String = String(_core.to_kif(sente_name, gote_name, started_at, terminator, result))
 	var filename := "kifu_%s.kif" % stamp
-	var saved_path := _save_kif(filename, kif)
-	if saved_path == "":
-		_history_dialog.show_save_result(false, "保存に失敗しました")
-	else:
-		_history_dialog.show_save_result(true, "保存先：%s" % saved_path)
+	return _save_kif(filename, kif)
 
 # Writes `body` into a file named `filename` and returns the on-disk
 # path the user can browse to (empty string on failure). Tries the

@@ -116,10 +116,13 @@ pub fn unpack_move(packed: i32) -> Option<Move> {
 //
 // Standard 柿木将棋 KIF text. Plays in any KIF viewer (Kifu for Windows,
 // 81Dojo, Shogi GUI). Per-move time tracking is omitted — we don't keep
-// clocks — and the trailing line is always 中断 because exporting mid-
-// game is the common case (post-mortem review). On a finished game the
-// caller is welcome to swap 中断 for 投了 / 詰み but viewers handle 中断
-// as an in-progress save without complaint.
+// clocks. The trailing line is the caller-supplied `terminator`
+// (投了 / 詰み / 千日手 / 持将棋 / 入玉勝ち …); an empty string means
+// 中断, the mid-game save, which viewers treat as an in-progress game.
+// `result` is a free-form human-readable outcome ("詰み 先手の勝ち");
+// when non-empty it is written as a `結果：` header so the KIF library
+// can show who won without re-deriving it from the move list. Viewers
+// ignore header keys they don't know.
 
 const FILE_DIGIT_ASCII: [&str; 10] = ["", "1", "2", "3", "4", "5", "6", "7", "8", "9"];
 
@@ -149,6 +152,8 @@ pub fn to_kif(
     sente_name: &str,
     gote_name: &str,
     started_at: &str,
+    terminator: &str,
+    result: &str,
 ) -> String {
     let mut out = String::new();
     out.push_str("# ---- 清正学園将棋部 棋譜ファイル ----\n");
@@ -156,6 +161,9 @@ pub fn to_kif(
     out.push_str(&format!("先手：{}\n", sente_name));
     out.push_str(&format!("後手：{}\n", gote_name));
     out.push_str("手合割：平手\n");
+    if !result.is_empty() {
+        out.push_str(&format!("結果：{}\n", result));
+    }
     out.push_str("手数----指手---------消費時間--\n");
 
     let mut prev_dest: Option<Square> = None;
@@ -168,7 +176,8 @@ pub fn to_kif(
         prev_dest = Some(to);
     }
     let next_ply = board.starting_ply + board.log.len() as u32;
-    out.push_str(&format!("{:>4} 中断\n", next_ply));
+    let term = if terminator.is_empty() { "中断" } else { terminator };
+    out.push_str(&format!("{:>4} {}\n", next_ply, term));
     out
 }
 
@@ -234,7 +243,9 @@ fn kind_from_kanji(s: &str) -> Option<Kind> {
     }
 }
 
-const TERMINATORS: &[&str] = &["中断", "投了", "詰み", "千日手", "持将棋", "反則勝ち", "反則負け"];
+const TERMINATORS: &[&str] = &[
+    "中断", "投了", "詰み", "千日手", "持将棋", "入玉勝ち", "反則勝ち", "反則負け", "不戦勝", "不戦敗",
+];
 
 /// Parse a KIF document into the same packed-i32 log shape `pack_log`
 /// produces, ready to feed into `apply_packed`.
@@ -464,7 +475,7 @@ mod tests {
         for &mv in &plies {
             assert!(a.apply_move(mv));
         }
-        let kif_text = to_kif(&a, "プレイヤー", "加藤", "2026/04/28 12:00:00");
+        let kif_text = to_kif(&a, "プレイヤー", "加藤", "2026/04/28 12:00:00", "", "");
         let parsed = parse_kif(&kif_text).expect("parse");
         let original = pack_log(&a);
         assert_eq!(parsed, original, "round-trip diverged");
@@ -508,13 +519,32 @@ mod tests {
             to: Square::new(3, 4),
             promote: false,
         });
-        let kif = to_kif(&b, "プレイヤー", "加藤よしこ", "2026/04/28 12:00:00");
+        let kif = to_kif(&b, "プレイヤー", "加藤よしこ", "2026/04/28 12:00:00", "", "");
         assert!(kif.contains("先手：プレイヤー"));
         assert!(kif.contains("後手：加藤よしこ"));
         assert!(kif.contains("手合割：平手"));
+        assert!(!kif.contains("結果："));
         assert!(kif.contains("   1 ７六歩(77)"));
         assert!(kif.contains("   2 ３四歩(33)"));
-        assert!(kif.trim_end().ends_with("中断"));
+        assert!(kif.trim_end().ends_with("   3 中断"));
+    }
+
+    #[test]
+    fn to_kif_with_terminator_and_result_header() {
+        let mut b = Board::default();
+        b.apply_move(Move::Board {
+            from: Square::new(7, 7),
+            to: Square::new(7, 6),
+            promote: false,
+        });
+        let kif = to_kif(&b, "A", "B", "2026/04/28 12:00:00", "詰み", "詰み 先手の勝ち");
+        assert!(kif.contains("結果：詰み 先手の勝ち\n"));
+        assert!(kif.trim_end().ends_with("   2 詰み"));
+        // The parser still stops at the terminator and ignores the header.
+        let packed = parse_kif(&kif).unwrap();
+        assert_eq!(packed.len(), 1);
+        let kif2 = to_kif(&b, "A", "B", "2026/04/28 12:00:00", "入玉勝ち", "");
+        assert_eq!(parse_kif(&kif2).unwrap().len(), 1);
     }
 
     #[test]

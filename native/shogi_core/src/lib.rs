@@ -102,12 +102,24 @@ impl ShogiCore {
     }
 
     #[func]
-    fn to_kif(&self, sente_name: GString, gote_name: GString, started_at: GString) -> GString {
+    /// `terminator` is the KIF closing line (投了 / 詰み / 千日手 /
+    /// 持将棋 / 入玉勝ち), empty for a mid-game 中断 save. `result` is a
+    /// free-form outcome written as a `結果：` header when non-empty.
+    fn to_kif(
+        &self,
+        sente_name: GString,
+        gote_name: GString,
+        started_at: GString,
+        terminator: GString,
+        result: GString,
+    ) -> GString {
         kifu::to_kif(
             &self.board,
             &sente_name.to_string(),
             &gote_name.to_string(),
             &started_at.to_string(),
+            &terminator.to_string(),
+            &result.to_string(),
         )
         .as_str()
         .into()
