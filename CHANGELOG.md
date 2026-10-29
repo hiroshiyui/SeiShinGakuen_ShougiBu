@@ -8,6 +8,27 @@ All notable changes to this project. Format follows
 
 ## [Unreleased]
 
+## [1.0.12] — 2026-10-29
+
+### Added
+- 対局が終わると棋譜 (.kif) を自動保存。詰み・千日手・持将棋・入玉宣言・
+  投了のいずれでも保存され、終了ダイアログにファイル名を表示。
+- 「棋譜検討」の一覧に日時・先手と後手・結果と手数を表示
+  (例: 詰み 先手の勝ち・79手)。
+- 画面切り替えに短い暗転フェード。「アニメーションを減らす」で即時
+  切り替え。
+
+### Changed
+- AI の強さをキャラクターごとの設定で制御し、弱いキャラクターほど
+  一手ごとに「気分」を抽選。普段はゆるく指しつつ、たまに鋭い一手を
+  返すように。Lv 1〜2 の最低探索量を引き上げ、ほぼランダムだった
+  指し手を初心者らしい指し手に。
+- 保存される棋譜の末尾が常に「中断」だった問題を修正し、終局理由
+  (詰み / 投了 / 千日手 / 持将棋 / 入玉勝ち) と「結果：」行を記録。
+
+[Full release notes](./docs/release-notes/1.0.12.md) ·
+[GitHub Release](https://github.com/hiroshiyui/SeiShinGakuen_ShougiBu/releases/tag/1.0.12)
+
 ## [1.0.11] — 2026-10-26
 
 ### Fixed
@@ -385,7 +406,8 @@ First public release.
 [Full release notes](./docs/release-notes/0.1.1.md) ·
 [GitHub Release](https://github.com/hiroshiyui/SeiShinGakuen_ShougiBu/releases/tag/0.1.1)
 
-[Unreleased]: https://github.com/hiroshiyui/SeiShinGakuen_ShougiBu/compare/1.0.11...HEAD
+[Unreleased]: https://github.com/hiroshiyui/SeiShinGakuen_ShougiBu/compare/1.0.12...HEAD
+[1.0.12]: https://github.com/hiroshiyui/SeiShinGakuen_ShougiBu/compare/1.0.11...1.0.12
 [1.0.11]: https://github.com/hiroshiyui/SeiShinGakuen_ShougiBu/compare/1.0.10...1.0.11
 [1.0.10]: https://github.com/hiroshiyui/SeiShinGakuen_ShougiBu/compare/1.0.9...1.0.10
 [1.0.9]: https://github.com/hiroshiyui/SeiShinGakuen_ShougiBu/compare/1.0.8...1.0.9
