@@ -34,8 +34,11 @@ How to build the Android APK for 清正学園将棋部.
    - Name: `Android arm64`
    - Architectures: **only** `arm64-v8a` (untick the others)
    - Resources → Filters to export non-resource files/folders:
-     `*.onnx` (required — Godot's default `all_resources` filter skips
-     `.onnx`, which means the model silently doesn't land in the APK)
+     `models/bonanza.onnx, assets/opening_book.json` (required — Godot's
+     default `all_resources` filter skips `.onnx` / `.json`, which means
+     the model silently doesn't land in the APK). Use exact paths, not
+     `*.json`: a bare glob also sweeps up stray files such as
+     `native/shogi_core/target/.rustc_info.json`.
    - Options → Screen → Orientation: **Portrait**
    - Options → Package → Unique name: `org.seishingakuen.shougibu`
    - Export path: `build/seishingakuen-debug.apk`

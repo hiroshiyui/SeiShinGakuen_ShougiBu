@@ -33,12 +33,15 @@ doesn't list it.
 Godot recognises as resources. Unknown extensions are silently dropped.
 
 **Fix:** export preset → *Resources → Filters to export non-resource
-files/folders* → add `*.onnx` (or the relevant glob). In
-`export_presets.cfg`:
+files/folders* → add the exact file path. In `export_presets.cfg`:
 ```
 export_filter="all_resources"
-include_filter="*.onnx"
+include_filter="models/bonanza.onnx, assets/opening_book.json"
 ```
+Prefer exact paths over globs like `*.json`: the glob matched
+`native/shogi_core/target/.rustc_info.json` and `.import` sidecars under
+`build/` and shipped them in the APK. `build/*` and
+`native/shogi_core/target/*` are also in `exclude_filter` as a backstop.
 
 ## Third-party native code can't read `res://`
 
