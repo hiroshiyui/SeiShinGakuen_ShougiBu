@@ -7,14 +7,20 @@
 
 ## ダウンロード
 
+<a href="https://f-droid.org/ja/packages/org.seishingakuen.shougibu/"><img alt="F-Droid で入手" src="./docs/badges/get-it-on-fdroid-ja.png" height="80"/></a>
+
+- **[F-Droid](https://f-droid.org/ja/packages/org.seishingakuen.shougibu/)**
+  — F-Droid クライアントから入手すると自動で更新通知が届く。
 - **[itch.io](https://hiroshiyui.itch.io/seishingakuen-shougibu)**
   — 日本語ストアページから APK を直接ダウンロード。フォロー登録で
   更新通知が受け取れる。
 - **[GitHub Releases](https://github.com/hiroshiyui/SeiShinGakuen_ShougiBu/releases)**
   — リリースノート全文と SHA-256 ハッシュ付きの一次配布窓口。
 
-どちらの窓口も同じ署名鍵で署名された同じ APK を配信しているので、
-あとから別の窓口の最新版に再インストール無しで更新できる。動作環境は
+itch.io と GitHub Releases は同じ署名鍵で署名された同じ APK を配信して
+いるので、あとから別の窓口の最新版に再インストール無しで更新できる。
+F-Droid 版は F-Droid 側がソースからビルドして独自の鍵で署名するため、
+他の窓口の APK とは相互に上書き更新できない（アンインストールが必要）。動作環境は
 Android 7.0（API 24）以降 / arm64-v8a。Google Play ストアは方針として
 対象外。
 
