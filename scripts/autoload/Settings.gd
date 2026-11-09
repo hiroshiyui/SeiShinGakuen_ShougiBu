@@ -96,6 +96,9 @@ var resume_packed: PackedInt32Array = PackedInt32Array()
 # by KifuReviewer._ready. Empty = no file selected (shouldn't happen in
 # the supported flows but the reviewer will pop back to the library).
 var review_kif_path: String = ""
+# Move (1-based ply) the reviewer should open on; -1 = the final
+# position. Set together with review_kif_path, consumed by KifuReviewer.
+var review_start_ply: int = -1
 
 # Path defaults for production. Tests override these via the
 # `_set_storage_paths_for_test` seam below so they can round-trip
