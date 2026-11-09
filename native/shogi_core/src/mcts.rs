@@ -141,6 +141,20 @@ impl<'a> Searcher<'a> {
         scored
     }
 
+    /// After a search, the search-backed value of root move `mv` from the
+    /// root player's perspective (`q ∈ [-1, 1]`). `None` when the move is
+    /// not a root child or was never visited.
+    pub fn root_child_q(&self, mv: Move) -> Option<f32> {
+        let children = self.nodes[0].children.as_ref()?;
+        let idx = children.iter().find(|c| c.mv == mv)?.node?;
+        let ch = &self.nodes[idx];
+        if ch.n == 0 {
+            return None;
+        }
+        // Child's w is from the child's STM; negate for the root player.
+        Some(-ch.w / ch.n as f32)
+    }
+
     fn playout(&mut self, board: &mut Board) {
         // Descent.
         let mut path: Vec<usize> = vec![0];

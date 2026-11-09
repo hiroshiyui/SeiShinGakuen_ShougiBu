@@ -13,7 +13,7 @@
 
 [sub_resource type="ShaderMaterial" id="1_round_mat"]
 shader = ExtResource("5_round")
-shader_parameter/radius = 4.0
+shader_parameter/radius = 6.0
 
 [node name="Main" type="Control"]
 anchor_right = 1.0
@@ -42,13 +42,13 @@ theme_override_constants/separation = 8
 [node name="OpponentStrip" type="HBoxContainer" parent="Layout"]
 unique_name_in_owner = true
 visible = false
-custom_minimum_size = Vector2(0, 64)
+custom_minimum_size = Vector2(0, 96)
 alignment = 1
 theme_override_constants/separation = 12
 
 [node name="OpponentPortraitFrame" type="Control" parent="Layout/OpponentStrip"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(64, 64)
+custom_minimum_size = Vector2(96, 96)
 clip_contents = true
 mouse_filter = 2
 
@@ -63,7 +63,7 @@ mouse_filter = 2
 
 [node name="OpponentLabel" type="Label" parent="Layout/OpponentStrip"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 64)
+custom_minimum_size = Vector2(0, 96)
 text = ""
 horizontal_alignment = 1
 vertical_alignment = 1

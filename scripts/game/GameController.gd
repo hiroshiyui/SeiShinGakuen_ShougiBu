@@ -38,6 +38,18 @@ var _gameover_terminator: String = ""
 @onready var _close_suggestions_btn: Button = %CloseSuggestionsButton
 
 var _think_thread: Thread
+# Opponent portrait expressions (see CharacterProfile.portrait_dir).
+# The AI looks happy / worried when the search rates its own move above
+# / below these win rates, and neutral in between.
+const EXPR_HAPPY_WIN_RATE := 0.62
+const EXPR_WORRIED_WIN_RATE := 0.38
+var _expression: String = "neutral"
+var _expression_textures: Dictionary = {}
+# Copy of the portrait node that holds the outgoing face on top while it
+# fades out, giving a cross-fade between expressions.
+const EXPR_FADE_SEC := 0.25
+var _portrait_fade: TextureRect = null
+var _portrait_fade_tween: Tween = null
 var _teacher_thread: Thread
 var _thinking: bool = false
 var _teacher_thinking: bool = false
@@ -287,12 +299,10 @@ func _load_opening_book() -> void:
 
 func _set_opponent_portrait(profile: CharacterProfile) -> void:
 	# Hide the avatar slot entirely when there's no portrait — keeps the
-	# label centered in the strip instead of showing an empty 64×64 box.
-	var tex: Texture2D = null
-	if profile != null and profile.portrait_dir != "":
-		var path := profile.portrait_dir.path_join("neutral.webp")
-		if ResourceLoader.exists(path):
-			tex = load(path)
+	# label centered in the strip instead of showing an empty 96×96 box.
+	_expression_textures.clear()
+	_expression = "neutral"
+	var tex: Texture2D = _expression_texture("neutral")
 	_opponent_portrait.texture = tex
 	_opponent_portrait_frame.visible = tex != null
 	# Sync the rounded-corner shader's `size` uniform whenever the rect
@@ -306,6 +316,76 @@ func _set_opponent_portrait(profile: CharacterProfile) -> void:
 	# push (0, 0) into the shader and discard every fragment until
 	# the first `resized` signal lands. Deferring lets layout settle.
 	_sync_portrait_shader_size.call_deferred()
+
+# Portrait for `expr` (neutral / thinking / happy / worried / victory /
+# defeat), cached per game. Characters without that variant fall back
+# to their neutral portrait; null when there is no portrait at all.
+func _expression_texture(expr: String) -> Texture2D:
+	if _expression_textures.has(expr):
+		return _expression_textures[expr]
+	var tex: Texture2D = null
+	if _character != null and _character.portrait_dir != "":
+		var path := _character.portrait_dir.path_join("%s.webp" % expr)
+		if ResourceLoader.exists(path):
+			tex = load(path)
+		elif expr != "neutral":
+			tex = _expression_texture("neutral")
+	_expression_textures[expr] = tex
+	return tex
+
+func _set_opponent_expression(expr: String) -> void:
+	if expr == _expression or not _ai_enabled:
+		return
+	var tex := _expression_texture(expr)
+	if tex == null:
+		return
+	_expression = expr
+	_crossfade_portrait(tex)
+
+# Swap the avatar to `tex` with a short cross-fade: the old face stays
+# on an overlay copy and fades out over the new one. Instant when
+# アニメーションを減らす is on.
+func _crossfade_portrait(tex: Texture2D) -> void:
+	var old_tex := _opponent_portrait.texture
+	_opponent_portrait.texture = tex
+	var duration: float = Settings.anim(EXPR_FADE_SEC)
+	if old_tex == null or old_tex == tex or duration <= 0.0:
+		return
+	if _portrait_fade == null:
+		# Same material instance, so the rounded-corner shader's `size`
+		# uniform stays in sync with the real portrait.
+		_portrait_fade = _opponent_portrait.duplicate() as TextureRect
+		_portrait_fade.unique_name_in_owner = false
+		_portrait_fade.name = "OpponentPortraitFade"
+		_opponent_portrait_frame.add_child(_portrait_fade)
+	if _portrait_fade_tween != null and _portrait_fade_tween.is_valid():
+		_portrait_fade_tween.kill()
+	_portrait_fade.texture = old_tex
+	_portrait_fade.modulate.a = 1.0
+	_portrait_fade.visible = true
+	_portrait_fade_tween = create_tween()
+	_portrait_fade_tween.tween_property(_portrait_fade, "modulate:a", 0.0, duration)
+	_portrait_fade_tween.tween_callback(_portrait_fade.hide)
+
+# Expression after the AI has moved, from how the search rated that
+# move. `win_rate` < 0 means unknown (opening-book move) → neutral.
+func _expression_for_win_rate(win_rate: float) -> String:
+	if win_rate < 0.0:
+		return "neutral"
+	if win_rate >= EXPR_HAPPY_WIN_RATE:
+		return "happy"
+	if win_rate <= EXPR_WORRIED_WIN_RATE:
+		return "worried"
+	return "neutral"
+
+# Game-over face from the result text: victory / defeat for a decisive
+# game, neutral for a draw.
+func _expression_for_result(text: String) -> String:
+	var gote_won := text.contains("後手 の勝ち") or text.contains("後手の勝ち")
+	var sente_won := text.contains("先手 の勝ち") or text.contains("先手の勝ち")
+	if gote_won == sente_won:
+		return "neutral"
+	return "victory" if gote_won == Settings.ai_plays_gote() else "defeat"
 
 func _sync_portrait_shader_size() -> void:
 	var mat := _opponent_portrait.material as ShaderMaterial
@@ -334,10 +414,12 @@ func _maybe_start_ai_turn() -> void:
 		_place_check_banner.call_deferred()
 		_undo_btn.disabled = true
 		_teacher_btn.disabled = true
+		_set_opponent_expression("thinking")
 		_run_book_move_with_pause(book_move)
 		return
 	_thinking = true
 	_thinking_label.visible = true
+	_set_opponent_expression("thinking")
 	_place_check_banner.call_deferred()
 	_undo_btn.disabled = true
 	_teacher_btn.disabled = true
@@ -355,6 +437,8 @@ func _run_book_move_with_pause(mv: Dictionary) -> void:
 	_thinking = false
 	_thinking_label.visible = false
 	_commit_move(mv)
+	if not _game_over:
+		_set_opponent_expression("neutral")
 
 func _run_ai_think(playouts: int, temperature: float) -> Variant:
 	return _core.think_sampled(playouts, temperature)
@@ -389,7 +473,10 @@ func _process(_delta: float) -> void:
 		_thinking_label.visible = false
 		if _game_over:
 			return
+		var win_rate := float(_core.last_think_win_rate())
 		_commit_move(mv)
+		if not _game_over:
+			_set_opponent_expression(_expression_for_win_rate(win_rate))
 
 func _refresh_all() -> void:
 	var view_core: Object = _active_core()
@@ -688,6 +775,7 @@ func _end_game(text: String, terminator: String) -> void:
 	_check_banner.visible = false
 	_undo_btn.disabled = true
 	_gameover_text = text
+	_set_opponent_expression(_expression_for_result(text))
 	Settings.clear_saved_game()
 	print("[game] %s" % text.replace("\n", " "))
 	# Every finished game is archived to the 棋譜検討 library
@@ -713,6 +801,7 @@ func _on_restart() -> void:
 	_gameover_text = ""
 	_pending_move = {}
 	_last_move = {}
+	_set_opponent_expression("neutral")
 	_clear_selection()
 	_refresh_all()
 	_refresh_last_move_hint()
@@ -733,6 +822,8 @@ func _on_undo() -> void:
 	# simplest correct behaviour is to blank the highlight until the
 	# next move is committed.
 	_last_move = {}
+	# The reaction belonged to the move that was just taken back.
+	_set_opponent_expression("neutral")
 	_clear_selection()
 	_refresh_all()
 	_refresh_last_move_hint()

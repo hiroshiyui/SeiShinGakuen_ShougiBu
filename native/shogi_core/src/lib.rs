@@ -40,12 +40,20 @@ pub struct ShogiCore {
     board: Board,
     nn: Option<NeuralNet>,
     book: OpeningBook,
+    /// Win rate (0..1, mover's perspective) of the move the last
+    /// `think_sampled` call returned; negative when unknown.
+    last_think_win_rate: f64,
 }
 
 #[godot_api]
 impl IRefCounted for ShogiCore {
     fn init(_base: Base<RefCounted>) -> Self {
-        Self { board: Board::default(), nn: None, book: OpeningBook::default() }
+        Self {
+            board: Board::default(),
+            nn: None,
+            book: OpeningBook::default(),
+            last_think_win_rate: -1.0,
+        }
     }
 }
 
@@ -494,10 +502,24 @@ impl ShogiCore {
         let n = playouts.max(1) as u32;
         let t = temperature.max(0.0) as f32;
         let mut searcher = Searcher::new(nn);
-        match searcher.sample_move(&mut self.board, n, t) {
+        let picked = searcher.sample_move(&mut self.board, n, t);
+        self.last_think_win_rate = picked
+            .and_then(|m| searcher.root_child_q(m))
+            .map(|q| ((q + 1.0) / 2.0).clamp(0.0, 1.0) as f64)
+            .unwrap_or(-1.0);
+        match picked {
             Some(m) => move_to_dict(m).to_variant(),
             None => Variant::nil(),
         }
+    }
+
+    /// How the AI rates the move its last `think_sampled` call returned:
+    /// win rate 0..1 from the mover's perspective, search-backed. Returns
+    /// a negative number when unknown (no search yet, or the chosen move
+    /// was never visited). Drives the opponent portrait's expression.
+    #[func]
+    fn last_think_win_rate(&self) -> f64 {
+        self.last_think_win_rate
     }
 }
 
