@@ -144,6 +144,32 @@ node (instant when アニメーションを減らす is on). The 対局終了 di
 repeats the victory / defeat portrait at 220 px, because the modal
 blur hides the avatar strip behind it.
 
+## 詰将棋
+
+`scenes/TsumeShogi.tscn` (`scripts/TsumeShogi.gd`) is a self-contained
+screen: its own `ShogiCore`, the shared `BoardView` / `HandView`, and
+the same two-tap input flow as the main game, without AI, clocks or
+kifu.
+
+- **Problems** are `{sfen, plies}` entries in `assets/tsume.json`,
+  always with the attacker as 先手. No solution is stored.
+- **Judging** is done by the Rust mate solver (`mate.rs`). After each
+  player move the screen calls `tsume_defense(plies_left)`: `mate`
+  solves the problem, `continue` returns the defender's longest reply
+  to play, `escaped` / `not_check` mark the move wrong and the problem
+  resets. Because the solver decides, alternative mating lines within
+  the stated length are accepted. ヒント asks `tsume_first_move`.
+- **Generation** is offline: `tools/gen_tsume.gd` plays policy-sampled
+  games and keeps positions where `tsume_solve` finds a forced mate in
+  1 / 3 / 5 with a unique first move. A small node budget keeps it fast
+  and biases the set toward mates a phone re-verifies instantly.
+  `sfen_flipped()` turns a 後手-attacks position around.
+- **Progress** (`Settings.tsume_solved`, `tsume_plies`) lives in
+  `prefs.cfg`, keyed by the position part of the SFEN.
+
+The file must be listed in `export_presets.cfg`'s `include_filter`,
+like the opening book — Godot does not export stray JSON by default.
+
 ## Review mode and the kifu library
 
 Two flows render historical positions on the board without disturbing

@@ -9,10 +9,8 @@ portraits and bios, yet once a game starts they are just an avatar and a
 strength dial.
 
 **Selected for implementation (2026-11-09): 1, 2, 4, 7, 8, 9.** They
-are marked ★ below. Planned order: 1 → 4 → 2 → 9 → 8 → 7 (cheapest and
-most visible first; 8 builds on 9's per-ply analysis; 7 is the largest
-and needs a puzzle source). Items 3, 5, 6, 10 and 11 stay in the
-backlog.
+are marked ★ below. Done so far: 1, 7, 8, 9. Still to do: 4, then 2.
+Items 3, 5, 6, 10 and 11 stay in the backlog.
 
 ## Make the characters come alive
 
@@ -48,16 +46,13 @@ backlog.
 
 ## Deepen the shogi itself
 
-- [ ] **★ 7. 詰将棋 (mate puzzles) as "club homework".** A daily puzzle
-  from a bundled set gives a two-minute session for when a full game is
-  too long. The rules engine can already validate solutions.
-- [ ] **★ 8. Post-game comment from 加藤先生.** The reviewer already
-  classifies moves as 好手 / 疑問手 / 悪手. Surface the single biggest
-  turning point on the game-over dialog ("42手目が惜しかったですね")
-  with a button into the reviewer.
-- [ ] **★ 9. Evaluation graph in 棋譜検討.** 先手勝率 is computed for
-  every ply; plotting it as a line makes the story of a game visible at
-  a glance.
+- [x] **★ 7. 詰将棋 (mate problems) as "club homework".** Done
+  2026-11-10 — 160 engine-mined 1 / 3 / 5 手詰 problems, solver-judged,
+  with 今日の一問 and a hint button. See `ROADMAP.md` Phase 7.
+- [x] **★ 8. Post-game comment from 加藤先生.** Done 2026-11-10 — the
+  対局終了 dialog names the player's costliest move and offers 検討.
+- [x] **★ 9. Evaluation graph in 棋譜検討.** Done 2026-11-10 —
+  形勢グラフ under the analysis label, tap to jump.
 
 ## Atmosphere
 

@@ -20,7 +20,7 @@ The release infrastructure is real and tested — confirm anything that looks am
 - **Signing — debug.** Godot's own debug keystore (`CN=Godot, OU=Godot Engine, O=Stichting Godot, C=NL`), configured globally. Because it's a **different cert** from release, a device that has a debug build can't `adb install -r` a release build (and vice versa) — see the smoke-install step.
 - **Tags.** Annotated, no `v` prefix (e.g. `1.0.7`); each tag points at its `chore(release):` commit.
 - **Release docs** (all updated in the release commit — see "Release Docs" below): `CHANGELOG.md`, `docs/release-notes/<X.Y.Z>.md`, `fastlane/metadata/android/ja/changelogs/<versionCode>.txt`.
-- **Tests.** Rust unit + parity + perft in `native/shogi_core/src/`; GDScript headless suites in `scripts/tests/`. All five must pass — see "Test Gate".
+- **Tests.** Rust unit + parity + perft in `native/shogi_core/src/`; GDScript headless suites in `scripts/tests/`. All six must pass — see "Test Gate".
 
 `package/unique_name="org.seishingakuen.shougibu"` — Android package id. Effectively immutable: changing it makes Android treat any new install as an unrelated app, breaks updates for sideloaders, and orphans every saved game in `user://`. Don't change it.
 
@@ -111,7 +111,7 @@ Gather material with `git log --oneline <prev-tag>..HEAD`. User-facing prose is 
 
 ## Test Gate
 
-Before any version bump, all five must pass — Rust first, because parity failures invalidate everything downstream:
+Before any version bump, all six must pass — Rust first, because parity failures invalidate everything downstream:
 
 ```bash
 G=~/.local/bin/Godot_v4.7.2-stable_linux.x86_64
@@ -119,11 +119,12 @@ G=~/.local/bin/Godot_v4.7.2-stable_linux.x86_64
 # 1. Rust: unit + parity (encoder ↔ ShogiDojo) + perft
 cargo test --manifest-path native/shogi_core/Cargo.toml --release
 
-# 2–5. GDScript suites
+# 2–6. GDScript suites
 $G --headless -s res://scripts/tests/rules_tests.gd --path .         # FFI rules: check, pin, 二歩, 打ち歩詰め, undo, …
 $G --headless -s res://scripts/tests/characters_tests.gd --path .    # roster + .tres validity
 $G --headless -s res://scripts/tests/persistence_tests.gd --path .   # save/resume, prefs, atomic model copy
 $G --headless -s res://scripts/tests/opening_book_tests.gd --path .  # every book USI legal, etc.
+$G --headless -s res://scripts/tests/tsume_tests.gd --path .         # every 詰将棋 problem re-solved (~1 min)
 ```
 
 Each GDScript suite prints `All … tests passed.` and exits 0, or `push_error`s the failing cases and exits 1. The `ObjectDB instances were leaked` / `resources still in use at exit` warnings at shutdown are pre-existing noise, not failures.

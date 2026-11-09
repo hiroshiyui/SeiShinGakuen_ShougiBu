@@ -75,6 +75,10 @@ Godot is not on PATH — always invoke by full path.
 # GDScript tests (opening book content sanity — every USI legal etc.)
 ~/.local/bin/Godot_v4.7.2-stable_linux.x86_64 \
   --headless -s res://scripts/tests/opening_book_tests.gd --path .
+
+# GDScript tests (詰将棋 set — every problem re-solved by the mate solver)
+~/.local/bin/Godot_v4.7.2-stable_linux.x86_64 \
+  --headless -s res://scripts/tests/tsume_tests.gd --path .
 ```
 
 Rust:
