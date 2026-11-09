@@ -70,6 +70,13 @@ HANDS = {
     "yoshida-sensei": " Her hand and the clipboard stay exactly as in the reference image.",
 }
 NO_HANDS = " Head and shoulders only: no hands, arms or fingers appear in the picture."
+# FLUX.2 cannot draw legible shogi pieces, so the prompts never mention
+# shogi, games, moves, winning or losing (any of which can summon a
+# board), and every prompt forbids new objects outright.
+NO_OBJECTS = (
+    " A portrait only: do not add any new objects, props, tables, boards,"
+    " game pieces, tiles, text, letters or symbols to the picture."
+)
 
 IDENTITY = (
     " This must clearly be the same individual as in the reference image,"
@@ -92,79 +99,80 @@ POSE_CHANGES = {("katou-sensei", "thinking")}
 # derived seed so a full regeneration reproduces the accepted images.
 SEED_OFFSETS: dict[tuple[str, str], int] = {
     ("nakamura-alice", "happy"): 1,
+    ("katou-sensei", "victory"): 1,
 }
 
 # Who each character is, from the `introduction` in their profile .tres.
 # Prepended to every prompt so the expression is played in character.
 PERSONA = {
-    "sato-ryutaro": "He is a bright, honest, innocent elementary-school boy who loves shogi.",
+    "sato-ryutaro": "He is a bright, honest, innocent playful elementary-school boy.",
     "suzuki-suzu": "She is a cheerful, sunny, friendly high-school girl, the mood-maker of her club.",
     "takahashi-yuriko": "She is a graceful, modest, well-mannered girl raised in a traditional kimono shop; her expressions are gentle and refined.",
     "itou-akira": "He is a mild-mannered, intelligent, slightly nerdy senior student who loves computers.",
     "nakamura-alice": "She is a calm, composed, cool girl who keeps a poker face and never lets her feelings show; her expressions are always very subtle.",
-    "terry-clark": "He is a cool, aloof, serious and proud young man, the strongest player in the club; his expressions are restrained.",
+    "terry-clark": "He is a cool, aloof, serious and proud young man, the most talented member of his club; his expressions are restrained.",
     "yoshida-sensei": "She is a gentle, soft-spoken young teacher with a quiet touch of melancholy; her expressions are tender and understated.",
-    "katou-sensei": "She is a warm, dignified, mature woman with the same fair, pale, light skin as in the reference image, a former professional shogi player with the calm confidence of a master.",
+    "katou-sensei": "She is a warm, dignified, mature woman with the same fair, pale, light skin as in the reference image with the calm confidence of a master of her craft.",
 }
 
 # Per-character wording, matched to each personality. The in-game avatar
 # is tiny (64 px), so the expressions lean a little pronounced.
 PROMPTS: dict[str, dict[str, str]] = {
     "sato-ryutaro": {
-        "thinking": "The boy is thinking hard about his next move: his mouth is closed and pursed to one side, his eyebrows are furrowed, and his eyes look up and to the side.",
+        "thinking": "The boy is thinking hard about a difficult puzzle in his head: his mouth is closed and pursed to one side, his eyebrows are furrowed, and his eyes look up and to the side.",
         "happy": "The boy beams with joy: his eyes are squeezed shut into happy curves and he has a huge open-mouthed grin, with rosy cheeks.",
         "worried": "The boy looks anxious and in trouble: his eyebrows are raised and slanted, his eyes are a little wide, and his closed mouth is a small wobbly frown.",
         "victory": "The boy cheers in triumph: his eyes are wide open and sparkling, his eyebrows are raised high, and he has a big, delighted open-mouthed smile.",
-        "defeat": "The boy has just lost and is about to cry: his eyes are glossy with tears welling up, his eyebrows droop, and his lower lip is pushed out in a trembling pout.",
+        "defeat": "The boy is bitterly disappointed and about to cry: his eyes are glossy with tears welling up, his eyebrows droop, and his lower lip is pushed out in a trembling pout.",
     },
     "suzuki-suzu": {
-        "thinking": "The girl is pondering her next move: her mouth is closed and pouted slightly to one side, one eyebrow is raised, and her eyes look up and to the side behind her glasses.",
+        "thinking": "The girl is pondering a tricky question in her head: her mouth is closed and pouted slightly to one side, one eyebrow is raised, and her eyes look up and to the side behind her glasses.",
         "happy": "The girl laughs happily: her eyes are closed into cheerful crescents behind her glasses and she has a big open-mouthed laugh.",
         "worried": "The girl looks a little nervous and flustered: her eyebrows are slanted upward in worry, her eyes glance to the side behind her glasses, and her closed mouth is a tight, awkward wavy line.",
-        "victory": "The girl celebrates a win: she winks one eye playfully and gives a bright, confident smile.",
-        "defeat": "The girl has just lost and takes it good-naturedly: her eyes are closed, her eyebrows droop, and she has a sheepish, embarrassed crooked smile.",
+        "victory": "The girl is triumphant and proud of herself: she winks one eye playfully and gives a bright, confident smile.",
+        "defeat": "The girl is good-naturedly embarrassed at her own failure: her eyes are closed, her eyebrows droop, and she has a sheepish, embarrassed crooked smile.",
     },
     "takahashi-yuriko": {
         "thinking": "The girl is concentrating quietly: her eyes are lowered and half closed, her lips are closed without a smile, and her expression is calm and serious.",
         "happy": "The girl smiles with gentle joy: her eyes are closed into soft curves and she has a warm closed-mouth smile with a light blush.",
         "worried": "The girl looks troubled: her eyebrows are drawn together and raised, her eyes are uneasy, and her lips are slightly parted in concern.",
-        "victory": "The girl is modestly delighted to have won: her eyes are bright, her cheeks are lightly flushed, and she has a graceful closed-mouth smile.",
-        "defeat": "The girl has just lost and accepts it gracefully: her eyes are closed, her eyebrows droop slightly, and she has a small, sad, resigned smile.",
+        "victory": "The girl is modestly delighted and proud: her eyes are bright, her cheeks are lightly flushed, and she has a graceful closed-mouth smile.",
+        "defeat": "The girl gracefully accepts a disappointment: her eyes are closed, her eyebrows droop slightly, and she has a small, sad, resigned smile.",
     },
     "itou-akira": {
         "thinking": "The boy is calculating variations: his eyes are narrowed and look sharply to the side behind his glasses, his eyebrows are lowered, and his mouth is a straight focused line.",
         "happy": "The boy is pleased: he has a relaxed, friendly open smile and bright eyes behind his glasses.",
-        "worried": "The boy realises he has miscalculated: his eyebrows are raised and slanted in worry, his eyes are slightly widened behind his glasses, and his closed mouth is pressed into a tense, uneasy line.",
-        "victory": "The boy is proud of his win: he has a confident, pleased smile, his eyebrows are slightly raised, and his eyes shine behind his glasses.",
-        "defeat": "The boy has just lost and is dejected: his eyes are downcast and half closed behind his glasses, his eyebrows droop, and his mouth is slightly open in a sigh.",
+        "worried": "The boy realises he has made a mistake: his eyebrows are raised and slanted in worry, his eyes are slightly widened behind his glasses, and his closed mouth is pressed into a tense, uneasy line.",
+        "victory": "The boy is proud and triumphant: he has a confident, pleased smile, his eyebrows are slightly raised, and his eyes shine behind his glasses.",
+        "defeat": "The boy is dejected and disappointed: his eyes are downcast and half closed behind his glasses, his eyebrows droop, and his mouth is slightly open in a sigh.",
     },
     "nakamura-alice": {
         "thinking": "The girl is quietly thinking: her face stays serene and almost expressionless, with smooth relaxed eyebrows, her eyes looking down and slightly to the side, and her lips gently closed.",
         "happy": "The girl looks quietly content. Her mouth is unchanged from the reference image: the same small, narrow, closed mouth, with only the very corners of her lips lifted by a hair. The feeling shows mainly in her eyes, which are open, soft and warm, with a faint blush on her cheeks. Her eyebrows are smooth and relaxed.",
         "worried": "The girl shows only a subtle hint of unease: her face stays serene, the inner ends of her eyebrows are raised very slightly, her eyes glance to the side, and her lips are gently closed.",
         "victory": "The girl shows quiet satisfaction: her small mouth stays closed and keeps exactly the same small size and width as in the reference image, with a slight, serene upward curve of the lips. Her open, calm eyes look at the viewer, and her eyebrows are smooth and relaxed.",
-        "defeat": "The girl accepts her loss serenely: her eyes are gently closed, her eyebrows are smooth and relaxed, and her closed mouth is neutral and peaceful.",
+        "defeat": "The girl accepts a disappointment serenely: her eyes are gently closed, her eyebrows are smooth and relaxed, and her closed mouth is neutral and peaceful.",
     },
     "terry-clark": {
         "thinking": "The stern boy is in deep concentration: his eyes are closed and his eyebrows are drawn together, with his mouth closed.",
         "happy": "The cool boy is quietly satisfied: his usual stern look softens, with relaxed eyebrows, calm eyes and a slight, genuine closed-mouth smile.",
-        "worried": "The cool boy lets a flicker of surprise show at an unexpected move: his eyes are slightly widened, his eyebrows are tense, and his lips are pressed firmly together.",
-        "victory": "The cool boy has won: he has a faint, confident closed-mouth smile with one corner of his mouth slightly raised, and steady, self-assured eyes.",
-        "defeat": "The stern boy has just lost and respects his opponent: his eyes are closed, his eyebrows are relaxed, and he has a faint, bitter smile.",
+        "worried": "The cool boy lets a flicker of surprise show: his eyes are slightly widened, his eyebrows are tense, and his lips are pressed firmly together.",
+        "victory": "The cool boy is quietly triumphant: he has a faint, confident closed-mouth smile with one corner of his mouth slightly raised, and steady, self-assured eyes.",
+        "defeat": "The cool boy accepts a disappointment with respect: his eyes are closed, his eyebrows are relaxed, and he has a faint, bitter smile.",
     },
     "yoshida-sensei": {
-        "thinking": "The woman is considering her move: her eyes glance up and to the side, her lips are slightly pursed, and her expression is thoughtful.",
+        "thinking": "The woman is thinking something over: her eyes glance up and to the side, her lips are slightly pursed, and her expression is thoughtful.",
         "happy": "The woman smiles warmly: her eyes are gently narrowed with tenderness and she has a soft closed-mouth smile.",
         "worried": "The woman looks quietly anxious: her eyebrows are knit slightly upward, her eyes are uneasy and look a little to the side, and her lips are pressed together.",
-        "victory": "The woman is gently pleased and relieved to have won: she has a soft, modest smile with her lips barely parted, and tender, slightly narrowed eyes.",
-        "defeat": "The woman has just lost and is wistful: her eyes are downcast and half closed, her eyebrows droop, and she has a small melancholy smile.",
+        "victory": "The woman is gently pleased and relieved: she has a soft, modest smile with her lips barely parted, and tender, slightly narrowed eyes.",
+        "defeat": "The woman is wistful and a little sad: her eyes are downcast and half closed, her eyebrows droop, and she has a small melancholy smile.",
     },
     "katou-sensei": {
-        "thinking": "The woman is lost in thought, resting her chin on one hand: one hand is raised into the frame with her chin resting lightly on it. She is not smiling, her mouth is a straight closed line, and her eyes are narrowed and sharp behind her glasses, looking slightly to the side. No other objects in the picture.",
+        "thinking": "The woman is deep in thought, resting her chin on one hand: one hand is raised into the frame with her chin resting lightly on it. She is not smiling, her mouth is a straight closed line, and her eyes are narrowed and sharp behind her glasses, looking slightly to the side.",
         "happy": "The woman smiles broadly and warmly, a little more than in the reference image: her lips are slightly parted in a soft laugh and her eyes are narrowed into gentle crescents behind her glasses.",
-        "worried": "The woman is mildly surprised by a strong move: her eyebrows are slightly raised, her eyes are a little widened behind her glasses, and her lips are slightly parted. The expression is restrained and dignified.",
-        "victory": "The woman has won with ease: she has a composed, confident closed-mouth smile with one eyebrow raised and a knowing look behind her glasses.",
-        "defeat": "The woman has just lost to her student and is proud of them: her eyes are closed, her eyebrows are relaxed, and she has a gentle, contented smile.",
+        "worried": "The woman is mildly, pleasantly surprised: her eyebrows are slightly raised, her eyes are a little widened behind her glasses, and her lips are slightly parted. The expression is restrained and dignified.",
+        "victory": "The woman is gracefully triumphant: she has an elegant, charming, gentle closed-mouth smile, with soft, kind, relaxed eyes behind her glasses and smooth, level, relaxed eyebrows. Her face is serene and refined, with a smooth forehead.",
+        "defeat": "The woman is content and proud of someone else's success: her eyes are closed, her eyebrows are relaxed, and she has a gentle, contented smile.",
     },
 }
 
@@ -220,8 +228,8 @@ def build_graph(image: str, prompt: str, seed: int, turbo: bool, prefix: str) ->
 def full_prompt(cid: str, expr: str) -> str:
     lead = PERSONA[cid] + " "
     if (cid, expr) in POSE_CHANGES:
-        return lead + PROMPTS[cid][expr] + KEEP_FACE + IDENTITY
-    return lead + PROMPTS[cid][expr] + KEEP + IDENTITY + HANDS.get(cid, NO_HANDS)
+        return lead + PROMPTS[cid][expr] + KEEP_FACE + IDENTITY + NO_OBJECTS
+    return lead + PROMPTS[cid][expr] + KEEP + IDENTITY + HANDS.get(cid, NO_HANDS) + NO_OBJECTS
 
 
 class Comfy:
