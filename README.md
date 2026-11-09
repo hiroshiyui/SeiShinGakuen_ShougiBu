@@ -8,6 +8,7 @@
 ## ダウンロード
 
 <a href="https://f-droid.org/ja/packages/org.seishingakuen.shougibu/"><img alt="F-Droid で入手" src="./docs/badges/get-it-on-fdroid-ja.png" height="80"/></a>
+<a href="https://hiroshiyui.itch.io/seishingakuen-shougibu"><img alt="itch.io で入手" src="./docs/badges/available-on-itchio.svg" height="80"/></a>
 
 - **[F-Droid](https://f-droid.org/ja/packages/org.seishingakuen.shougibu/)**
   — F-Droid クライアントから入手すると自動で更新通知が届く。
