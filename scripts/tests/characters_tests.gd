@@ -29,6 +29,7 @@ func _initialize() -> void:
 	_run("playouts > 0 and temperature in [0, 2]", _test_strength_dials)
 	_run("moods well-formed and roll_dials stays in range", _test_moods)
 	_run("portrait_dir points at an existing directory", _test_portrait_dirs)
+	_run("every character ships all six expression portraits", _test_expression_portraits)
 	_run("load_character round-trips by id", _test_load_by_id)
 	_run("load_character returns null for unknown id", _test_load_unknown)
 	if _fails > 0:
@@ -124,6 +125,16 @@ func _test_portrait_dirs() -> String:
 		if not DirAccess.dir_exists_absolute(c.portrait_dir):
 			return "%s: portrait_dir missing on disk: %s" % [
 				c.id, c.portrait_dir]
+	return ""
+
+# GameController falls back to neutral for a missing variant, so a
+# dropped file would go unnoticed in play; catch it here instead.
+func _test_expression_portraits() -> String:
+	for c in _settings.list_characters():
+		for expr in ["neutral", "thinking", "happy", "worried", "victory", "defeat"]:
+			var path: String = c.portrait_dir.path_join("%s.webp" % expr)
+			if not FileAccess.file_exists(path):
+				return "%s: missing %s" % [c.id, path]
 	return ""
 
 func _test_load_by_id() -> String:

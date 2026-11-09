@@ -48,6 +48,23 @@ var _expression_textures: Dictionary = {}
 # Copy of the portrait node that holds the outgoing face on top while it
 # fades out, giving a cross-fade between expressions.
 const EXPR_FADE_SEC := 0.25
+# The search's rating of a single move is noisy at the low playout
+# counts weak characters use, so the mood follows a running blend of it
+# rather than each raw value (weight of the newest move).
+const EXPR_WIN_RATE_BLEND := 0.6
+var _mood_win_rate: float = -1.0
+# How long the opponent's flinch at a strong player move (check, or
+# losing a 飛 / 角) stays up before the thinking face takes over.
+const EXPR_REACTION_SEC := 0.9
+const EXPR_MAJOR_KINDS := [
+	PieceScript.Kind.ROOK, PieceScript.Kind.BISHOP,
+	PieceScript.Kind.DRAGON, PieceScript.Kind.HORSE,
+]
+var _reaction_until_msec: int = 0
+# Large portrait + text shown inside the 対局終了 dialog (the modal blur
+# hides the avatar strip behind it).
+var _gameover_portrait: TextureRect = null
+var _gameover_label: Label = null
 var _portrait_fade: TextureRect = null
 var _portrait_fade_tween: Tween = null
 var _teacher_thread: Thread
@@ -121,9 +138,28 @@ func _ready() -> void:
 	_gameover_dialog.add_cancel_button("閉じる")
 	# The auto-saved KIF path line can be ~90 chars on Android; wrap it
 	# instead of letting the dialog grow past the 720 px viewport.
-	var gameover_label := _gameover_dialog.get_label()
-	gameover_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	gameover_label.custom_minimum_size.x = 560
+	# The dialog's own label stays empty; a custom column carries the
+	# opponent's victory / defeat portrait above the result text.
+	var gameover_box := VBoxContainer.new()
+	gameover_box.add_theme_constant_override("separation", 16)
+	_gameover_portrait = TextureRect.new()
+	_gameover_portrait.custom_minimum_size = Vector2(220, 220)
+	_gameover_portrait.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	_gameover_portrait.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
+	_gameover_portrait.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	_gameover_portrait.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_gameover_portrait.visible = false
+	var round_mat := (_opponent_portrait.material as ShaderMaterial).duplicate() as ShaderMaterial
+	round_mat.set_shader_parameter("size", _gameover_portrait.custom_minimum_size)
+	round_mat.set_shader_parameter("radius", 12.0)
+	_gameover_portrait.material = round_mat
+	gameover_box.add_child(_gameover_portrait)
+	_gameover_label = Label.new()
+	_gameover_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_gameover_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_gameover_label.custom_minimum_size.x = 560
+	gameover_box.add_child(_gameover_label)
+	_gameover_dialog.add_child(gameover_box)
 	for d: Window in [_promo_dialog, _gameover_dialog, _quit_dialog, _jishogi_info_dialog]:
 		ModalBlur.attach(d)
 	_undo_btn.pressed.connect(_on_undo)
@@ -378,6 +414,34 @@ func _expression_for_win_rate(win_rate: float) -> String:
 		return "worried"
 	return "neutral"
 
+# Face after an AI move: the running mood, lifted to happy when the
+# move it just played gives check and it isn't already in trouble.
+func _expression_after_ai_move(win_rate: float) -> String:
+	if win_rate >= 0.0:
+		_mood_win_rate = win_rate if _mood_win_rate < 0.0 \
+			else lerpf(_mood_win_rate, win_rate, EXPR_WIN_RATE_BLEND)
+	var expr := _expression_for_win_rate(_mood_win_rate if win_rate >= 0.0 else -1.0)
+	if expr == "neutral" and bool(_core.is_check()):
+		expr = "happy"
+	return expr
+
+# Flinch at a strong move by the player, held briefly before the
+# thinking face replaces it.
+func _react_to_player_move(gives_check: bool, captured_kind: int) -> void:
+	if not (gives_check or captured_kind in EXPR_MAJOR_KINDS):
+		return
+	_set_opponent_expression("worried")
+	_reaction_until_msec = Time.get_ticks_msec() + int(EXPR_REACTION_SEC * 1000.0)
+	await get_tree().create_timer(EXPR_REACTION_SEC).timeout
+	if is_inside_tree() and _thinking and not _game_over:
+		_set_opponent_expression("thinking")
+
+# Thinking face for the AI's turn, unless a flinch is still showing (its
+# timer switches to thinking when it runs out).
+func _show_thinking_expression() -> void:
+	if Time.get_ticks_msec() >= _reaction_until_msec:
+		_set_opponent_expression("thinking")
+
 # Game-over face from the result text: victory / defeat for a decisive
 # game, neutral for a draw.
 func _expression_for_result(text: String) -> String:
@@ -414,12 +478,12 @@ func _maybe_start_ai_turn() -> void:
 		_place_check_banner.call_deferred()
 		_undo_btn.disabled = true
 		_teacher_btn.disabled = true
-		_set_opponent_expression("thinking")
+		_show_thinking_expression()
 		_run_book_move_with_pause(book_move)
 		return
 	_thinking = true
 	_thinking_label.visible = true
-	_set_opponent_expression("thinking")
+	_show_thinking_expression()
 	_place_check_banner.call_deferred()
 	_undo_btn.disabled = true
 	_teacher_btn.disabled = true
@@ -476,7 +540,7 @@ func _process(_delta: float) -> void:
 		var win_rate := float(_core.last_think_win_rate())
 		_commit_move(mv)
 		if not _game_over:
-			_set_opponent_expression(_expression_for_win_rate(win_rate))
+			_set_opponent_expression(_expression_after_ai_move(win_rate))
 
 func _refresh_all() -> void:
 	var view_core: Object = _active_core()
@@ -666,6 +730,7 @@ func _commit_move(m: Dictionary) -> void:
 	var to_pos = m["to"]
 	var target_piece = _core.piece_at(int(to_pos.x), int(to_pos.y))
 	var is_capture: bool = target_piece != null
+	var mover_is_ai: bool = _ai_enabled and Settings.side_is_ai(_core.side_to_move_gote())
 	
 	if not bool(_core.apply_move(m)):
 		print("[game] rejected: %s" % m)
@@ -709,6 +774,9 @@ func _commit_move(m: Dictionary) -> void:
 	if OS.has_feature("mobile"):
 		Input.vibrate_handheld(50)
 	_check_end_state()
+	if _ai_enabled and not mover_is_ai and not _game_over:
+		_react_to_player_move(bool(_core.is_check()),
+			int(target_piece["kind"]) if is_capture else -1)
 	# If the player committed a move while suggestions were open, the
 	# board has been held small through this turn. Once it's the player's
 	# turn again (= AI has replied) — or the game ended — zoom back.
@@ -775,12 +843,16 @@ func _end_game(text: String, terminator: String) -> void:
 	_check_banner.visible = false
 	_undo_btn.disabled = true
 	_gameover_text = text
-	_set_opponent_expression(_expression_for_result(text))
+	var result_expr := _expression_for_result(text)
+	_set_opponent_expression(result_expr)
+	var result_tex := _expression_texture(result_expr) if _ai_enabled else null
+	_gameover_portrait.texture = result_tex
+	_gameover_portrait.visible = result_tex != null
 	Settings.clear_saved_game()
 	print("[game] %s" % text.replace("\n", " "))
 	# Every finished game is archived to the 棋譜検討 library
 	# automatically; the dialog just reports where it went.
-	_gameover_dialog.dialog_text = "%s\n\n%s" % [text, _auto_save_kif_message()]
+	_gameover_label.text = ("%s\n\n%s" % [text, _auto_save_kif_message()]).strip_edges()
 	_gameover_dialog.reset_size()
 	_gameover_dialog.popup_centered()
 
@@ -801,6 +873,8 @@ func _on_restart() -> void:
 	_gameover_text = ""
 	_pending_move = {}
 	_last_move = {}
+	_mood_win_rate = -1.0
+	_reaction_until_msec = 0
 	_set_opponent_expression("neutral")
 	_clear_selection()
 	_refresh_all()
