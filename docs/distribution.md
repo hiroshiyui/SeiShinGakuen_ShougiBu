@@ -1,13 +1,17 @@
 # 配布チャネル
 
-清正学園将棋部の APK は同一の署名鍵で署名された **同じバイナリ** を、
-複数の窓口から配布する。ユーザーはどの窓口から入手しても、後から別の
-窓口で配信されたバージョンへ再インストール無しで更新できる。
+清正学園将棋部は 3 つの窓口から配布している。GitHub Releases と itch.io は
+同一の署名鍵で署名された **同じバイナリ** を配信するので、どちらから
+入手しても、後からもう一方で配信されたバージョンへ再インストール無しで
+更新できる。F-Droid 版は F-Droid 側がリリースタグのソースからビルドして
+独自の鍵で署名するため、他の窓口の APK とは相互に上書き更新できない
+（乗り換えにはアンインストールが必要）。
 
 | 窓口 | URL | 対象 | 備考 |
 |---|---|---|---|
 | GitHub Releases | https://github.com/hiroshiyui/SeiShinGakuen_ShougiBu/releases | 技術寄りユーザー、開発者 | 一次配布。SHA-256 ハッシュとリリースノート全文を併載。 |
 | itch.io | https://hiroshiyui.itch.io/seishingakuen-shougibu | 海外含む indie / Godot コミュニティ | プラットフォームタグ `Android`、日本語ページ。 |
+| F-Droid | https://f-droid.org/ja/packages/org.seishingakuen.shougibu/ | F-Droid 利用者 | リリースタグから自動でビルド・更新される。掲載文・スクリーンショット・更新履歴は `fastlane/metadata/android/` から読まれる。 |
 
 このドキュメントは itch.io 出品時にコピー＆ペーストするための原稿を
 集約している。リリース毎にここを更新してから itch.io に反映する運用

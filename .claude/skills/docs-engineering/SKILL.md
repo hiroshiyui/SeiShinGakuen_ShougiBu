@@ -10,13 +10,13 @@ You are performing documentation tasks for **清正学園将棋部** (SeiShinGak
 
 ## Current state of project documentation
 
-Read this before assuming files exist. The repo has solid technical documentation; user-facing / store-listing material is lighter.
+Read this before assuming files exist. The repo has solid technical documentation plus store-listing material for F-Droid and itch.io.
 
 **Currently exists:**
 
 | File | Status | Purpose |
 |---|---|---|
-| [README.md](../../README.md) | ✅ exists (English) | Project overview, screenshot, build instructions, tech stack |
+| [README.md](../../README.md) | ✅ exists (Japanese) | Project overview, download badges, screenshots, build instructions, tech stack |
 | [CLAUDE.md](../../CLAUDE.md) | ✅ exists | Project context for Claude Code; what to read before planning |
 | [ROADMAP.md](../../ROADMAP.md) | ✅ exists | Phased plan + "shipped differently" notes per completed phase |
 | [docs/architecture.md](../../docs/architecture.md) | ✅ exists | Two-layer architecture walkthrough (GDScript ↔ Rust GDExtension) |
@@ -24,19 +24,22 @@ Read this before assuming files exist. The repo has solid technical documentatio
 | [docs/android-build.md](../../docs/android-build.md) | ✅ exists | APK export pipeline notes |
 | [docs/android-gotchas.md](../../docs/android-gotchas.md) | ✅ exists | Android-only behaviour notes (orientation int, touch double-fire, …) |
 | Per-asset READMEs | ✅ partial | `assets/fonts/{fude-goshirae,noto-serif-jp}/README.md` |
+| [CHANGELOG.md](../../CHANGELOG.md) | ✅ exists | Keep a Changelog, Japanese bullets; one section per release |
+| [docs/release-notes/](../../docs/release-notes/) | ✅ one file per release | Japanese highlights + commit list; doubles as the GitHub Release body |
+| [docs/distribution.md](../../docs/distribution.md) | ✅ exists (Japanese) | Distribution channels and the itch.io page text |
+| [fastlane/metadata/android/](../../fastlane/metadata/android/) | ✅ `ja` + `en-US` | F-Droid listing: title, descriptions, screenshots, per-versionCode changelogs |
+| [LICENSE](../../LICENSE) | ✅ exists | GPL-3.0-or-later |
 
 **Does not yet exist** (don't pretend they do; ask before creating):
 
-- `CHANGELOG.md`
-- `LICENSE` — *no license file in the repo today*; copyright is implicit. Don't fabricate one. If the user wants to add a license, that's a deliberate decision worth a separate conversation.
 - `NOTICES.md` / third-party attribution document
-- `PRIVACY-POLICY.md` and `fastlane/` are intentionally absent — distribution is GitHub Releases sideload only, no Play Store / F-Droid (see ROADMAP Open Questions). Don't propose creating either unless the user reopens that decision.
+- `PRIVACY-POLICY.md` — intentionally absent. The app requests no network permission and none of its channels (F-Droid, itch.io, GitHub Releases) requires one; Google Play, which would, is out of scope (see ROADMAP Open Questions). Don't propose creating it unless the user reopens that decision.
 
 When the user asks about one of the missing files, confirm whether to create it before writing — do not silently scaffold a tree of new docs.
 
 ## Tone and writing style
 
-- README is clear English technical prose with a few opinionated turns of phrase. Match it.
+- README is maintained entirely in Japanese: clear technical prose with a few opinionated turns of phrase. Match it, and don't draft README sections in English.
 - ROADMAP is structured by phase, with "shipped differently" callouts under completed phases that note what changed from the original plan. Maintain that pattern.
 - ADRs are short — context, decision, consequences — not essays. Number sequentially.
 - **Bilingual content is welcome.** Game UI and character names are Japanese; documentation can mix English prose with Japanese terms (`先生モード`, `加藤先生`, etc.) where they're the natural label. The user is comfortable in both.
@@ -57,7 +60,7 @@ When writing or editing docs, double-check these from the source rather than cop
 - **Encoder invariant**: 45-plane position + 139-plane move index, byte-parity-tested against ShogiDojo's Python implementation via `tools/gen_fixtures.py` → `native/shogi_core/src/parity_tests.rs`. Don't describe the encoder casually — the project's defense against silent AI breakage is "the bytes are identical."
 - **Search**: single-threaded PUCT MCTS (no virtual loss, no transposition table) with Dirichlet noise at the root. Temperature-sampled — `tools/build_all.sh` and the Lv 1–8 strength presets in `Settings.gd` drive the playouts/τ pair.
 - **Rules**: full board + hand handling, check, 二歩, 打ち歩詰め, 千日手 (incl. perpetual-check variant), 入玉 detection. SFEN parse + serialize.
-- **Distribution**: GitHub Releases (signed APK + `.idsig` sidecar). Sideload only — Google Play and F-Droid are explicitly out of scope (see ROADMAP Open Questions).
+- **Distribution**: three channels. **F-Droid** (accepted 2026-11; built from source and signed by F-Droid, updated automatically from release tags), **GitHub Releases** (signed APK + `.idsig` sidecar, the primary source of the sideload APK) and **itch.io** (the same APK, uploaded by hand). The F-Droid build carries a different signature, so it cannot update over, or be updated by, the sideload APK. Google Play is explicitly out of scope (see ROADMAP Open Questions).
 - **License**: not yet declared. The repo has no `LICENSE` file. Don't quote a license unless one lands.
 - **Author**: `Hui-Hong You` per `git log`.
 - **GitHub remote**: `git@github.com:hiroshiyui/SeiShinGakuen_ShougiBu.git`.

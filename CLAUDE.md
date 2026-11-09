@@ -142,8 +142,10 @@ APK export: [`docs/android-build.md`](./docs/android-build.md).
   tests. The model silently plays garbage if the encoding drifts.
 - **The ROADMAP's "Open Questions"** section flags decisions not yet
   made (in-game 入玉 claim button, telemetry, UI string centralisation,
-  etc.). Distribution is settled: GitHub Releases sideload only, no
-  Play Store. Don't invent answers — surface the question.
+  etc.). Distribution is settled: F-Droid (built from source by
+  F-Droid, updated automatically from release tags) plus the signed
+  APK on GitHub Releases and itch.io; no Play Store. Don't invent
+  answers — surface the question.
 - **New UI strings must round-trip through the font subset script.**
   `tools/build_font_subsets.py` walks `scripts/`, `scenes/`, and
   `assets/` (filtered to text suffixes — `.gd`, `.tscn`, `.tres`, etc.)
