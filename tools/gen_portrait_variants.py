@@ -74,7 +74,10 @@ NO_HANDS = " Head and shoulders only: no hands, arms or fingers appear in the pi
 IDENTITY = (
     " This must clearly be the same individual as in the reference image,"
     " with the same apparent age, face proportions, eye shape and eye size,"
-    " nose, mouth size, lips and skin tone. The change of expression is"
+    " nose, mouth size and lips. The skin is rendered exactly as in the"
+    " reference image: the same light skin color and brightness, never darker,"
+    " more yellow or more tanned, with the same smooth skin and soft"
+    " shading. The change of expression is"
     " subtle to moderate, natural and believable, never exaggerated or"
     " cartoonish."
 )
@@ -101,7 +104,7 @@ PERSONA = {
     "nakamura-alice": "She is a calm, composed, cool girl who keeps a poker face and never lets her feelings show; her expressions are always very subtle.",
     "terry-clark": "He is a cool, aloof, serious and proud young man, the strongest player in the club; his expressions are restrained.",
     "yoshida-sensei": "She is a gentle, soft-spoken young teacher with a quiet touch of melancholy; her expressions are tender and understated.",
-    "katou-sensei": "She is a warm, dignified, mature woman, a former professional shogi player with the calm confidence of a master.",
+    "katou-sensei": "She is a warm, dignified, mature woman with the same fair, pale, light skin as in the reference image, a former professional shogi player with the calm confidence of a master.",
 }
 
 # Per-character wording, matched to each personality. The in-game avatar
