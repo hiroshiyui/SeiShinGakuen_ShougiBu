@@ -29,11 +29,15 @@ Android 7.0（API 24）以降 / arm64-v8a。Google Play ストアは方針とし
 
 | タイトル画面 | 対戦相手選択 | 対局画面 |
 |:---:|:---:|:---:|
-| <img src="docs/screenshots/01_main_menu.png" width="220" alt="タイトル画面 — 対局モード・対戦相手を選び、設定 / 続きから / 棋譜検討 / 新規対局へ進む。"> | <img src="docs/screenshots/02_character_picker.png" width="220" alt="対戦相手選択画面 — 8 人の部員・先生から指す相手を選ぶ。上半分に選択中キャラの肖像と紹介、下半分に Lv 1〜8 のグリッド。"> | <img src="docs/screenshots/03_in_game_start.png" width="220" alt="Lv 4（伊藤明）との対局序盤（7六歩 8四歩）。タイトルや見出しはポップ体 Mochiy Pop One。上部バーに対戦相手の肖像と名前、下部に「加藤先生！教えてください！」ボタンを配置。"> |
+| <img src="docs/screenshots/01_main_menu.png" width="220" alt="タイトル画面 — 対局モード・対戦相手を選び、設定 / 続きから / 棋譜検討 / 詰将棋 / 新規対局へ進む。"> | <img src="docs/screenshots/02_character_picker.png" width="220" alt="対戦相手選択画面 — 8 人の部員・先生から指す相手を選ぶ。上半分に選択中キャラの肖像と紹介、下半分に Lv 1〜8 のグリッド。"> | <img src="docs/screenshots/03_in_game_start.png" width="220" alt="Lv 4（伊藤明）との対局序盤（7六歩 3四歩）。上部バーに対戦相手の肖像と名前、下部に「加藤先生！教えてください！」ボタンを配置。肖像は対局の流れで表情が変わる。"> |
 
 | 先生モード | 棋譜検討（一覧） | 棋譜検討（解析） |
 |:---:|:---:|:---:|
-| <img src="docs/screenshots/04_teacher_mode.png" width="220" alt="先生モード — MCTS による上位 3 手の候補を勝率 % 付きで表示。"> | <img src="docs/screenshots/05_kifu_library.png" width="220" alt="棋譜検討の一覧画面 — 保存した .kif が新しい順に並び、各行に日時・対局者・結果と手数、削除ボタン。"> | <img src="docs/screenshots/06_kifu_reviewer.png" width="220" alt="棋譜検討の盤面再生 — 各手の先手勝率と分類バッジ（◎好手 / △疑問手 / ×悪手）に加え、悪手 / 疑問手なら推奨手まで表示。"> |
+| <img src="docs/screenshots/04_teacher_mode.png" width="220" alt="先生モード — MCTS による上位 3 手の候補を勝率 % 付きで表示。"> | <img src="docs/screenshots/05_kifu_library.png" width="220" alt="棋譜検討の一覧画面 — 保存した .kif が新しい順に並び、各行に日時・対局者・結果と手数、削除ボタン。"> | <img src="docs/screenshots/06_kifu_reviewer.png" width="220" alt="棋譜検討の盤面再生 — 各手の先手勝率と分類バッジ（◎好手 / △疑問手 / ×悪手）、悪手 / 疑問手なら推奨手を表示。その下の形勢グラフは各手の先手勝率を棒で示し、タップでその手へ移動できる。"> |
+
+| 詰将棋（出題） | 詰将棋（正解） | 表情の変化（思考中） |
+|:---:|:---:|:---:|
+| <img src="docs/screenshots/07_tsume_problem.png" width="220" alt="詰将棋の出題画面 — 1手詰・3手詰・5手詰のタブに解いた数、今日の一問、盤面の下にヒント / やり直し / 前後の問題ボタン。"> | <img src="docs/screenshots/08_tsume_solved.png" width="220" alt="詰将棋を解いたところ — 「正解！ 詰みです」と表示され、問題名に【済】、タブの解いた数が 1/40 に増える。"> | <img src="docs/screenshots/09_thinking_face.png" width="220" alt="AI の思考中 — 盤の右上に「思考中…」、上部バーの対戦相手が考える表情に変わっている。"> |
 
 ## 主な機能
 
