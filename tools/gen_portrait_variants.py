@@ -100,6 +100,8 @@ POSE_CHANGES = {("katou-sensei", "thinking")}
 SEED_OFFSETS: dict[tuple[str, str], int] = {
     ("nakamura-alice", "happy"): 1,
     ("katou-sensei", "victory"): 1,
+    ("yoshida-sensei", "happy"): 2,
+    ("yoshida-sensei", "victory"): 1,
 }
 
 # Who each character is, from the `introduction` in their profile .tres.
@@ -111,7 +113,7 @@ PERSONA = {
     "itou-akira": "He is a mild-mannered, intelligent, slightly nerdy senior student who loves computers.",
     "nakamura-alice": "She is a calm, composed, cool girl who keeps a poker face and never lets her feelings show; her expressions are always very subtle.",
     "terry-clark": "He is a cool, aloof, serious and proud young man, the most talented member of his club; his expressions are restrained.",
-    "yoshida-sensei": "She is a gentle, soft-spoken young teacher with a quiet touch of melancholy; her expressions are tender and understated.",
+    "yoshida-sensei": "She is a gentle, soft-spoken, polite and reserved young teacher with a quiet touch of melancholy; her expressions are always subtle and understated, and her mouth is very small.",
     "katou-sensei": "She is a warm, dignified, mature woman with the same fair, pale, light skin as in the reference image with the calm confidence of a master of her craft.",
 }
 
@@ -161,11 +163,11 @@ PROMPTS: dict[str, dict[str, str]] = {
         "defeat": "The cool boy accepts a disappointment with respect: his eyes are closed, his eyebrows are relaxed, and he has a faint, bitter smile.",
     },
     "yoshida-sensei": {
-        "thinking": "The woman is thinking something over: her eyes glance up and to the side, her lips are slightly pursed, and her expression is thoughtful.",
-        "happy": "The woman smiles warmly: her eyes are gently narrowed with tenderness and she has a soft closed-mouth smile.",
-        "worried": "The woman looks quietly anxious: her eyebrows are knit slightly upward, her eyes are uneasy and look a little to the side, and her lips are pressed together.",
-        "victory": "The woman is gently pleased and relieved: she has a soft, modest smile with her lips barely parted, and tender, slightly narrowed eyes.",
-        "defeat": "The woman is wistful and a little sad: her eyes are downcast and half closed, her eyebrows droop, and she has a small melancholy smile.",
+        "thinking": "Her face is almost the same as in the reference image, changed only very slightly: she is quietly thinking, her eyes lowered a little and looking gently to one side, with the same tiny closed mouth.",
+        "happy": "Her face is almost the same as in the reference image, changed only very slightly: she looks gently, politely content. Her mouth and lips are exactly identical to the reference image: the same tiny, closed, small lips in a calm neutral line, the same width, not stretched sideways. Her contentment shows only around her eyes: her lower eyelids are raised a little, her gaze is soft and warm, and there is a light pink blush on her cheeks.",
+        "worried": "Her face is almost the same as in the reference image, changed only very slightly: she looks a little uneasy. The inner ends of her eyebrows are raised slightly, her eyes look a little to one side, and she has the same tiny closed mouth.",
+        "victory": "Her face is almost the same as in the reference image, changed only very slightly: she looks quietly, modestly glad. Her mouth is the same tiny, narrow, closed mouth as in the reference image, no wider, with a faint upward curve, and her open eyes are bright and gentle.",
+        "defeat": "Her face is almost the same as in the reference image, changed only very slightly: she looks a little wistful. Her eyes are lowered and half closed, her eyebrows are relaxed, and she has the same tiny closed mouth.",
     },
     "katou-sensei": {
         "thinking": "The woman is deep in thought, resting her chin on one hand: one hand is raised into the frame with her chin resting lightly on it. She is not smiling, her mouth is a straight closed line, and her eyes are narrowed and sharp behind her glasses, looking slightly to the side.",
@@ -223,6 +225,19 @@ def build_graph(image: str, prompt: str, seed: int, turbo: bool, prefix: str) ->
         "9": {"class_type": "SaveImage", "inputs": {
             "images": ["8", 0], "filename_prefix": prefix}},
     }
+
+
+# Some characters have a very small mouth that FLUX widens into a smile
+# for any pleased expression, whatever the prompt says. For these the
+# mouth region of the reference portrait is blended back over the
+# render (feathered ellipse: centre x, centre y, radius x, radius y in
+# portrait pixels). Works because every variant keeps the reference's
+# framing and pose.
+MOUTH_FEATHER = 14
+MOUTH_FROM_REFERENCE: dict[tuple[str, str], tuple[int, int, int, int]] = {
+    ("yoshida-sensei", "happy"): (448, 600, 104, 52),
+    ("yoshida-sensei", "victory"): (448, 600, 104, 52),
+}
 
 
 def full_prompt(cid: str, expr: str) -> str:
@@ -288,6 +303,25 @@ def image_size(path: Path) -> str:
     return out.stdout.strip()
 
 
+def encode(png: Path, dst: Path, size: str, ref: Path,
+           mouth: tuple[int, int, int, int] | None) -> None:
+    """Resize the render to the portrait size and write it as WebP,
+    optionally blending the reference portrait's mouth back in."""
+    resize = ["-filter", "Lanczos", "-resize", size + "!"]
+    cmd = ["magick", str(png), *resize]
+    if mouth is not None:
+        cx, cy, rx, ry = mouth
+        cmd += [
+            "(", str(ref), *resize,
+            "(", "-size", size, "xc:black", "-fill", "white",
+            "-draw", f"ellipse {cx},{cy} {rx},{ry} 0,360",
+            "-blur", f"0x{MOUTH_FEATHER}", "-colorspace", "Gray", "-alpha", "off", ")",
+            "-alpha", "off", "-compose", "CopyOpacity", "-composite", ")",
+            "-compose", "Over", "-composite",
+        ]
+    subprocess.run([*cmd, "-quality", str(WEBP_QUALITY), str(dst)], check=True)
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     ap.add_argument("-c", "--character", action="append", choices=sorted(PROMPTS),
@@ -300,6 +334,9 @@ def main() -> int:
     ap.add_argument("--server", default="http://127.0.0.1:8188")
     ap.add_argument("--originals-dir", type=Path, default=Path.home() / "Pictures" / "samples",
                     help="where the lossless original renders live (optional)")
+    ap.add_argument("--from-png", type=Path,
+                    help="skip rendering: post-process this existing ComfyUI output "
+                         "(use with exactly one -c and one -e)")
     ap.add_argument("--out-dir", type=Path,
                     help="write <id>_<expr>.webp here instead of the portrait dirs (for trials)")
     args = ap.parse_args()
@@ -317,8 +354,13 @@ def main() -> int:
                 continue
             jobs.append((cid, expr, dst))
 
+    if args.from_png and len(jobs) != 1:
+        print("!! --from-png needs exactly one character and one expression (and --force)",
+              file=sys.stderr)
+        return 1
     print(f"{len(jobs)} portrait(s) to generate")
     uploaded: dict[str, str] = {}
+    refs: dict[str, Path] = {}
     for n, (cid, expr, dst) in enumerate(jobs, 1):
         src = dirs[cid] / "neutral.webp"
         if cid not in uploaded:
@@ -326,19 +368,19 @@ def main() -> int:
             if not ref.is_file():
                 ref = src
             print(f"    reference for {cid}: {ref}")
-            uploaded[cid] = comfy.upload(ref, cid + ref.suffix, "shougibu")
+            refs[cid] = ref
+            uploaded[cid] = "" if args.from_png else comfy.upload(ref, cid + ref.suffix, "shougibu")
         seed = zlib.crc32(f"{cid}/{expr}".encode()) + SEED_OFFSETS.get((cid, expr), 0) + args.seed_offset
         graph = build_graph(uploaded[cid], full_prompt(cid, expr), seed,
                             args.turbo, f"shougibu/{cid}_{expr}")
         t0 = time.time()
-        png = comfy.run(graph)
+        png = args.from_png.read_bytes() if args.from_png else comfy.run(graph)
         dst.parent.mkdir(parents=True, exist_ok=True)
         with tempfile.NamedTemporaryFile(suffix=".png") as tmp:
             tmp.write(png)
             tmp.flush()
-            subprocess.run(["magick", tmp.name, "-filter", "Lanczos",
-                            "-resize", image_size(src) + "!", "-quality", str(WEBP_QUALITY),
-                            str(dst)], check=True)
+            encode(Path(tmp.name), dst, image_size(src), refs[cid],
+                   MOUTH_FROM_REFERENCE.get((cid, expr)))
         print(f"[{n}/{len(jobs)}] {dst.relative_to(REPO) if dst.is_relative_to(REPO) else dst}"
               f"  ({time.time() - t0:.0f}s)", flush=True)
     return 0
