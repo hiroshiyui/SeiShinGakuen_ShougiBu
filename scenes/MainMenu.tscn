@@ -105,6 +105,12 @@ custom_minimum_size = Vector2(0, 72)
 text = "棋譜検討"
 theme_override_font_sizes/font_size = 24
 
+[node name="TsumeButton" type="Button" parent="Layout/Center/Panel/Box"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 72)
+text = "詰将棋"
+theme_override_font_sizes/font_size = 24
+
 [node name="StartButton" type="Button" parent="Layout/Center/Panel/Box"]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 72)

@@ -7,6 +7,7 @@ extends Control
 @onready var _resume_btn: Button = %ResumeButton
 @onready var _settings_btn: Button = %SettingsButton
 @onready var _kifu_library_btn: Button = %KifuLibraryButton
+@onready var _tsume_btn: Button = %TsumeButton
 @onready var _quit_dialog: ConfirmationDialog = %QuitDialog
 @onready var _version_label: Label = %VersionLabel
 
@@ -31,6 +32,7 @@ func _ready() -> void:
 	_resume_btn.visible = Settings.has_saved_game()
 	_settings_btn.pressed.connect(_on_settings_pressed)
 	_kifu_library_btn.pressed.connect(_on_kifu_library_pressed)
+	_tsume_btn.pressed.connect(func(): SceneTransition.go_to("res://scenes/TsumeShogi.tscn"))
 	_quit_dialog.confirmed.connect(_on_quit_confirmed)
 	ModalBlur.attach(_quit_dialog)
 	_title.gui_input.connect(_on_title_gui_input)

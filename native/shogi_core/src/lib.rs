@@ -1,6 +1,7 @@
 mod board;
 mod encode;
 mod kifu;
+mod mate;
 mod mcts;
 mod move_index;
 mod movegen;
@@ -21,6 +22,7 @@ use godot::prelude::*;
 
 use crate::board::Board;
 use crate::encode::encode_position;
+use crate::mate::{DEFAULT_NODE_BUDGET, Defense, Solver, flipped};
 use crate::mcts::{Searcher, all_legal_moves};
 use crate::opening_book::OpeningBook;
 use crate::move_index::encode_move;
@@ -511,6 +513,84 @@ impl ShogiCore {
             Some(m) => move_to_dict(m).to_variant(),
             None => Variant::nil(),
         }
+    }
+
+    // --- 詰将棋 -------------------------------------------------------------
+
+    /// Shortest forced mate (every attacker move a check) for the side to
+    /// move within `max_plies`. Returns `{plies, unique, solution}`:
+    /// `plies` is 0 when there is none (or the search budget ran out),
+    /// `unique` is true when exactly one first move mates in that many
+    /// plies, and `solution` is the line as move dicts with the
+    /// defender's longest replies. `node_budget` caps the search effort
+    /// (0 = the default); the puzzle generator passes a small one so it
+    /// only keeps mates that are cheap to verify, the hint button the
+    /// default.
+    #[func]
+    fn tsume_solve(&mut self, max_plies: i64, node_budget: i64) -> VarDictionary {
+        let mut d = VarDictionary::new();
+        let mut solution = Array::<VarDictionary>::new();
+        let mut plies = 0i64;
+        let mut unique = false;
+        let budget = max_plies.clamp(1, 15) as u32;
+        let nodes = if node_budget > 0 { node_budget as u64 } else { DEFAULT_NODE_BUDGET };
+        if let Some(pv) = Solver::new(nodes).solve(&mut self.board, budget) {
+            plies = pv.len() as i64;
+            unique = Solver::new(DEFAULT_NODE_BUDGET)
+                .count_first_moves(&mut self.board, pv.len() as u32)
+                == 1;
+            for mv in pv {
+                solution.push(&move_to_dict(mv));
+            }
+        }
+        d.set("plies", plies);
+        d.set("unique", unique);
+        d.set("solution", &solution);
+        d
+    }
+
+    /// First move of the shortest forced mate within `max_plies`, or
+    /// `nil` when there is none. The hint button's query: unlike
+    /// `tsume_solve` it skips the uniqueness count, which can cost far
+    /// more than finding the mate itself.
+    #[func]
+    fn tsume_first_move(&mut self, max_plies: i64) -> Variant {
+        let budget = max_plies.clamp(1, 15) as u32;
+        match Solver::new(DEFAULT_NODE_BUDGET).solve(&mut self.board, budget) {
+            Some(pv) if !pv.is_empty() => move_to_dict(pv[0]).to_variant(),
+            _ => Variant::nil(),
+        }
+    }
+
+    /// Judge the attacker move that was just applied in a puzzle, with
+    /// `plies_left` plies remaining for the rest of the solution.
+    /// Returns `{status, reply}` where status is `"mate"`, `"continue"`
+    /// (forced mate remains; `reply` is the defender's longest defence,
+    /// not yet applied), `"escaped"` (the defender survives the budget)
+    /// or `"not_check"`.
+    #[func]
+    fn tsume_defense(&mut self, plies_left: i64) -> VarDictionary {
+        let mut d = VarDictionary::new();
+        let left = plies_left.clamp(0, 15) as u32;
+        let status = match Solver::new(DEFAULT_NODE_BUDGET).defense(&mut self.board, left) {
+            Defense::NotCheck => "not_check",
+            Defense::Mate => "mate",
+            Defense::Escaped => "escaped",
+            Defense::Continue(reply) => {
+                d.set("reply", &move_to_dict(reply));
+                "continue"
+            }
+        };
+        d.set("status", status);
+        d
+    }
+
+    /// SFEN of the current position rotated 180° with colours swapped,
+    /// so a problem where 後手 attacks can be shown with the attacker
+    /// as 先手 at the bottom.
+    #[func]
+    fn sfen_flipped(&self) -> GString {
+        GString::from(&crate::sfen::to_sfen(&flipped(&self.board)))
     }
 
     /// How the AI rates the move its last `think_sampled` call returned:

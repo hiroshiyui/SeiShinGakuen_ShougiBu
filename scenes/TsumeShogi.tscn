@@ -1,0 +1,130 @@
+[gd_scene load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://scripts/TsumeShogi.gd" id="1_tsume"]
+[ext_resource type="PackedScene" path="res://scenes/game/Board.tscn" id="2_board"]
+[ext_resource type="PackedScene" path="res://scenes/game/Hand.tscn" id="3_hand"]
+[ext_resource type="Texture2D" path="res://assets/backgrounds/kifu_reviewer_bg.webp" id="4_bg"]
+[ext_resource type="Script" path="res://scripts/SafeAreaLayout.gd" id="5_safe"]
+
+[node name="TsumeShogi" type="Control"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+script = ExtResource("1_tsume")
+
+[node name="Background" type="ColorRect" parent="."]
+anchor_right = 1.0
+anchor_bottom = 1.0
+color = Color(0.08, 0.08, 0.1, 1)
+mouse_filter = 2
+
+[node name="BackgroundImage" type="TextureRect" parent="."]
+anchor_right = 1.0
+anchor_bottom = 1.0
+texture = ExtResource("4_bg")
+expand_mode = 1
+stretch_mode = 6
+mouse_filter = 2
+
+[node name="Layout" type="VBoxContainer" parent="."]
+anchor_right = 1.0
+anchor_bottom = 1.0
+theme_override_constants/separation = 8
+script = ExtResource("5_safe")
+
+[node name="HeaderRow" type="HBoxContainer" parent="Layout"]
+custom_minimum_size = Vector2(0, 72)
+theme_override_constants/separation = 12
+
+[node name="TitleLabel" type="Label" parent="Layout/HeaderRow"]
+unique_name_in_owner = true
+size_flags_horizontal = 3
+text = "詰将棋"
+clip_text = true
+vertical_alignment = 1
+theme_override_colors/font_color = Color(0.98, 0.85, 0.45, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 6
+theme_override_font_sizes/font_size = 28
+
+[node name="BackButton" type="Button" parent="Layout/HeaderRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(120, 72)
+text = "戻る"
+theme_override_font_sizes/font_size = 22
+
+[node name="LevelRow" type="HBoxContainer" parent="Layout"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 64)
+theme_override_constants/separation = 8
+
+[node name="DailyButton" type="Button" parent="Layout/LevelRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 64)
+size_flags_horizontal = 3
+text = "今日の一問"
+theme_override_font_sizes/font_size = 22
+
+[node name="GoteHand" parent="Layout" instance=ExtResource("3_hand")]
+unique_name_in_owner = true
+is_gote = true
+
+[node name="BoardHolder" type="CenterContainer" parent="Layout"]
+size_flags_horizontal = 3
+size_flags_vertical = 3
+mouse_filter = 1
+
+[node name="BoardView" parent="Layout/BoardHolder" instance=ExtResource("2_board")]
+unique_name_in_owner = true
+
+[node name="SenteHand" parent="Layout" instance=ExtResource("3_hand")]
+unique_name_in_owner = true
+
+[node name="StatusLabel" type="Label" parent="Layout"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 48)
+horizontal_alignment = 1
+vertical_alignment = 1
+autowrap_mode = 3
+text = ""
+theme_override_colors/font_color = Color(0.98, 0.98, 0.98, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 6
+theme_override_font_sizes/font_size = 26
+
+[node name="NavRow" type="HBoxContainer" parent="Layout"]
+custom_minimum_size = Vector2(0, 72)
+alignment = 1
+theme_override_constants/separation = 8
+
+[node name="PrevButton" type="Button" parent="Layout/NavRow"]
+unique_name_in_owner = true
+accessibility_name = "前の問題"
+custom_minimum_size = Vector2(72, 72)
+text = "<"
+theme_override_font_sizes/font_size = 22
+
+[node name="RetryButton" type="Button" parent="Layout/NavRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(150, 72)
+text = "やり直し"
+theme_override_font_sizes/font_size = 22
+
+[node name="HintButton" type="Button" parent="Layout/NavRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(130, 72)
+text = "ヒント"
+theme_override_font_sizes/font_size = 22
+
+[node name="NextButton" type="Button" parent="Layout/NavRow"]
+unique_name_in_owner = true
+accessibility_name = "次の問題"
+custom_minimum_size = Vector2(72, 72)
+text = ">"
+theme_override_font_sizes/font_size = 22
+
+[node name="PromotionDialog" type="ConfirmationDialog" parent="."]
+unique_name_in_owner = true
+min_size = Vector2(420, 240)
+title = "成り"
+ok_button_text = "成る"
+cancel_button_text = "不成"

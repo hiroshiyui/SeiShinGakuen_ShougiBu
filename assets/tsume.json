@@ -1,0 +1,642 @@
+[
+  {
+    "plies": 1,
+    "sfen": "ln1gg2+Pl/2sk2+P2/p1pppp2p/6p2/1rB2N3/2P6/P1SPPPP1P/1G1R3S1/LN2KG1NL b BS2P 37"
+  },
+  {
+    "plies": 1,
+    "sfen": "l8/9/p2g3p1/1gps+B1pSp/2k1sN3/2l1B3P/P1PpPPPP1/1r2NS1K1/3PL2NL b NPr2g3p 135"
+  },
+  {
+    "plies": 1,
+    "sfen": "kn+R5+P/9/1spp2p2/4p4/7p1/6P2/lP+nPP3P/4G4/2SGK4 b 2B2G2S2N5Pr3l2p 1"
+  },
+  {
+    "plies": 1,
+    "sfen": "4+L2nl/6k2/p1p3n2/2g3NrS/6PB1/5P1KP/PP5P1/R8/L5sNL b G6Pb2g2s4p 1"
+  },
+  {
+    "plies": 1,
+    "sfen": "l1Bk2G1l/5s3/1ppp1pn+R1/p3p3p/PS3s1p1/9/3PP+Bp1P/3GK2R1/LN4GNL b GSPn4p 1"
+  },
+  {
+    "plies": 1,
+    "sfen": "+R4spS+P/5g3/6nk1/p1pg1R3/1p5p1/Ps2p4/2PPP1N2/2G6/LNK2L2L b 2BGSNPl6p 147"
+  },
+  {
+    "plies": 1,
+    "sfen": "6+Rsk/3+Rp1sl1/p2p2l1P/2p1P2pS/3s1P1P1/P3GNPNG/3P1G3/4+p2K1/L6N1 b 2BG4Pnlp 147"
+  },
+  {
+    "plies": 1,
+    "sfen": "+R3nB1+Rl/2S1+B2p1/2p1pp2k/pK1p2gnp/4G2L1/1pP6/P2PSPP1P/1S7/LN2s+p1gL b GN3P 1"
+  },
+  {
+    "plies": 1,
+    "sfen": "l1g4Rl/3sk1+P2/p+Rnp1s1pp/2pbpp3/5N3/2G5B/PSNPPP1GP/4KS3/L7L b GN5P 1"
+  },
+  {
+    "plies": 1,
+    "sfen": "l3B1Snl/5+R3/p4p1Sp/1pN1p4/6ppB/PP2Sk3/L1SPP3P/9/1K5NL b 3GN5Prgp 147"
+  },
+  {
+    "plies": 1,
+    "sfen": "ln3R2l/1pskg4/2pp5/PP2g4/2P3P2/2R2SK1P/3PP2P1/1BGS5/L7L b BN7Pgs2n 85"
+  },
+  {
+    "plies": 1,
+    "sfen": "+Pns5l/1ks6/lpp3ngp/p3p1p2/1N3P3/3b5/1P1PP1P1P/1SK2+p1+r1/L2G1R1NL b GSPbg3p 1"
+  },
+  {
+    "plies": 1,
+    "sfen": "l2g2knl/2s6/p2ppp1Bp/6p2/7Rs/Pb3PP2/3+pPS2P/4GK3/L6NL b GN4Prgsn2p 75"
+  },
+  {
+    "plies": 1,
+    "sfen": "ll7/1+R1G2gP1/1spppsn1p/pk5p1/bN4p2/b1P2S3/NPGPP1P1P/3KG2r1/L1S4NL b P3p 1"
+  },
+  {
+    "plies": 1,
+    "sfen": "lnB5+R/k1sg5/ppps3pp/3pp1p2/P4p1n1/2P1P4/1K1P1P2+r/3GG4/LNS1L4 b GSLbn4p 93"
+  },
+  {
+    "plies": 1,
+    "sfen": "ln1g5/k2s3pK/1Rpppp2P/pL7/2P2g3/N3n4/PN1P4+r/1p7/L5L2 b 2B3S4P2g3p 1"
+  },
+  {
+    "plies": 1,
+    "sfen": "+P5s1l/3g5/p1p2pn1p/4N4/2P6/4P4/2G1kPP1P/2S1+p1K2/1Pb4NL b 2P2rb2g2sn2l4p 1"
+  },
+  {
+    "plies": 1,
+    "sfen": "ln1gk4/1+L3gR2/p2ppp+B2/2ps4p/6S2/2P5P/P1N1PP3/2K6/L4G1NL b BG2SN5Pr2p 1"
+  },
+  {
+    "plies": 1,
+    "sfen": "7kl/5+Rg2/3+Bp1+Bp1/pppp2p1P/7P1/PPP5R/2n2+sP2/KSG6/L2+n3+sL b 2GS2NL2P3p 103"
+  },
+  {
+    "plies": 1,
+    "sfen": "ln5n1/6G1k/p1sp1g1pp/2p1p1psL/9/2PPP1P2/P+r1SS4/1b1KG2R1/LN5N1 b GLPb5p 1"
+  },
+  {
+    "plies": 1,
+    "sfen": "lnR4nl/1S1G1kg2/4ppspp/p2p2p2/7P1/1psPR1P2/PP1g1gS1P/1K7/LN5NL b 2B2P2p 71"
+  },
+  {
+    "plies": 1,
+    "sfen": "ln1g4l/1ps6/p1p2gn1p/3Gpsk2/P8/3PS1+pp1/1S6P/1KGB2+b2/LN2R3L b RPn7p 1"
+  },
+  {
+    "plies": 1,
+    "sfen": "lnS1+L4/1+B4s2/1pp5p/k2p2p2/pPP1p4/2GP2P2/P7P/LGS+r5/KN5NL b BGN2Prgs3p 1"
+  },
+  {
+    "plies": 1,
+    "sfen": "l6+Pl/2+Bn5/k1s+R4p/5NP1b/p1pP2pS1/P4P3/3K1GN1P/9/8L b R3G2SNL7Pp 145"
+  },
+  {
+    "plies": 1,
+    "sfen": "1k4S1l/l1pG5/2+P1ngPp1/4ppp1p/p1B4N1/1Pl1P4/PG1s1P3/K7R/LN7 b BS2Prgsn3p 151"
+  },
+  {
+    "plies": 1,
+    "sfen": "lr2k3l/1g4g2/p1P+S1p2p/1P1+Bp1Sp1/1g7/3P2P2/P2bPP2P/3+n1K3/L4G1NL b S4Prs2np 95"
+  },
+  {
+    "plies": 1,
+    "sfen": "ln1+B4l/5+N3/p2pp3p/2p2p3/4G2G1/4P2p1/P+Rnk+b+sp1P/7G1/LN1SK2RL b g2s7p 1"
+  },
+  {
+    "plies": 1,
+    "sfen": "ln7/1sg1r1l2/pppnlkpp1/4p4/4n+B3/2PB3P1/P6SP/7SL/6G1K b RNP2gs7p 191"
+  },
+  {
+    "plies": 1,
+    "sfen": "l6nl/5pR2/2n1B2p1/p1sppN2p/1p4pk1/PS4P2/1G1GP3P/1K3+b3/LN3r2L b G2Pg2s4p 1"
+  },
+  {
+    "plies": 1,
+    "sfen": "l+Pgk2snl/1R4gb1/pppppNppp/s4p3/2P6/5PK2/P2+b2P1P/4g1S1R/LN2+p2NL b Sg2p 1"
+  },
+  {
+    "plies": 1,
+    "sfen": "l3k2+B1/1r1s5/p3p+N1Gp/1spg5/1p5l1/2P+bP2p1/PP3PP1P/3p2KP1/2+r1GGSNL b SP2nl2p 77"
+  },
+  {
+    "plies": 1,
+    "sfen": "6lnl/7b1/p+R2p+R2p/1B7/1P1g5/P2pP1P1k/2+p2P1L1/3P1KS2/4G2N1 b 2G3S2N6Plp 111"
+  },
+  {
+    "plies": 1,
+    "sfen": "ln4G1+R/5k1p1/p1pSg1n1p/4ppp2/2gP4P/P3S1P2/6S2/1SK6/LN5NL b R2BGL7p 137"
+  },
+  {
+    "plies": 1,
+    "sfen": "ln+B5l/3S5/pp1p4p/2pkp2G1/P4+R1p1/2+bN2P2/2NP1P1PN/2GS2SK1/L1P2G2L b RGS2P3p 1"
+  },
+  {
+    "plies": 1,
+    "sfen": "l4k3/2s1g2S1/2nppp1p1/prp3R1l/7np/P2P1PP2/1P2P4/1+nG1K1S2/LN3G2L b BGPbs4p 1"
+  },
+  {
+    "plies": 1,
+    "sfen": "ln1g2knl/1r1s5/p1ppppp+Pp/9/1p3b3/2P4R1/PPSPPPP1P/3K5/LN1G1GSNL b BGSP 1"
+  },
+  {
+    "plies": 1,
+    "sfen": "ln1g1g1k1/r5s2/p1+P2pns+P/4p1pp1/1p1p5/5+BP2/PP2PP1P1/4G1SK1/+b4G1N1 b SN2LPrl2p 71"
+  },
+  {
+    "plies": 1,
+    "sfen": "l6nb/7nk/p1p1+RR1sp/2b3pp1/1p2P3P/2P2pP2/PPG2S1G1/7K1/LN6L b 2GSNL4Psp 1"
+  },
+  {
+    "plies": 1,
+    "sfen": "4kr1+P1/9/3+N5/2pspp2p/lp4g2/n1P2P2P/PP1SP4/2+n1G4/KN5BL b G5Prbg2s2lp 111"
+  },
+  {
+    "plies": 1,
+    "sfen": "6R1+N/1P+P2sS1s/+P+B+B5p/2S1pg1pk/6pl1/L3PP3/3+p1GP1P/1K3R1P1/1N1G3NL b GNL5P 1"
+  },
+  {
+    "plies": 3,
+    "sfen": "ln1g4l/1ks6/pppp2gpp/4+B4/Pn7/1PP2BPR1/3P+s+s2P/1SK6/L2G4L b RG2N5Pp 87"
+  },
+  {
+    "plies": 3,
+    "sfen": "l8/9/p6p1/2psp+BpSp/2lksN3/8P/P2pPPPP1/2R2S1K1/3PL2NL b RBNP4gn3p 119"
+  },
+  {
+    "plies": 3,
+    "sfen": "ln4nb1/4k3l/p7p/3p1S3/1p3P2P/4P4/P3G1S2/2s1GK3/LN6L b 2GSP2rbn9p 1"
+  },
+  {
+    "plies": 3,
+    "sfen": "ln4+P2/1+R1l5/pppkps1+Bp/3p1Np2/5p1s1/2P6/PP1PPP2P/2SKG4/LN1G3NL b RB2GS2p 1"
+  },
+  {
+    "plies": 3,
+    "sfen": "l6nl/1+P5s1/4Gpkp1/p2Gp1p1p/3PbS3/1+p4n1P/P2+lPPP2/6S2/1N5KL b 2RB2GSn4p 1"
+  },
+  {
+    "plies": 3,
+    "sfen": "l1kn+R4/1p1g+BG3/p1n2p1pp/2Gpp4/P1S2PpP1/1R2S1+s2/1K6P/3+s5/L6NL b BGNL5Pp 129"
+  },
+  {
+    "plies": 3,
+    "sfen": "+Bn2k4/4g1g2/p2spp2l/2p5p/NS1p1NSp1/4P4/P3g4/1B+p6/LN2KG1SL b 2RL2P6p 115"
+  },
+  {
+    "plies": 3,
+    "sfen": "+B2g5/+Rps1k1+P2/p4p2l/2S5p/N2N2Sp1/3BP4/P2K5/9/LN5SL b GL7Pr2gn3p 155"
+  },
+  {
+    "plies": 3,
+    "sfen": "2n1r3l/1ks3g2/1p2s3p/2p1p4/lNNP1pP+r1/1GP1P4/1PS2P1+pP/2KGS4/1N6L b BGbl5p 1"
+  },
+  {
+    "plies": 3,
+    "sfen": "1k6l/4r1g2/Gp+Nns3p/2p1p4/l2P1pP+r1/1GP1P4/1PS2P1+pP/2KGS4/1N6L b S2bnl5p 1"
+  },
+  {
+    "plies": 3,
+    "sfen": "4k3l/4s1g2/1G2+N3p/2pPp4/G4pP+r1/2PSP4/1P3P1+pP/2KGS4/1N6L b RBLPbs2nl5p 1"
+  },
+  {
+    "plies": 3,
+    "sfen": "1nk1p1+R1l/+S8/3+b1pr2/gNp2s2p/BP4p2/K1P6/2S3P1P/1+s1+p5/L6NL b G2P2gnl6p 131"
+  },
+  {
+    "plies": 3,
+    "sfen": "+R4spS+P/5g3/6n2/p1pg1p1k1/1p4Lp1/Ps2pl3/1sPPP1N2/1g1G5/LN1K1R2L b 2BN6p 137"
+  },
+  {
+    "plies": 3,
+    "sfen": "lns3+R1l/4kg3/p1ppp3p/9/1r1B5/9/P+pPPP1P1P/1B5S1/LNSGKG1NL b GSN3P3p 1"
+  },
+  {
+    "plies": 3,
+    "sfen": "l3r1Gnl/2p2k1G1/p2+Rppg1p/1pN6/6pp1/PP7/L1SPP3P/2G2+n3/2K4NL b 2B3S3P2p 109"
+  },
+  {
+    "plies": 3,
+    "sfen": "l3BRSnl/6k2/p4p2p/1pN1p4/6pp1/PP7/L1SPP3P/9/1K5NL b B4G2SN5Prp 137"
+  },
+  {
+    "plies": 3,
+    "sfen": "ln1k3nl/5sgb1/1p1Gpp1p1/p2p2p1p/2P6/P8/1gNPPPPbP/5K3/L1S2GSNL b R3Prs 1"
+  },
+  {
+    "plies": 3,
+    "sfen": "ln5+Rl/1lG4+R1/kp1ppp2p/2p3s2/pG7/2P6/PP1PGPP1P/4KS3/L4G2+p b 2B2S3N2Pp 71"
+  },
+  {
+    "plies": 3,
+    "sfen": "ln4s1l/1R2+P4/p1p1pp1pn/3sk1pGB/2P6/1P2S2KP/P1N1Pg+nS1/1pG6/7+rL b GPbl4p 83"
+  },
+  {
+    "plies": 3,
+    "sfen": "ln3k1nl/2s6/pppp1Gspp/4P4/5+bp2/3P2P2/PP3P1KP/G4+B3/L5SNL b RNPr2gs3p 61"
+  },
+  {
+    "plies": 3,
+    "sfen": "kn6l/ls+R6/ppp1pp3/1G6p/N2p2p2/4K4/P1S1PP2P/6S2/L1s2G3 b R2B2G2NL5Pp 1"
+  },
+  {
+    "plies": 3,
+    "sfen": "lnB+S3nl/9/pkgB3+Rp/1r1pp4/6P1P/P1pPPS3/1PP2P3/2G2G3/L+p2K2NL b G4P2sn 1"
+  },
+  {
+    "plies": 3,
+    "sfen": "3+S3nl/1k1+B5/p1r5p/1r1pp4/2L3P1P/P1pPPS3/1PP2P3/2G2G3/L+p2K2NL b 2GN4Pb2sn 1"
+  },
+  {
+    "plies": 3,
+    "sfen": "l5gnl/1R1s5/p1n1p+P1P1/2pP4p/P8/1PP2S2P/K1S1+B4/1+p+b3R2/LN5kL b 3P3gsn3p 105"
+  },
+  {
+    "plies": 3,
+    "sfen": "l1n2Bb1l/4+Rg1k1/p1rp2ppp/4g4/1p7/4P1P2/PPPP1n2P/1S1K5/LN6L b G2S4Pgsnp 1"
+  },
+  {
+    "plies": 3,
+    "sfen": "l4pp+Rl/1S+P1k1g2/p2p2Sp1/2p1p1P1p/1n1N5/1b1PG3P/P5N2/6R2/L4GK1L b G2SN5Pb 1"
+  },
+  {
+    "plies": 3,
+    "sfen": "l2S1p2l/1S+P1S4/p2p1+R1p1/2p1p3p/1n1N2k2/1b1PG3P/P5N2/6R2/L4GK1L b 2GN6Pbsp 1"
+  },
+  {
+    "plies": 3,
+    "sfen": "lns1R4/3k1g1+R1/p1pp2p1p/4pp3/6K1+b/2N3S2/P1SPPP2P/1P4+n2/LN3g2L b 2GL4Pbsp 1"
+  },
+  {
+    "plies": 3,
+    "sfen": "+R4+P3/9/4B1ppp/p1p+Bp1n2/1s5P1/5GPS1/2k1P1SKP/+p7R/8L b 3GS3N2L5Plp 1"
+  },
+  {
+    "plies": 3,
+    "sfen": "lnRB4l/1+S1k1sRp1/p1p1s1n2/4p1p1p/5p3/2PPP1S2/PP4P1P/1GK3GP1/3+ng2NL b Pbgl2p 1"
+  },
+  {
+    "plies": 3,
+    "sfen": "ln1+R4l/1+S+B2sRp1/p1p1s1n2/2k1p1p1p/5p3/2PPP1S2/PP4P1P/1GK3GP1/3+ng2NL b Pbgl2p 1"
+  },
+  {
+    "plies": 3,
+    "sfen": "1+R4gnl/7k1/2p1ppPp1/1S4g1p/5P1N1/L1PPS3P/NP2P1+b+n1/1KG1G4/3R5 b B2S6P2l 1"
+  },
+  {
+    "plies": 3,
+    "sfen": "l+R4snl/6gb1/pp+R1pp1pk/1B3np2/1P1g2sSp/P8/1+p2PPPL1/5KS2/5G1NL b GN3P2p 77"
+  },
+  {
+    "plies": 3,
+    "sfen": "l3n1knl/4+Rr1g1/p3pp1pp/+b1Bp2p2/2p6/3P2P1P/PP2PPK2/2+n2SG2/L4g1NL b G3SP2p 1"
+  },
+  {
+    "plies": 3,
+    "sfen": "l5bnl/2+S2k2s/pl6p/2ppppPb1/6N2/K1PP2+R2/P2G3pP/1P1S1P3/+r6NL b 2GSPgn3p 117"
+  },
+  {
+    "plies": 3,
+    "sfen": "5B2l/8k/2p1+LGn2/pr4psp/3+B1p3/PpP1SnPpP/2GPP4/1P3s3/LNKG2r1L b GNPs3p 133"
+  },
+  {
+    "plies": 3,
+    "sfen": "l2R1n1kl/5+S1p1/6nsp/p2+R5/3Sp1P2/PP7/1K1PP3P/L1P4+p1/1N6L b 2B4GN6Ps 121"
+  },
+  {
+    "plies": 3,
+    "sfen": "l5S1l/4+R1s2/6S1k/p1p3ppp/4gl2P/2P2PP2/P1N1+p2P1/3pG1SK1/+r3BG1NL b BG2N3P2p 1"
+  },
+  {
+    "plies": 3,
+    "sfen": "ln1+Bs1+R1l/1r7/p1ppp3p/5p3/1pS1kb3/2Pg4P/PP1PPPP2/3S5/LN1GKGS+pL b Pg2np 71"
+  },
+  {
+    "plies": 3,
+    "sfen": "l+S4S1l/3+R2bS1/p3ppn2/2pp3kp/3n5/P1P2PP1P/1P2PKN2/1G4S+p1/L2R1G2L b B2GN4P 1"
+  },
+  {
+    "plies": 3,
+    "sfen": "l2p3nl/6+S2/1pn1G2pp/p1pk1P3/5gpP1/P1P6/1PKPP3P/1S7/LN5+sL b G2P2r2bgsnp 89"
+  },
+  {
+    "plies": 3,
+    "sfen": "6+R1l/4n4/4ppn1p/1pp1nkpg1/p2+R1B3/1PP6/L2PPPPpP/4GK3/1+b4SNL b G3SL2Pgp 1"
+  },
+  {
+    "plies": 3,
+    "sfen": "6+R1S/7Sl/p3kl1p1/3p3+bp/2N1ppp2/P3N1L1P/4PPPP1/6SK1/+s3GG1NL b G2Prbgn3p 101"
+  },
+  {
+    "plies": 3,
+    "sfen": "l6nl/4+NR1S1/2g1+B2kg/p2n2pp1/1S1pGP3/P1p3P1l/1P1PP4/2+s6/3g1K1RL b BSN3P4p 1"
+  },
+  {
+    "plies": 3,
+    "sfen": "ln5+P1/1klG2+R2/ppp2p3/s1r5p/1PN+B1N3/1GP2S3/P3PP2P/1B5S1/LN2KG2L b S6Pg 1"
+  },
+  {
+    "plies": 3,
+    "sfen": "l7l/3g4k/p2ppG2p/3r2S2/7B1/1PP1P1p2/PGG2+l2P/2K6/LN5N+b b NPr3sn7p 1"
+  },
+  {
+    "plies": 3,
+    "sfen": "l2k3r1/4g1g2/2Gs5/pp1p1Bpp1/1n2pp2B/P1SP2P1p/1P2PP1P1/1K1G2+s2/LN6+r b SLP2nl2p 1"
+  },
+  {
+    "plies": 3,
+    "sfen": "l8/k1p+R1l1R1/pg3g1pp/1pS1p4/P8/2G2P3/1PK1PpPPP/1S2+n1S2/L6NL b 2BSN4Pgn 127"
+  },
+  {
+    "plies": 3,
+    "sfen": "l7l/1r1s+B1Pp1/p1n1p1n1p/2ppkp3/6g2/PPP2P3/3PPS2P/1SG6/LN2KG2L b RGSN3Pb 59"
+  },
+  {
+    "plies": 3,
+    "sfen": "l1+B3k2/4g1p2/2Bp1s+Rpp/p3p4/s6P1/2P6/P2S1P2P/3K5/L1+l1G2+rL b GSN3Pg3n4p 93"
+  },
+  {
+    "plies": 3,
+    "sfen": "ln4snl/5kg2/p2p1g1pp/1rp2bp2/4Rp3/2P3P2/PP1P2N1P/2K1G4/LNSG4L b BS2Ps3p 1"
+  },
+  {
+    "plies": 3,
+    "sfen": "4l3l/5g1k1/P1p5p/1p1p+B1p2/1nS1s2s1/l1PP2P2/1P1GPP+n1P/1g1R5/sN1K4L b RGNPb4p 1"
+  },
+  {
+    "plies": 3,
+    "sfen": "ln5nl/5kg2/p1p1gpspp/3BR1p2/2S6/3P2P2/PpK1PPSPP/3G3R1/Lg5NL b S4Pbn 1"
+  },
+  {
+    "plies": 3,
+    "sfen": "1g1g1k1nl/p1s6/1ppp1pspp/1+R2p1p2/2B5P/2P6/P4KPP1/9/L4GSNL b RBGSNL3Pnp 1"
+  },
+  {
+    "plies": 3,
+    "sfen": "lnr5l/2gs1b3/ppppp2pp/5P3/3k1GR2/PPP1Pp2P/1SBG5/1KG6/LN6L b NP2sn3p 127"
+  },
+  {
+    "plies": 3,
+    "sfen": "ln2s2nl/2+R3+R1b/1p2p2gp/k1pp1p3/p1G6/2P6/PPSPPP1pP/2GK5/LN3G1NL b S2Pbsp 69"
+  },
+  {
+    "plies": 3,
+    "sfen": "1+B7/7k1/1gn1pp3/3p2p1p/p1S3LN1/P1P1PPnlP/2NP5/3S2S1K/+p2+b2G1L b GSLP2rg4p 1"
+  },
+  {
+    "plies": 3,
+    "sfen": "ln3gp+Rl/1ksS+P4/pppp3+Pp/4p4/P2s1g3/1PP6/1S1P4P/3K5/LN6L b B2G2N4Prb 115"
+  },
+  {
+    "plies": 3,
+    "sfen": "l6nl/5k3/p1nS2s1p/2ppS1pp1/1p2pp1nP/2PPP+bP2/PP1S3P1/1RG2G2K/LN6L b RGbgp 1"
+  },
+  {
+    "plies": 3,
+    "sfen": "ln7/3k5/p1ppP1s1+L/4p1pp1/4gP3/2s1+p4/PP1P2P2/2KS3R1/LN3G1N1 b RBGNbgsl5p 1"
+  },
+  {
+    "plies": 5,
+    "sfen": "4B1+R2/l3sng2/pppp1k1pp/4ppP2/bn6P/1NPP5/PP3P1P1/3+s1KS2/LN3G2L b GSLrg2p 101"
+  },
+  {
+    "plies": 5,
+    "sfen": "l1r3k1l/7g1/p3pgn1p/2Pp3R1/1S4N2/1P1P2P2/PG1gP1N1P/1K3+bS2/LN1+b4L b 2SP6p 1"
+  },
+  {
+    "plies": 5,
+    "sfen": "ln5n1/1Sskg1R2/2ppp3p/p+R5+P1/3sBp3/PNP1Pg2P/1P1P5/1S1K3+p1/LN6L b B2GL4P 85"
+  },
+  {
+    "plies": 5,
+    "sfen": "1R5+Rl/3+P1gg2/l2pp1spk/2p2pp2/3P1S2p/2b2n3/PS4PPP/2G1P4/B4K1NL b GS2NL4p 1"
+  },
+  {
+    "plies": 5,
+    "sfen": "ln1k5/5+BR2/p1bg1p1pp/3pp4/1GS2PpP1/P1pRS1+s2/2N1+s3P/2K6/L6NL b N2P2gl4p 101"
+  },
+  {
+    "plies": 5,
+    "sfen": "ln3gk2/1r2g1s2/p2spp+P1l/2p4Sp/3p1Nbp1/4P4/PP1S5/1BG6/LN2KG2L b N2Pr5p 95"
+  },
+  {
+    "plies": 5,
+    "sfen": "6+Rpl/3+S1+Bs1k/1+S4+P2/5p2p/2K1N4/2Pn4P/1P5+r1/3G5/L1SG4L b B2G2NL7P4p 159"
+  },
+  {
+    "plies": 5,
+    "sfen": "lng5l/6S2/1Kp1kSn+S1/n1gPp4/p6Pp/2PSP1p2/P1N3+r1P/2G2P3/L6RL b BG3Pb3p 119"
+  },
+  {
+    "plies": 5,
+    "sfen": "k2S5/1g7/lp+P3+P+P+P/9/p2P1S+B2/3SP4/PPNG1PN+R1/2K6/LN1G4L b RBGSN7Pl 141"
+  },
+  {
+    "plies": 5,
+    "sfen": "l6nl/1s1G5/1k1ppp1pp/1ps3p2/p3B4/7P1/PP1P1PP1P/LS7/KNGG3NL b RBGSPrn2p 75"
+  },
+  {
+    "plies": 5,
+    "sfen": "ln1kgRs1l/9/p1pppp+BG1/8p/9/P1P2Pp1P/1P1PPG1+p1/2+bS5/LN4KNL b G2Srn3p 77"
+  },
+  {
+    "plies": 5,
+    "sfen": "ln2+P3l/9/2p1pp1k1/1S4P1p/ps4+bn1/6N2/P1+p+pP1b1P/7g1/LR3K2L b 3GN5Pr2sp 1"
+  },
+  {
+    "plies": 5,
+    "sfen": "ln1k1n3/1sg4g1/ppppp2pp/6P2/3P1R1P1/PPP1PP3/1S1GS3P/1KG6/LN6L b RSNL2P2b 1"
+  },
+  {
+    "plies": 5,
+    "sfen": "ln3bR2/1sg4g1/pppppkBpp/6P2/3P3P1/PPP1PP3/1S1GS3P/1KG6/LN6L b SNL2Prn 1"
+  },
+  {
+    "plies": 5,
+    "sfen": "lR2+N3l/5B3/p3p2k1/1pp2nppp/5S3/3p1SP1P/PP2P4/3G1K1R1/L7L b SNb3gsn5p 1"
+  },
+  {
+    "plies": 5,
+    "sfen": "ln1+N5/1ks2+R2+B/1ppp3p1/p3p1p1p/9/PPP4P1/1S1PGSP1P/1KG2R3/LN6+l b B2GS2Pnlp 77"
+  },
+  {
+    "plies": 5,
+    "sfen": "ln2k2nl/2s1g4/pppp1pspp/6p2/9/3P3+B1/PP3PPPP/1S2R2K1/L+b3GSNL b GPrgn2p 43"
+  },
+  {
+    "plies": 5,
+    "sfen": "+B5k1l/3+P5/4+Spnpp/2p3p2/KS3P1P1/P5P2/8P/9/L+r5NL b 2GSNL7Prb2gsn 1"
+  },
+  {
+    "plies": 5,
+    "sfen": "ln+R6/k1s6/ppb4pp/2ppp1p2/P4p3/s1P1P4/1s1P1P2n/3GG4/1NK1L4 b RBGSN2Lg4p 123"
+  },
+  {
+    "plies": 5,
+    "sfen": "4gk2l/1g5P1/S4p1np/3pN1RBn/4G1p2/8P/3PPPP1K/5S3/1r3G1NL b LPb2sl7p 181"
+  },
+  {
+    "plies": 5,
+    "sfen": "8l/4+Rg1k1/3+Bp1npp/pppp1Bp2/7PP/P1P5R/1Pn2+sP2/KSG6/L2+n3+sL b GSNLPg3p 93"
+  },
+  {
+    "plies": 5,
+    "sfen": "l2+R1+NSnl/1+PP1P1s1k/9/pK1+P5/8p/1+B7/P5P1P/6Ss1/Lr3G1NL b B3GN9P 155"
+  },
+  {
+    "plies": 5,
+    "sfen": "l5gnl/1R1s3B1/p1n1p+P1P1/2pPkp1Rp/P8/1PPpPS2P/K1S2P+p2/1+p+b6/LN6L b 3gsnp 91"
+  },
+  {
+    "plies": 5,
+    "sfen": "ln4bnl/1s1g+Rskg1/pppppPppp/9/3P5/2P1P1P2/PP1GSpN1P/1BG2R3/LNK5L b sp 71"
+  },
+  {
+    "plies": 5,
+    "sfen": "l1s3S1l/1kp+R5/2b+PngPp1/4ppp1p/p1B4N1/1Pl1P4/PG1s1P3/K7R/LN7 b 2G2Psn3p 143"
+  },
+  {
+    "plies": 5,
+    "sfen": "ln1+B4l/5+N3/pR1pp3p/1Sp2p3/4G2G1/1ks1P2p1/P2P+b+sp1P/2G4G1/L3K2RL b 2NPs5p 1"
+  },
+  {
+    "plies": 5,
+    "sfen": "ln1+B4l/5+N3/pR1pp3p/2p2p3/4G2G1/4P2p1/PG1k+b+sp1P/7G1/L3K2RL b SN2sn7p 1"
+  },
+  {
+    "plies": 5,
+    "sfen": "1+R1B2G2/1ss1g4/1k1spp+Bp1/pp1p1Lp1p/2P4R1/P1SP2P1P/1PK6/2G6/LN6L b G2NL4Pn 95"
+  },
+  {
+    "plies": 5,
+    "sfen": "ln2n2R1/4+B4/pksppp2p/2p4s1/6P2/1SP5P/PP3P3/1KG4sL/LN4+r2 b GNL2Pb2g4p 99"
+  },
+  {
+    "plies": 5,
+    "sfen": "l5snl/1kg+R2gb1/pppppNppp/s4p3/2P6/5PK2/P2+b2P1P/4g1S1R/LN2+p2NL b GS3p 1"
+  },
+  {
+    "plies": 5,
+    "sfen": "lns2g3/7+R1/p1ppkp2p/4p1p2/9/2NB1KS2/P1SPPP2P/1P4+n2/LN3g2L b R2GL3Pbs2p 1"
+  },
+  {
+    "plies": 5,
+    "sfen": "ln1+R4l/1ks4s1/1pppg2Pp/6P2/p3+b4/1K1N5/P2PPP2P/4GS3/LN1G5 b BGSN2Prl4p 73"
+  },
+  {
+    "plies": 5,
+    "sfen": "+R6nl/6sbk/p+R2pp1pp/1B4SL1/1P1g4L/P2pP4/2+p2PP2/3P1KS2/5G1N1 b 2GSNL5Pn 95"
+  },
+  {
+    "plies": 5,
+    "sfen": "ln4k1l/5s3/p1p2gnpp/4ppp+R1/2gP4P/4S1P2/P1S3S2/2K6/LN5NL b RG2bg7p 113"
+  },
+  {
+    "plies": 5,
+    "sfen": "ln4G1+R/5k1p1/p1p2gn1p/4ppp2/2gP4P/4S1P2/P1S3S2/2K6/LN5NL b GSLr2b7p 127"
+  },
+  {
+    "plies": 5,
+    "sfen": "l+R3g1n1/3n1g1b+B/p2pskl2/2p4Gp/1p3SLP1/2P2P1p1/PP1K4P/5+p1s1/LN3G3 b RSN4Pp 1"
+  },
+  {
+    "plies": 5,
+    "sfen": "ln6l/2gs2+N2/2pppk1pp/p4p3/6P2/2P2P1r1/PP1PPS2P/1G1KG4/LN3r2L b BG2SN2Pbp 73"
+  },
+  {
+    "plies": 5,
+    "sfen": "l5p+Rl/1p4g2/p2kp2pp/3N1p3/3s3PP/1GP2+p2R/P2K1+n2S/1B7/LN6L b B2GS6Psn 1"
+  },
+  {
+    "plies": 5,
+    "sfen": "ln1gs1+R1l/1r7/p1pppB+N1p/3k1ppg1/1p7/2P5P/PP1PPPP2/3S5/LN1GKGS+pL b SPbn 53"
+  },
+  {
+    "plies": 5,
+    "sfen": "ln1gs1+R1l/1r7/p1ppp3p/4kp+B2/1pS2b3/2PG4P/PP1PPPP2/3S5/LN1GKGS+pL b 2P2n 61"
+  },
+  {
+    "plies": 5,
+    "sfen": "ln6+P/1+Sp1g4/1R2ps2p/p1Pp2B2/1N3Gp2/P1ksB4/NP2PP2P/1G1KG2S1/LR6L b L4Pnp 111"
+  },
+  {
+    "plies": 5,
+    "sfen": "l1k2Sgnl/2s6/ppn+Sp1g1p/2pp3p1/P4pp2/2P1P2R1/1P1P1P2P/2K1G4/LNS3bNL b Grb2p 65"
+  },
+  {
+    "plies": 5,
+    "sfen": "9/ng4R2/k1n+B3p1/p1pl4p/1pN4P1/P1P6/1P1P4P/LS1G5/KNS5L b BG2SL6Prgp 171"
+  },
+  {
+    "plies": 5,
+    "sfen": "l4+R1nl/4G1S2/pBpppps1p/6pk1/5P2R/2P6/P1SPP1GNP/9/L2GK3+s b 2Pbg2nl3p 75"
+  },
+  {
+    "plies": 5,
+    "sfen": "lnB2+R2l/6Sk1/p1p3gp1/8p/2S4n1/PP2P4/N1PPG2RP/2GS1K3/L+p1b3NL b GS7P 87"
+  },
+  {
+    "plies": 5,
+    "sfen": "+L8/2p3gl1/6n1+R/3Np2p1/8P/2b1P1Pkl/pPN2PN2/1S1L1S3/1K4G2 b RGPbg2s8p 1"
+  },
+  {
+    "plies": 5,
+    "sfen": "kn6l/lsGG5/1pn1+Pp1+Pp/ps7/3P1b3/3b5/PPL1p+p2P/L1G6/KNG4R1 b RSPsn5p 141"
+  },
+  {
+    "plies": 5,
+    "sfen": "lnr3b1l/2gsks+P2/ppppp2pp/9/3P2R2/PPP1Pp2P/1SBG5/1KG6/LN6L b GN2Psnp 119"
+  },
+  {
+    "plies": 5,
+    "sfen": "l1p5l/3+P1+B1pk/4p3p/2G2Np2/p3P2N1/1+RPG1PP2/P1NS4P/2KN2+s2/L1B5L b R2G2S4Pp 1"
+  },
+  {
+    "plies": 5,
+    "sfen": "1R4nnl/6+Rsk/p4p1pp/2P3p2/2G6/4P1P2/PP1P2+B1P/2+l3S2/L3KG1NL b B2GSN6Ps 1"
+  },
+  {
+    "plies": 5,
+    "sfen": "l2B5/1+R2G4/p1ppP1s1+L/2k1p1pp1/2s1gP3/2s1+p4/PP1P2P2/2KS3R1/LNN2G1N1 b NLbg5p 1"
+  },
+  {
+    "plies": 5,
+    "sfen": "l8/1+R+B1G4/p1ppP1s1+L/1sk1p1pp1/2s1gP3/P1s1+p4/1P1Pg1P2/7R1/LNN1KG1N1 b BNL5p 1"
+  },
+  {
+    "plies": 5,
+    "sfen": "3RK3l/1G7/k1pGGnnp1/8p/1s1p5/1PP1PL3/+l1S1p3P/4g1+r2/8L b S2N6P2bs3p 173"
+  },
+  {
+    "plies": 5,
+    "sfen": "l7l/2g2G3/3s3pp/1Spppp1k1/p5s1R/2PgP+pp1P/PP5BB/3R5/LNK4NL b GNsn4p 1"
+  },
+  {
+    "plies": 5,
+    "sfen": "l2k1r2l/9/2nG2Gp1/pp+B3s2/3lSpNbp/P3P1P1P/2p2P3/1KS1G4/LN7 b N2Prgs5p 169"
+  },
+  {
+    "plies": 5,
+    "sfen": "l6nl/5G1k1/p5rpp/2p1pp+Sb1/9/1PPSPPS2/P1NG2N1P/3K3R1/L+p1G4L b GSN3Pb2p 91"
+  },
+  {
+    "plies": 5,
+    "sfen": "ln2k1Gnl/9/p2g1+Rsp1/2p1Gpp1p/2P1P4/6P1P/P2P1P1P1/3+n1G2L/L+r4SNK b 3P2b2sp 71"
+  },
+  {
+    "plies": 5,
+    "sfen": "l2+R3nl/1k7/1pnpp2pp/p1p3p2/9/PPPP2G2/2N1P3P/1KS3r2/L2+s3NL b B2G2S2Pbg2p 67"
+  },
+  {
+    "plies": 5,
+    "sfen": "+R4+Bsnl/3g3k1/p3sg1p1/3pppp2/1S6p/9/P1N3NPP/1P4LK1/L4+bS1L b GNPrg6p 1"
+  },
+  {
+    "plies": 5,
+    "sfen": "l2K4l/1kls3p1/ppn1B1n1p/2n6/P6s1/2PPPP3/1P2S3P/3G1G3/L+b+r6 b 2GSN7Pr 151"
+  }
+]

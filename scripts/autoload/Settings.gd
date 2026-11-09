@@ -121,6 +121,25 @@ var sound_enabled: bool = true
 # panel fades) to instant. Feedback flashes stay — they carry meaning.
 var reduce_motion: bool = false
 
+# 詰将棋 progress. `tsume_plies` is the set the player last had open
+# (1 / 3 / 5 手詰); `tsume_solved` holds the position key of every
+# problem solved so far, so progress survives a regenerated problem
+# set as long as the positions themselves are kept.
+var tsume_plies: int = 1
+var tsume_solved: Dictionary = {}
+
+func set_tsume_plies(plies: int) -> void:
+	if plies == tsume_plies:
+		return
+	tsume_plies = plies
+	_save_prefs()
+
+func mark_tsume_solved(position_key: String) -> void:
+	if tsume_solved.has(position_key):
+		return
+	tsume_solved[position_key] = true
+	_save_prefs()
+
 const CHARACTERS_DIR := "res://assets/characters"
 
 func _ready() -> void:
@@ -245,6 +264,12 @@ func _load_prefs() -> void:
 	ai_level = clamp_level(int(cfg.get_value("ai", "level", ai_level)))
 	sound_enabled = bool(cfg.get_value("audio", "sound_enabled", true))
 	reduce_motion = bool(cfg.get_value("ui", "reduce_motion", false))
+	tsume_plies = int(cfg.get_value("tsume", "plies", tsume_plies))
+	var solved: Variant = cfg.get_value("tsume", "solved", [])
+	tsume_solved.clear()
+	if solved is Array:
+		for key in solved:
+			tsume_solved[str(key)] = true
 
 func _save_prefs() -> void:
 	var cfg := ConfigFile.new()
@@ -253,6 +278,8 @@ func _save_prefs() -> void:
 	cfg.set_value("ai", "level", ai_level)
 	cfg.set_value("audio", "sound_enabled", sound_enabled)
 	cfg.set_value("ui", "reduce_motion", reduce_motion)
+	cfg.set_value("tsume", "plies", tsume_plies)
+	cfg.set_value("tsume", "solved", tsume_solved.keys())
 	var err: int = cfg.save(PREFS_PATH)
 	if err != OK:
 		push_warning("save_prefs: ConfigFile.save returned %d" % err)
