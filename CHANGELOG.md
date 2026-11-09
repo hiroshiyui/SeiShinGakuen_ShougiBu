@@ -8,6 +8,30 @@ All notable changes to this project. Format follows
 
 ## [Unreleased]
 
+## [1.0.13] — 2026-11-10
+
+### Added
+- 対戦相手の肖像が対局の流れで表情を変えるように。思考中・優勢・
+  劣勢・勝ち・負けの 5 種類を 8 人全員に追加。王手をかけたり飛車・角を
+  取ったりすると相手が一瞬たじろぎ、終局時の表情は対局終了
+  ダイアログにも表示。
+- 詰将棋。タイトル画面の「詰将棋」から 1手詰・3手詰・5手詰あわせて
+  160 問に挑戦できる。「今日の一問」、ヒント、やり直しつき。指した
+  手は詰み探索エンジンが判定し、手数内に詰む手順ならどれでも正解。
+- 加藤先生の一言。対局が終わると、いちばん惜しかった一手と代わりの
+  手を対局終了ダイアログで教えてくれる。「検討」ボタンでその手から
+  棋譜検討を開ける。
+- 棋譜検討に形勢グラフ。解析後、各手の先手勝率を棒グラフで表示し、
+  疑問手・悪手に印をつける。タップでその手へ移動。
+
+### Changed
+- 盤面上部の対戦相手の肖像を 64px から 96px に拡大。
+- 肖像・背景・木目テクスチャを非可逆 WebP で取り込むように変更。
+  肖像を 40 枚追加したうえで、APK は前バージョンより小さくなった。
+
+[Full release notes](./docs/release-notes/1.0.13.md) ·
+[GitHub Release](https://github.com/hiroshiyui/SeiShinGakuen_ShougiBu/releases/tag/1.0.13)
+
 ## [1.0.12] — 2026-10-29
 
 ### Added
@@ -406,7 +430,8 @@ First public release.
 [Full release notes](./docs/release-notes/0.1.1.md) ·
 [GitHub Release](https://github.com/hiroshiyui/SeiShinGakuen_ShougiBu/releases/tag/0.1.1)
 
-[Unreleased]: https://github.com/hiroshiyui/SeiShinGakuen_ShougiBu/compare/1.0.12...HEAD
+[Unreleased]: https://github.com/hiroshiyui/SeiShinGakuen_ShougiBu/compare/1.0.13...HEAD
+[1.0.13]: https://github.com/hiroshiyui/SeiShinGakuen_ShougiBu/compare/1.0.12...1.0.13
 [1.0.12]: https://github.com/hiroshiyui/SeiShinGakuen_ShougiBu/compare/1.0.11...1.0.12
 [1.0.11]: https://github.com/hiroshiyui/SeiShinGakuen_ShougiBu/compare/1.0.10...1.0.11
 [1.0.10]: https://github.com/hiroshiyui/SeiShinGakuen_ShougiBu/compare/1.0.9...1.0.10
