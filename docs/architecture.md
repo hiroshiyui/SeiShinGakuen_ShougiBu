@@ -119,6 +119,31 @@ Square._gui_input(touch)                                  — UI tap
                           └─> (same path as human commit above)
 ```
 
+## Opponent expressions
+
+The opponent's avatar above the board is not static; `GameController`
+picks one of the six portraits in the character's `portrait_dir`:
+
+| Moment | Expression |
+|---|---|
+| AI is searching (or pausing on a book move) | `thinking` |
+| Player just gave check or took a 飛 / 角 (龍 / 馬) | `worried` for 0.9 s, then `thinking` |
+| AI has moved | `happy` / `worried` / `neutral` from its mood |
+| Game over | `victory` / `defeat`, `neutral` on a draw |
+| 待った / 新規対局 | `neutral` |
+
+The mood is a running blend (weight 0.6 on the newest move) of
+`ShogiCore.last_think_win_rate()` — the search-backed win rate of the
+move `think_sampled` just returned, from the AI's point of view. At or
+above 62 % the face is happy, at or below 38 % worried. A move that
+gives check lifts a neutral face to happy. Opening-book moves carry no
+evaluation and leave the mood unchanged.
+
+Swaps cross-fade over 0.25 s through an overlay copy of the portrait
+node (instant when アニメーションを減らす is on). The 対局終了 dialog
+repeats the victory / defeat portrait at 220 px, because the modal
+blur hides the avatar strip behind it.
+
 ## Review mode and the kifu library
 
 Two flows render historical positions on the board without disturbing
@@ -214,8 +239,14 @@ rewinding `_core` in place: [ADR-0008](./adr/0008-review-mode-scratch-core.md).
   Keep playouts at or below 256; that is already a few seconds per
   move on arm64 with Bonanza v2.
   Drop portraits in the character's `portrait_dir` keyed by expression
-  name (`neutral.webp` is required, others fall back to neutral). The
-  picker scans the directory at startup via
+  name: `neutral.webp` is required; `thinking` / `happy` / `worried` /
+  `victory` / `defeat` fall back to neutral when missing, though
+  `characters_tests.gd` expects all six. `GameController` swaps them
+  on the opponent strip as the game unfolds (see "Opponent
+  expressions" below). The variants are generated from the neutral
+  portrait with `tools/gen_portrait_variants.py` (FLUX.2 through a
+  local ComfyUI); import them as lossy WebP like the existing ones.
+  The picker scans the directory at startup via
   `Settings.list_characters()` — no scene edits needed.
 - **Tuning MCTS** — `C_PUCT`, `DIRICHLET_ALPHA`, `DIRICHLET_WEIGHT` in
   [`mcts.rs`](../native/shogi_core/src/mcts.rs).

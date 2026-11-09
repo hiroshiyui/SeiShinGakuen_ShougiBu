@@ -16,18 +16,14 @@ backlog.
 
 ## Make the characters come alive
 
-- [ ] **★ 1. In-game reactions.** `CharacterProfile` already supports
-  `thinking / happy / worried / victory / defeat` portraits, but nothing
-  in the code swaps them. Drive the expression from the MCTS value the AI
-  already computes: worried when its win rate drops, happy after a
-  capture or check, victory / defeat on the game-over dialog.
-  - [ ] Portrait art: generated with `tools/gen_portrait_variants.py`
-    (FLUX.2 via ComfyUI, from the neutral portraits). In progress.
-  - [x] Wire the expression swap into `GameController` (opponent
-    strip): thinking while searching, happy / worried / neutral from
-    `ShogiCore.last_think_win_rate()` (≥ 62 % / ≤ 38 %), victory /
-    defeat at game end, 0.25 s cross-fade, avatar enlarged to 96 px.
-    Thresholds still need tuning by feel.
+- [x] **★ 1. In-game reactions.** Done 2026-11-09 — see the Phase 7
+  entry in `ROADMAP.md` and "Opponent expressions" in
+  `docs/architecture.md`. All eight characters have `thinking / happy /
+  worried / victory / defeat` portraits and the opponent strip swaps
+  them from the AI's search-backed mood. Left for later: tune the
+  62 % / 38 % thresholds by feel, and the variants sit a hair off the
+  neutral portraits' framing (visible as a slight jump in the
+  cross-fade).
 - [ ] **★ 2. Short speech bubbles.** A few lines per character for game
   start, check, losing a major piece, winning and losing — アリス is
   cold, すず is cheerful, テリー mixes in English. New characters must go
