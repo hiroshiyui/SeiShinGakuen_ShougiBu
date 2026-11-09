@@ -2,6 +2,7 @@ class_name GameController
 extends Control
 
 const PieceScript := preload("res://scripts/game/Piece.gd")
+const Analyzer := preload("res://scripts/KifuAnalyzer.gd")
 const BoardViewScript := preload("res://scripts/game/BoardView.gd")
 const HandViewScript := preload("res://scripts/game/HandView.gd")
 
@@ -65,6 +66,22 @@ var _reaction_until_msec: int = 0
 # hides the avatar strip behind it).
 var _gameover_portrait: TextureRect = null
 var _gameover_label: Label = null
+# 加藤先生's post-game comment (ROADMAP "post-game comment"). While the
+# game runs, each AI search leaves the AI's own win rate here, keyed by
+# the move number of that AI move. A sharp rise between two of them
+# points at the player move in between; at game end the few sharpest
+# candidates get a proper analysis on a worker thread and the worst
+# becomes the comment. A whole-game analysis would take a minute or
+# more on a phone, far too long for a dialog.
+const COMMENT_MAX_CANDIDATES := 3
+const COMMENT_MIN_JUMP := 0.08
+var _ai_evals: Dictionary = {}
+var _gameover_comment: Label = null
+var _gameover_review_btn: Button = null
+var _gameover_kif_path: String = ""
+var _comment_thread: Thread = null
+var _comment_cancel: bool = false
+var _comment_ply: int = -1
 var _portrait_fade: TextureRect = null
 var _portrait_fade_tween: Tween = null
 var _teacher_thread: Thread
@@ -159,6 +176,18 @@ func _ready() -> void:
 	_gameover_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_gameover_label.custom_minimum_size.x = 560
 	gameover_box.add_child(_gameover_label)
+	_gameover_comment = Label.new()
+	_gameover_comment.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_gameover_comment.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	# Room for three lines up front so the dialog doesn't jump when the
+	# comment arrives.
+	_gameover_comment.custom_minimum_size = Vector2(560, 96)
+	_gameover_comment.add_theme_color_override("font_color", Color(0.98, 0.85, 0.45, 1))
+	_gameover_comment.visible = false
+	gameover_box.add_child(_gameover_comment)
+	_gameover_review_btn = _gameover_dialog.add_button("検討", false, "review")
+	_gameover_review_btn.visible = false
+	_gameover_dialog.custom_action.connect(_on_gameover_action)
 	_gameover_dialog.add_child(gameover_box)
 	for d: Window in [_promo_dialog, _gameover_dialog, _quit_dialog, _jishogi_info_dialog]:
 		ModalBlur.attach(d)
@@ -508,6 +537,8 @@ func _run_ai_think(playouts: int, temperature: float) -> Variant:
 	return _core.think_sampled(playouts, temperature)
 
 func _process(_delta: float) -> void:
+	if _comment_thread != null and not _comment_thread.is_alive():
+		_finish_gameover_comment()
 	if _teacher_thinking and _teacher_thread != null and not _teacher_thread.is_alive():
 		_finish_teacher_think()
 		return
@@ -539,6 +570,8 @@ func _process(_delta: float) -> void:
 			return
 		var win_rate := float(_core.last_think_win_rate())
 		_commit_move(mv)
+		if win_rate >= 0.0:
+			_ai_evals[int(_core.move_log_size())] = win_rate
 		if not _game_over:
 			_set_opponent_expression(_expression_after_ai_move(win_rate))
 
@@ -853,20 +886,119 @@ func _end_game(text: String, terminator: String) -> void:
 	# Every finished game is archived to the 棋譜検討 library
 	# automatically; the dialog just reports where it went.
 	_gameover_label.text = ("%s\n\n%s" % [text, _auto_save_kif_message()]).strip_edges()
+	_gameover_review_btn.visible = _gameover_kif_path != ""
+	_start_gameover_comment()
 	_gameover_dialog.reset_size()
 	_gameover_dialog.popup_centered()
+
+# --- 加藤先生's post-game comment -----------------------------------------
+
+# Player moves most likely to have been the turning point, as 1-based
+# move numbers: those followed by the sharpest rises in the AI's own
+# win rate. Only moves from this session are known (the record isn't
+# saved with the game).
+func _comment_candidates() -> Array[int]:
+	var plies: Array = _ai_evals.keys()
+	plies.sort()
+	var jumps: Array = []
+	for i in range(1, plies.size()):
+		var a: int = plies[i - 1]
+		var b: int = plies[i]
+		if b - a != 2:
+			continue  # not consecutive AI moves (undo, book move between)
+		var jump: float = float(_ai_evals[b]) - float(_ai_evals[a])
+		if jump >= COMMENT_MIN_JUMP:
+			jumps.append([jump, b - 1])
+	jumps.sort_custom(func(x, y): return x[0] > y[0])
+	var out: Array[int] = []
+	for j in jumps.slice(0, COMMENT_MAX_CANDIDATES):
+		out.append(int(j[1]))
+	return out
+
+func _start_gameover_comment() -> void:
+	_comment_ply = -1
+	_gameover_comment.visible = false
+	if not _ai_enabled or _ai_evals.size() < 2:
+		return
+	var candidates := _comment_candidates()
+	_gameover_comment.visible = true
+	if candidates.is_empty():
+		_gameover_comment.text = "加藤先生「大きな悪手のない、良い将棋でした。」"
+		return
+	_gameover_comment.text = "加藤先生が検討中…"
+	_comment_cancel = false
+	_comment_thread = Thread.new()
+	_comment_thread.start(_run_gameover_comment.bind(
+		_core.move_log_packed(), candidates, Settings.model_absolute_path()))
+
+# Worker thread: analyses each candidate move on a private ShogiCore
+# and returns the worst one as an Analyzer entry (with `ply`), or {}.
+func _run_gameover_comment(packed: PackedInt32Array, candidates: Array[int],
+		model_path: String) -> Dictionary:
+	var core: Object = ClassDB.instantiate("ShogiCore")
+	if model_path == "" or not bool(core.load_model(model_path)):
+		return {}
+	var analyses: Array = []
+	analyses.resize(packed.size())
+	analyses.fill({})
+	for ply in candidates:
+		if _comment_cancel:
+			return {}
+		analyses[ply - 1] = Analyzer.analyze_ply(core, packed, ply - 1)
+	return Analyzer.biggest_mistake(analyses, not Settings.ai_plays_gote())
+
+func _finish_gameover_comment() -> void:
+	var worst: Dictionary = _comment_thread.wait_to_finish()
+	_comment_thread = null
+	if _comment_cancel or not _game_over:
+		return
+	if worst.is_empty():
+		_gameover_comment.text = "加藤先生「大きな悪手のない、良い将棋でした。」"
+		return
+	_comment_ply = int(worst["ply"])
+	var lines: PackedStringArray = _core.move_log_kifu_lines()
+	var played: String = lines[_comment_ply - 1] if _comment_ply - 1 < lines.size() else ""
+	# Lines read "3 ☗４八銀"; the move number is already in the sentence.
+	var marker_at: int = maxi(played.find("☗"), played.find("☖"))
+	if marker_at > 0:
+		played = played.substr(marker_at)
+	_gameover_comment.text = "加藤先生「%d手目の %s が惜しかったですね。%s が良かったと思います。」" % [
+		_comment_ply, played, String(worst["best_kifu"])]
+
+# Abandon a running comment analysis and join its thread (at most one
+# search away) so the scene can restart or tear down cleanly.
+func _stop_gameover_comment() -> void:
+	_comment_cancel = true
+	if _comment_thread != null:
+		_comment_thread.wait_to_finish()
+		_comment_thread = null
+
+# 検討: open the just-saved game in the 棋譜検討 reviewer, on the move
+# the comment is about when there is one.
+func _on_gameover_action(action: StringName) -> void:
+	if action != &"review" or _gameover_kif_path == "":
+		return
+	_stop_gameover_comment()
+	Settings.review_kif_path = _gameover_kif_path
+	Settings.review_start_ply = _comment_ply
+	_gameover_dialog.hide()
+	SceneTransition.go_to("res://scenes/KifuReviewer.tscn")
 
 # Writes the finished game's KIF and returns a one-line status for the
 # player. Requires _game_over so the closing line + 結果 header are set.
 func _auto_save_kif_message() -> String:
+	_gameover_kif_path = ""
 	if int(_core.move_log_size()) == 0:
 		return ""
 	var saved_path := _export_kif()
 	if saved_path == "":
 		return "棋譜の保存に失敗しました"
+	_gameover_kif_path = saved_path
 	return "棋譜を保存しました：%s" % saved_path.get_file()
 
 func _on_restart() -> void:
+	_stop_gameover_comment()
+	_ai_evals.clear()
 	_core.reset_starting()
 	_game_over = false
 	_gameover_terminator = ""
@@ -898,6 +1030,9 @@ func _on_undo() -> void:
 	_last_move = {}
 	# The reaction belonged to the move that was just taken back.
 	_set_opponent_expression("neutral")
+	for ply in _ai_evals.keys():
+		if int(ply) > int(_core.move_log_size()):
+			_ai_evals.erase(ply)
 	_clear_selection()
 	_refresh_all()
 	_refresh_last_move_hint()
@@ -992,7 +1127,11 @@ func _handle_back() -> void:
 		return
 	_back_to_title()
 
+func _exit_tree() -> void:
+	_stop_gameover_comment()
+
 func _back_to_title() -> void:
+	_stop_gameover_comment()
 	# Drain any live worker threads so we don't leak join handles when the
 	# scene tears down (same rationale as _on_quit_confirmed).
 	if _thinking and _think_thread != null and _think_thread.is_alive():
