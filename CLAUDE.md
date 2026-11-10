@@ -160,6 +160,10 @@ APK export: [`docs/android-build.md`](./docs/android-build.md).
   and `KifuReviewer` all use it. `GameController` and `CharacterPicker`
   intentionally still roll their own because their inset math is
   intertwined with board-sizing / custom display calculations.
+- **Never call the global `seed()`.** It resets the RNG that
+  background picks, the AI's per-move mood roll and think delays all
+  draw from. For a repeatable pattern (e.g. per-piece wood grain), use
+  a local `RandomNumberGenerator` with its own `seed`.
 - **Scene switches go through `SceneTransition.go_to(path)`**, the
   autoload in `scripts/autoload/SceneTransition.gd`, not
   `get_tree().change_scene_to_file`. It provides the fade and honours
