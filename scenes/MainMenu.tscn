@@ -1,10 +1,13 @@
-[gd_scene load_steps=7 format=3]
+[gd_scene load_steps=10 format=3]
 
 [ext_resource type="Script" path="res://scripts/MainMenu.gd" id="1_mm"]
 [ext_resource type="Texture2D" path="res://assets/backgrounds/main_title_bg.webp" id="2_bg"]
 [ext_resource type="FontFile" path="res://assets/fonts/m-plus-2/MPLUS2-Regular.otf" id="3_mplus2"]
 [ext_resource type="FontFile" path="res://assets/fonts/mochiy-pop-one/MochiyPopOne-Regular.ttf" id="4_mochiy"]
 [ext_resource type="Script" path="res://scripts/SafeAreaLayout.gd" id="4_safe"]
+[ext_resource type="Script" path="res://scripts/RandomBackground.gd" id="5_randbg"]
+[ext_resource type="Texture2D" path="res://assets/backgrounds/main_title_alice_bg.webp" id="6_bg_alice"]
+[ext_resource type="Texture2D" path="res://assets/backgrounds/main_title_suzu_bg.webp" id="7_bg_suzu"]
 
 [sub_resource type="StyleBoxFlat" id="1_panel"]
 bg_color = Color(0, 0, 0, 0.5)
@@ -35,6 +38,8 @@ texture = ExtResource("2_bg")
 expand_mode = 1
 stretch_mode = 6
 mouse_filter = 2
+script = ExtResource("5_randbg")
+variants = Array[Texture2D]([ExtResource("2_bg"), ExtResource("6_bg_alice"), ExtResource("7_bg_suzu")])
 
 [node name="Layout" type="Control" parent="."]
 anchor_right = 1.0
