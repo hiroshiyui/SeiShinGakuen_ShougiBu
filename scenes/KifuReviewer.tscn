@@ -1,4 +1,4 @@
-[gd_scene load_steps=8 format=3]
+[gd_scene load_steps=10 format=3]
 
 [ext_resource type="Script" path="res://scripts/KifuReviewer.gd" id="1_rev"]
 [ext_resource type="PackedScene" path="res://scenes/game/Board.tscn" id="2_board"]
@@ -7,6 +7,8 @@
 [ext_resource type="FontFile" path="res://assets/fonts/m-plus-2/MPLUS2-Regular.otf" id="5_mplus2"]
 [ext_resource type="Script" path="res://scripts/SafeAreaLayout.gd" id="6_safe"]
 [ext_resource type="Script" path="res://scripts/EvalGraph.gd" id="7_graph"]
+[ext_resource type="Script" path="res://scripts/RandomBackground.gd" id="8_randbg"]
+[ext_resource type="Texture2D" path="res://assets/backgrounds/kifu_reviewer_library_bg.webp" id="9_bg2"]
 
 [node name="KifuReviewer" type="Control"]
 anchor_right = 1.0
@@ -26,6 +28,8 @@ texture = ExtResource("4_bg")
 expand_mode = 1
 stretch_mode = 6
 mouse_filter = 2
+script = ExtResource("8_randbg")
+variants = Array[Texture2D]([ExtResource("4_bg"), ExtResource("9_bg2")])
 
 [node name="Layout" type="VBoxContainer" parent="."]
 anchor_right = 1.0
