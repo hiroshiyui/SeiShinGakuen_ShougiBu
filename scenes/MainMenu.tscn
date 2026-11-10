@@ -1,4 +1,4 @@
-[gd_scene load_steps=10 format=3]
+[gd_scene load_steps=11 format=3]
 
 [ext_resource type="Script" path="res://scripts/MainMenu.gd" id="1_mm"]
 [ext_resource type="Texture2D" path="res://assets/backgrounds/main_title_bg.webp" id="2_bg"]
@@ -8,6 +8,7 @@
 [ext_resource type="Script" path="res://scripts/RandomBackground.gd" id="5_randbg"]
 [ext_resource type="Texture2D" path="res://assets/backgrounds/main_title_alice_bg.webp" id="6_bg_alice"]
 [ext_resource type="Texture2D" path="res://assets/backgrounds/main_title_suzu_bg.webp" id="7_bg_suzu"]
+[ext_resource type="Texture2D" path="res://assets/backgrounds/main_title_teachers_bg.webp" id="8_bg_teachers"]
 
 [sub_resource type="StyleBoxFlat" id="1_panel"]
 bg_color = Color(0, 0, 0, 0.5)
@@ -39,7 +40,8 @@ expand_mode = 1
 stretch_mode = 6
 mouse_filter = 2
 script = ExtResource("5_randbg")
-variants = Array[Texture2D]([ExtResource("2_bg"), ExtResource("6_bg_alice"), ExtResource("7_bg_suzu")])
+variants = Array[Texture2D]([ExtResource("2_bg"), ExtResource("6_bg_alice"), ExtResource("7_bg_suzu"), ExtResource("8_bg_teachers")])
+weights = Array[float]([1.0, 1.0, 1.0, 0.3])
 
 [node name="Layout" type="Control" parent="."]
 anchor_right = 1.0
