@@ -32,15 +32,17 @@ func _draw() -> void:
 		draw_texture_rect(_wood_texture, Rect2(Vector2.ZERO, s), false)
 	else:
 		draw_rect(Rect2(Vector2.ZERO, s), wood_color)
-		seed(42)
+		# Local RNG so the fixed grain pattern never reseeds the global RNG.
+		var rng := RandomNumberGenerator.new()
+		rng.seed = 42
 		for i in range(40):
 			var x_base := i * (s.x / 40.0)
 			var points := PackedVector2Array()
 			for j in range(11):
 				var y := (float(j) / 10.0) * s.y
-				var wave := sin(y * 0.02 + i) * 2.0 + (randf() - 0.5) * 1.5
+				var wave := sin(y * 0.02 + i) * 2.0 + (rng.randf() - 0.5) * 1.5
 				points.append(Vector2(x_base + wave, y))
-			draw_polyline(points, grain_color, randf_range(1.0, 3.0), true)
+			draw_polyline(points, grain_color, rng.randf_range(1.0, 3.0), true)
 
 	# 2. Calculate Grid Area with Margins
 	var margin_x := s.x * MARGIN_PERCENT

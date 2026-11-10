@@ -80,13 +80,16 @@ func _draw() -> void:
 
 	# 4. Top Face with Normalized UV Texture Cropping
 	if _wood_texture:
-		seed(text.hash())
+		# Local RNG: per-piece stable grain without reseeding the global RNG
+		# (which background picks, AI moods and think delays rely on).
+		var rng := RandomNumberGenerator.new()
+		rng.seed = text.hash()
 		var tex_size := _wood_texture.get_size()
 		# Pick a sub-rect (random part of the wood)
 		var crop_w := tex_size.x * 0.3
 		var crop_h := tex_size.y * 0.3
-		var crop_x := randf_range(0, tex_size.x - crop_w)
-		var crop_y := randf_range(0, tex_size.y - crop_h)
+		var crop_x := rng.randf_range(0, tex_size.x - crop_w)
+		var crop_y := rng.randf_range(0, tex_size.y - crop_h)
 		var region := Rect2(crop_x, crop_y, crop_w, crop_h)
 		
 		var uvs := PackedVector2Array()
