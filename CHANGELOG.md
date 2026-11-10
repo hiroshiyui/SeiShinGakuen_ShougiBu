@@ -8,6 +8,8 @@ All notable changes to this project. Format follows
 
 ## [Unreleased]
 
+## [1.0.14] — 2026-11-11
+
 ### Added
 - タイトル画面の背景を毎回ランダムに。吉田先生と部員 5 人（明・アリス・
   すず・ゆり子・テリー）がそれぞれの性格に合ったポーズで登場し、まれに
@@ -25,6 +27,9 @@ All notable changes to this project. Format follows
 ### Fixed
 - 駒や盤の描画が乱数の種を毎回リセットしていたため、背景の抽選や AI の
   「気分」の抽選、思考時間のゆらぎが実質的に固定されていた問題を修正。
+
+[Full release notes](./docs/release-notes/1.0.14.md) ·
+[GitHub Release](https://github.com/hiroshiyui/SeiShinGakuen_ShougiBu/releases/tag/1.0.14)
 
 ## [1.0.13] — 2026-11-10
 
@@ -448,7 +453,8 @@ First public release.
 [Full release notes](./docs/release-notes/0.1.1.md) ·
 [GitHub Release](https://github.com/hiroshiyui/SeiShinGakuen_ShougiBu/releases/tag/0.1.1)
 
-[Unreleased]: https://github.com/hiroshiyui/SeiShinGakuen_ShougiBu/compare/1.0.13...HEAD
+[Unreleased]: https://github.com/hiroshiyui/SeiShinGakuen_ShougiBu/compare/1.0.14...HEAD
+[1.0.14]: https://github.com/hiroshiyui/SeiShinGakuen_ShougiBu/compare/1.0.13...1.0.14
 [1.0.13]: https://github.com/hiroshiyui/SeiShinGakuen_ShougiBu/compare/1.0.12...1.0.13
 [1.0.12]: https://github.com/hiroshiyui/SeiShinGakuen_ShougiBu/compare/1.0.11...1.0.12
 [1.0.11]: https://github.com/hiroshiyui/SeiShinGakuen_ShougiBu/compare/1.0.10...1.0.11
