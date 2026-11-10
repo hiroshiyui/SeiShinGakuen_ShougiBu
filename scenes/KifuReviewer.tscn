@@ -8,7 +8,7 @@
 [ext_resource type="Script" path="res://scripts/SafeAreaLayout.gd" id="6_safe"]
 [ext_resource type="Script" path="res://scripts/EvalGraph.gd" id="7_graph"]
 [ext_resource type="Script" path="res://scripts/RandomBackground.gd" id="8_randbg"]
-[ext_resource type="Texture2D" path="res://assets/backgrounds/kifu_reviewer_library_bg.webp" id="9_bg2"]
+[ext_resource type="Resource" path="res://assets/backgrounds/kifu_reviewer_backgrounds.tres" id="10_bgset"]
 
 [node name="KifuReviewer" type="Control"]
 anchor_right = 1.0
@@ -29,7 +29,7 @@ expand_mode = 1
 stretch_mode = 6
 mouse_filter = 2
 script = ExtResource("8_randbg")
-variants = Array[Texture2D]([ExtResource("4_bg"), ExtResource("9_bg2")])
+background_set = ExtResource("10_bgset")
 
 [node name="Layout" type="VBoxContainer" parent="."]
 anchor_right = 1.0

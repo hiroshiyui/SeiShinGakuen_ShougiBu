@@ -1,31 +1,22 @@
 extends TextureRect
-## Picks one of `variants` at random each time the scene is entered.
-## The scene's own `texture` stays as the editor preview / fallback.
+## Shows one image from `background_set`, picked at random each time the
+## scene is entered. Only the chosen image is loaded.
 ##
-## `weights` is optional: leave it empty for a uniform pick, or give one
-## relative weight per variant (e.g. 1.0 for the regulars, 0.3 for a
-## rarer "special" image). A size mismatch falls back to uniform.
+## The scene's own `texture` stays as the editor preview and as the
+## fallback if the set is missing or the chosen image fails to load.
 
-@export var variants: Array[Texture2D] = []
-@export var weights: Array[float] = []
+@export var background_set: BackgroundSet
 
 
 func _ready() -> void:
-	if variants.is_empty():
+	if background_set == null:
 		return
-	if weights.size() != variants.size():
-		texture = variants.pick_random()
+	var i := background_set.pick_index()
+	if i < 0:
 		return
-	var total := 0.0
-	for w in weights:
-		total += maxf(w, 0.0)
-	if total <= 0.0:
-		texture = variants.pick_random()
+	var path := background_set.paths[i]
+	var tex := load(path) as Texture2D
+	if tex == null:
+		push_warning("RandomBackground: could not load %s; keeping the preview texture" % path)
 		return
-	var roll := randf() * total
-	for i in variants.size():
-		roll -= maxf(weights[i], 0.0)
-		if roll < 0.0:
-			texture = variants[i]
-			return
-	texture = variants[-1]
+	texture = tex

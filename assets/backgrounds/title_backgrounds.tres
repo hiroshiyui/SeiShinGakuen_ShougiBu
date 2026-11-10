@@ -1,0 +1,8 @@
+[gd_resource type="Resource" script_class="BackgroundSet" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/BackgroundSet.gd" id="1_set"]
+
+[resource]
+script = ExtResource("1_set")
+paths = Array[String](["res://assets/backgrounds/main_title_bg.webp", "res://assets/backgrounds/main_title_akira_bg.webp", "res://assets/backgrounds/main_title_alice_bg.webp", "res://assets/backgrounds/main_title_suzu_bg.webp", "res://assets/backgrounds/main_title_yuriko_bg.webp", "res://assets/backgrounds/main_title_terry_bg.webp", "res://assets/backgrounds/main_title_teachers_bg.webp"])
+weights = Array[float]([1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.3])

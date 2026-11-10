@@ -1,0 +1,7 @@
+[gd_resource type="Resource" script_class="BackgroundSet" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/BackgroundSet.gd" id="1_set"]
+
+[resource]
+script = ExtResource("1_set")
+paths = Array[String](["res://assets/backgrounds/kifu_reviewer_bg.webp", "res://assets/backgrounds/kifu_reviewer_library_bg.webp"])
