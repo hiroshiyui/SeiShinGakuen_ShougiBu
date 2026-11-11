@@ -96,6 +96,11 @@ var _teacher_thread: Thread
 var _thinking: bool = false
 var _teacher_thinking: bool = false
 var _ai_enabled: bool = false
+# 通信対戦 (ROADMAP Phase 8): the other side is a person on another device,
+# reached through the NetSession autoload. `_lan_waiting` is true while
+# the connection is down and NetSession is trying to restore it.
+var _lan: bool = false
+var _lan_waiting: bool = false
 
 
 enum SelState { IDLE, BOARD, HAND }
@@ -134,6 +139,7 @@ func _ready() -> void:
 		push_error("ShogiCore GDExtension not loaded — check addons/shogi_core.gdextension and native/bin")
 		return
 	_core = ClassDB.instantiate("ShogiCore")
+	_lan = NetSession.in_game
 	_load_ai_if_needed()
 	_resumed = not Settings.resume_packed.is_empty() or Settings.resume_sfen != ""
 	if not Settings.resume_packed.is_empty():
@@ -219,6 +225,8 @@ func _ready() -> void:
 	_close_suggestions_btn.pressed.connect(_close_suggestions)
 	_apply_teacher_side()
 	_teacher_row.visible = _ai_enabled
+	if _lan:
+		_setup_lan()
 	_sente_hand.is_gote = false
 	_gote_hand.is_gote = true
 	get_viewport().size_changed.connect(_refit_board)
@@ -228,7 +236,7 @@ func _ready() -> void:
 	_refresh_all()
 	if not _resumed:
 		_say("start")
-	if Settings.mode != Settings.Mode.H_VS_H and not _ai_enabled:
+	if Settings.mode != Settings.Mode.H_VS_H and not _ai_enabled and not _lan:
 		_show_ai_load_error.call_deferred()
 	_maybe_start_ai_turn()
 
@@ -340,7 +348,7 @@ func _apply_safe_area() -> void:
 	_review_banner.offset_bottom = insets.position.y + BANNER_H
 
 func _load_ai_if_needed() -> void:
-	if Settings.mode == Settings.Mode.H_VS_H:
+	if Settings.mode == Settings.Mode.H_VS_H or _lan:
 		_ai_enabled = false
 		return
 	var abs_path: String = Settings.model_absolute_path()
@@ -672,10 +680,14 @@ func _refresh_all() -> void:
 		var review_ply: int = int(_review_core.move_log_size())
 		var live_ply: int = int(_core.move_log_size())
 		_status.text = "%d手目 / %d手目 (棋譜閲覧中)" % [review_ply, live_ply]
+	elif _lan_waiting and not _game_over:
+		_status.text = "接続が切れました。再接続を待っています…"
 	else:
 		var ply: int = int(_core.move_log_size()) + 1
+		if _lan and not _game_over:
+			mover = "相手" if _is_remote_turn() else "あなた"
 		_status.text = "%s の手番 (%d手目)" % [mover, ply]
-	_undo_btn.disabled = int(_core.move_log_size()) == 0 or _game_over or _in_review
+	_undo_btn.disabled = int(_core.move_log_size()) == 0 or _game_over or _in_review or _lan
 	_history_btn.disabled = int(_core.move_log_size()) == 0 or _thinking
 	var ai_turn := _ai_enabled and Settings.side_is_ai(side_gote)
 	_teacher_btn.disabled = _game_over or _thinking or ai_turn or not _ai_enabled or _in_review
@@ -689,6 +701,8 @@ func _refresh_all() -> void:
 		and not _in_review
 		and not _thinking
 		and not ai_turn
+		and not _is_remote_turn()
+		and not _lan_waiting
 		and bool(view_core.king_entered(side_gote))
 	)
 
@@ -711,6 +725,8 @@ func _on_board_tapped(file: int, rank: int) -> void:
 		return
 	if _ai_enabled and Settings.side_is_ai(_core.side_to_move_gote()):
 		return
+	if _is_remote_turn() or _lan_waiting:
+		return
 	_clear_suggestion_preview()
 	var key := Vector2i(file, rank)
 	match _sel_state:
@@ -725,6 +741,8 @@ func _on_hand_tapped(kind: int, is_gote: bool) -> void:
 	if _game_over or _thinking or _in_review or is_gote != _core.side_to_move_gote():
 		return
 	if _ai_enabled and Settings.side_is_ai(is_gote):
+		return
+	if _is_remote_turn() or _lan_waiting:
 		return
 	_clear_suggestion_preview()
 	_clear_selection()
@@ -846,10 +864,16 @@ func _commit_move(m: Dictionary) -> void:
 	var target_piece = _core.piece_at(int(to_pos.x), int(to_pos.y))
 	var is_capture: bool = target_piece != null
 	var mover_is_ai: bool = _ai_enabled and Settings.side_is_ai(_core.side_to_move_gote())
+	# A local move in a LAN game goes to the peer once it is applied.
+	var lan_usi: String = ""
+	if _lan and not _is_remote_turn():
+		lan_usi = str(_core.move_to_usi(m))
 	
 	if not bool(_core.apply_move(m)):
 		print("[game] rejected: %s" % m)
 		return
+	if lan_usi != "":
+		NetSession.send_move(lan_usi)
 	
 	# Sound Logic
 	var sm = get_node_or_null("/root/SoundManager")
@@ -902,7 +926,8 @@ func _commit_move(m: Dictionary) -> void:
 	if _pending_zoom_back and (_game_over or not Settings.side_is_ai(_core.side_to_move_gote())):
 		_pending_zoom_back = false
 		_zoom_back_after_slide()
-	if not _game_over:
+	# A LAN game can't be resumed alone, so it never takes the 続きから slot.
+	if not _game_over and not _lan:
 		Settings.save_game(str(_core.to_sfen()), _core.move_log_packed())
 	_maybe_start_ai_turn()
 
@@ -958,6 +983,8 @@ func _check_end_state() -> void:
 # `winner` is "先手" / "後手", or "" for a draw.
 func _end_game(text: String, terminator: String, winner: String = "") -> void:
 	_game_over = true
+	if _lan:
+		NetSession.finish_game()
 	_gameover_terminator = terminator
 	_board_view.clear_check()
 	_undo_btn.disabled = true
@@ -1089,6 +1116,11 @@ func _auto_save_kif_message() -> String:
 	return "棋譜を保存しました：%s" % saved_path.get_file()
 
 func _on_restart() -> void:
+	if _lan:
+		# No rematch over the network yet: back to the title, where
+		# 通信対戦 starts a fresh game.
+		_back_to_title()
+		return
 	_stop_gameover_comment()
 	_ai_evals.clear()
 	_core.reset_starting()
@@ -1156,6 +1188,8 @@ func _on_jishogi_pressed() -> void:
 	var result: Dictionary = _core.can_declare_jishogi(side_gote)
 	if bool(result["ok"]):
 		var winner := "後手" if side_gote else "先手"
+		if _lan:
+			NetSession.send_declare()
 		_end_game("入玉宣言 — %s の勝ち" % winner, "入玉勝ち", winner)
 		return
 	_jishogi_info_dialog.dialog_text = _jishogi_info_text(result)
@@ -1223,14 +1257,22 @@ func _handle_back() -> void:
 	if _suggestions_panel.visible:
 		_close_suggestions()
 		return
+	if _lan and not _game_over:
+		# Leaving a LAN game resigns it, so ask first.
+		_quit_dialog.popup_centered()
+		return
 	_back_to_title()
 
 func _exit_tree() -> void:
 	_stop_gameover_comment()
+	if _lan and NetSession.in_game:
+		NetSession.close("abort")
 
 func _back_to_title() -> void:
 	_stop_gameover_comment()
 	_join_workers()
+	if _lan:
+		NetSession.close("abort" if NetSession.in_game else "")
 	SceneTransition.go_to("res://scenes/MainMenu.tscn")
 
 # Join every search thread before touching _core or tearing down the
@@ -1262,13 +1304,19 @@ func _on_quit_confirmed() -> void:
 	_gameover_text = "投了 — %s の勝ち" % winner
 	_record_character_result(winner)
 	_auto_save_kif_message()
-	Settings.clear_saved_game()
+	if _lan:
+		NetSession.send_resign()
+		NetSession.close()
+	else:
+		Settings.clear_saved_game()
 	SceneTransition.go_to("res://scenes/MainMenu.tscn")
 
 # Best-effort attribution of who resigned. In AI modes the human is the
 # only one who can tap 投了, so we attribute to the human side. In H-v-H
 # we attribute to whoever's turn it currently is.
 func _resignation_side() -> String:
+	if _lan:
+		return "後手" if NetSession.local_is_gote else "先手"
 	if Settings.mode == Settings.Mode.H_VS_AI_GOTE:
 		return "先手"
 	if Settings.mode == Settings.Mode.H_VS_AI_SENTE:
@@ -1559,6 +1607,8 @@ func _short_result(text: String) -> String:
 # H_VS_H labels both sides as the generic player so the export still
 # round-trips cleanly through any KIF viewer.
 func _player_name_for_side(is_gote: bool) -> String:
+	if _lan:
+		return NetSession.local_name if is_gote == NetSession.local_is_gote else NetSession.remote_name
 	if _ai_enabled and Settings.side_is_ai(is_gote) and _character != null:
 		return "%s (Lv.%d)" % [_character.display_name, _character.level]
 	return "プレイヤー"
@@ -1575,3 +1625,102 @@ func _exit_review() -> void:
 	_review_core = null
 	_review_banner.visible = false
 	_refresh_all()
+
+# --- 通信対戦 (LAN) ---------------------------------------------------------
+
+func _setup_lan() -> void:
+	NetSession.move_received.connect(_on_lan_move)
+	NetSession.resign_received.connect(_on_lan_resign)
+	NetSession.declare_received.connect(_on_lan_declare)
+	NetSession.abort_received.connect(_on_lan_abort)
+	NetSession.peer_lost.connect(_on_lan_peer_lost)
+	NetSession.peer_restored.connect(_on_lan_peer_restored)
+	NetSession.session_failed.connect(_on_lan_failed)
+	_opponent_label.text = "%s (%s)" % [NetSession.remote_name, _remote_side()]
+	_opponent_portrait_frame.visible = false
+	_opponent_strip.visible = true
+	_undo_btn.visible = false
+	_gameover_dialog.ok_button_text = "タイトルへ"
+
+func _local_side() -> String:
+	return "後手" if NetSession.local_is_gote else "先手"
+
+func _remote_side() -> String:
+	return "先手" if NetSession.local_is_gote else "後手"
+
+func _is_remote_turn() -> bool:
+	return _lan and bool(_core.side_to_move_gote()) != NetSession.local_is_gote
+
+# Every peer move is checked against the full rules before it touches the
+# board; anything else ends the game.
+func _on_lan_move(usi: String) -> void:
+	if _game_over:
+		return
+	var m: Variant = _core.usi_to_move(usi)
+	if m == null or not _is_remote_turn() or not bool(_core.is_legal_move(m)):
+		_lan_protocol_error()
+		return
+	if _in_review:
+		_exit_review()
+	_commit_move(m)
+
+func _on_lan_resign() -> void:
+	if _game_over:
+		return
+	var winner := _local_side()
+	_end_game("投了 — %s の勝ち (相手が投了しました)" % winner, "投了", winner)
+
+func _on_lan_declare() -> void:
+	if _game_over:
+		return
+	var remote_gote := not NetSession.local_is_gote
+	if not _is_remote_turn() or not bool(_core.can_declare_jishogi(remote_gote)["ok"]):
+		_lan_protocol_error()
+		return
+	var winner := _remote_side()
+	_end_game("入玉宣言 — %s の勝ち" % winner, "入玉勝ち", winner)
+
+func _on_lan_abort() -> void:
+	if _game_over:
+		return
+	_end_game("相手が対局をやめました — 中断", "")
+
+func _on_lan_peer_lost() -> void:
+	if _game_over:
+		return
+	_lan_waiting = true
+	_clear_selection()
+	_refresh_all()
+
+# Replays the agreed move list from the start. On a reconnect either side
+# may have been one move behind; the list is checked move by move.
+func _on_lan_peer_restored(usi_moves: PackedStringArray) -> void:
+	_lan_waiting = false
+	if _game_over:
+		return
+	if usi_moves.size() != int(_core.move_log_size()):
+		if _in_review:
+			_exit_review()
+		_core.reset_starting()
+		var last: Dictionary = {}
+		for usi in usi_moves:
+			var m: Variant = _core.usi_to_move(usi)
+			if m == null or not bool(_core.is_legal_move(m)) or not bool(_core.apply_move(m)):
+				_lan_protocol_error()
+				return
+			last = m
+		_last_move = last
+		_clear_selection()
+		_refresh_last_move_hint()
+		_check_end_state()
+	_refresh_all()
+
+func _on_lan_failed(reason: String) -> void:
+	_lan_waiting = false
+	if _game_over:
+		return
+	_end_game("%s — 中断" % reason, "")
+
+func _lan_protocol_error() -> void:
+	NetSession.close("abort")
+	_end_game("相手から不正な指し手を受信しました — 中断", "")

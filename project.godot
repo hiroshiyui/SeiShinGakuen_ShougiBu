@@ -22,6 +22,7 @@ config/icon="res://icon.png"
 Settings="*res://scripts/autoload/Settings.gd"
 SoundManager="*res://scripts/autoload/SoundManager.gd"
 SceneTransition="*res://scripts/autoload/SceneTransition.gd"
+NetSession="*res://scripts/autoload/NetSession.gd"
 
 [display]
 
