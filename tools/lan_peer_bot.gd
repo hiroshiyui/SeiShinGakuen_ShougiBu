@@ -8,7 +8,7 @@ extends SceneTree
 #   # phone taps 対局を作る, bot joins the first game it hears:
 #   godot --headless -s res://tools/lan_peer_bot.gd --path . -- join
 #
-# Add `addr=<phone ip>` to join without discovery. Add `drop` to drop the connection once after the third move, to watch
+# Add `rematch` to stay for 再戦 after the game. Add `addr=<phone ip>` to join without discovery. Add `drop` to drop the connection once after the third move, to watch
 # the phone wait for the reconnect.
 
 const Net := preload("res://scripts/autoload/NetSession.gd")
@@ -18,11 +18,13 @@ var _net: Node
 var _disc: Node
 var _core: Object
 var _drop_once: bool = false
+var _rematch: bool = false
 var _move_at_msec: int = -1
 
 func _initialize() -> void:
 	var args := OS.get_cmdline_user_args()
 	_drop_once = "drop" in args
+	_rematch = "rematch" in args
 	_core = ClassDB.instantiate("ShogiCore")
 	_net = Net.new()
 	root.add_child(_net)
@@ -32,8 +34,11 @@ func _initialize() -> void:
 	_net.move_received.connect(_on_move)
 	_net.peer_lost.connect(func(): print("[bot] peer lost, waiting"))
 	_net.peer_restored.connect(_on_restored)
-	_net.resign_received.connect(func(): _finish("opponent resigned"))
-	_net.declare_received.connect(func(): _finish("opponent declared 入玉"))
+	_net.resign_received.connect(func(): _game_over("opponent resigned"))
+	_net.declare_received.connect(func(): _game_over("opponent declared 入玉"))
+	_net.rematch_requested.connect(func():
+		print("[bot] phone asks for a rematch")
+		_net.request_rematch())
 	_net.abort_received.connect(func(): _finish("opponent left"))
 	_net.session_failed.connect(func(r): _finish("session failed: " + r))
 	var direct := ""
@@ -124,6 +129,16 @@ func _play_random() -> void:
 		_drop_once = false
 		print("[bot] dropping the connection once")
 		_net._on_connection_dropped()
+
+# With `rematch`, stay connected and agree to the next game.
+func _game_over(why: String) -> void:
+	_move_at_msec = -1
+	if not _rematch:
+		_finish(why)
+		return
+	print("[bot] %s — asking for a rematch" % why)
+	_net.finish_game()
+	_net.request_rematch()
 
 func _finish(why: String) -> void:
 	print("[bot] %s" % why)

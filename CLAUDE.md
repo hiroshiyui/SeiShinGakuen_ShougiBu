@@ -86,7 +86,7 @@ Godot is not on PATH — always invoke by full path.
 
 # Headless random-move LAN opponent for testing against a phone
 # (`-- host`, `-- join`, or `-- join addr=<phone ip>`; add `drop` to
-# test the reconnect). firewalld blocks UDP 47123 / TCP 47124-47133.
+# test the reconnect, `rematch` to ask for 再戦 after each game). firewalld blocks UDP 47123 / TCP 47124-47133.
 ~/.local/bin/Godot_v4.7.2-stable_linux.x86_64 \
   --headless -s res://tools/lan_peer_bot.gd --path . -- host
 ```

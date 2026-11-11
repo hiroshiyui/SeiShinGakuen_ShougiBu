@@ -21,6 +21,8 @@ func _initialize() -> void:
 func _main() -> void:
 	await _test_handshake_and_move()
 	await _test_reconnect_resyncs_longer_list()
+	await _test_rematch_swaps_sides()
+	await _test_leaving_after_game_ends_session()
 	await _test_version_mismatch_rejected()
 	await _test_discovery_finds_beacon()
 	for n: Node in [_host, _guest]:
@@ -52,6 +54,7 @@ func _make(tag: String) -> Node:
 	n.peer_lost.connect(func(): _events.append(tag + ":lost"))
 	n.peer_restored.connect(func(m): _events.append(tag + ":restored:" + ",".join(m)))
 	n.session_failed.connect(func(r): _events.append(tag + ":failed:" + r))
+	n.rematch_requested.connect(func(): _events.append(tag + ":rematch?"))
 	return n
 
 func _test_handshake_and_move() -> void:
@@ -90,6 +93,39 @@ func _test_reconnect_resyncs_longer_list() -> void:
 	_check(Array(_host.moves) == ["7g7f", "3c3d"], "host has the longer list")
 	_check(Array(_guest.moves) == ["7g7f", "3c3d"], "guest has the longer list")
 	_check(_host.in_game and _guest.in_game, "game continues")
+
+func _test_rematch_swaps_sides() -> void:
+	print("rematch")
+	_events.clear()
+	var host_was_gote: bool = _host.local_is_gote
+	var old_id: String = _host.game_id
+	_host.finish_game()
+	_guest.finish_game()
+	_guest.request_rematch()
+	var asked := await _wait_for(func(): return "host:rematch?" in _events, 2.0)
+	_check(asked, "host hears the rematch request")
+	_check(not _host.in_game, "no new game until both ask")
+	_host.request_rematch()
+	var both := await _wait_for(func():
+		return "host:started" in _events and "guest:started" in _events, 2.0)
+	_check(both, "both sides start the rematch")
+	_check(_host.local_is_gote == not host_was_gote, "sides swapped")
+	_check(_guest.local_is_gote == host_was_gote, "guest has the other side")
+	_check(_host.game_id != old_id and _host.game_id == _guest.game_id, "new shared game id")
+	_check(_host.moves.is_empty() and _guest.moves.is_empty(), "move lists cleared")
+
+func _test_leaving_after_game_ends_session() -> void:
+	print("leaving after the game")
+	_events.clear()
+	_host.finish_game()
+	_guest.finish_game()
+	_guest.close()
+	var told := await _wait_for(func():
+		return _events.any(func(e): return e.begins_with("host:failed")), TIMEOUT_WAIT)
+	_check(told, "host learns the guest left")
+	_check(not _host.is_active(), "host session closed")
+
+const TIMEOUT_WAIT := 10.0
 
 func _test_version_mismatch_rejected() -> void:
 	print("version mismatch")

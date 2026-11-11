@@ -68,5 +68,6 @@ Choices to make:
   alone. 待った, the teacher hints and the AI-only features are off.
 - The player with 後手 sees the board turned round, as in the
   先手(AI) 対 後手(人) mode, which gained the same flip.
-- Not done yet: rematch from the 対局終了 dialog (it returns to the
-  title) and a draw offer.
+- 再戦 after a game: when both players ask, the host starts a new game
+  with the sides swapped, so the connection is kept open between games.
+- Not done yet: a draw offer.

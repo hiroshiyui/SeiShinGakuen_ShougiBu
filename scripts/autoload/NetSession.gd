@@ -17,6 +17,9 @@ extends Node
 #   move    {seq, usi}                          1-based ply number + USI.
 #   resign / declare / abort                    game end by the sender
 #           (投了, 入玉宣言, left the game).
+#   rematch                                     after a game: the sender
+#           wants another. Once both have asked, the host sends a new
+#           `start` with the sides swapped.
 #   ping / pong                                 keepalive.
 #   error   {reason}                            sender is closing.
 #
@@ -33,6 +36,8 @@ signal abort_received
 signal peer_lost
 # Reconnected. `moves` is the agreed USI list to replay from the start.
 signal peer_restored(moves: PackedStringArray)
+# The peer asked for a rematch (after a finished game).
+signal rematch_requested
 # The session is over without a game result (lost for good, version
 # mismatch, protocol error). `reason` is shown to the player.
 signal session_failed(reason: String)
@@ -59,6 +64,11 @@ var moves: PackedStringArray = PackedStringArray()
 # True from `start` until the game ends or the session closes.
 var in_game: bool = false
 var listen_port: int = 0
+# Between a finished game and the next `start`: the connection is only
+# kept for a rematch, so losing it ends the session.
+var post_game: bool = false
+var _rematch_local: bool = false
+var _rematch_remote: bool = false
 
 var _server: TCPServer = null
 var _peer: StreamPeerTCP = null
@@ -123,6 +133,9 @@ func close(notify: String = "") -> void:
 	_lost_since_msec = 0
 	role = Role.NONE
 	in_game = false
+	post_game = false
+	_rematch_local = false
+	_rematch_remote = false
 	game_id = ""
 	moves = PackedStringArray()
 	remote_name = ""
@@ -142,6 +155,34 @@ func send_declare() -> void:
 
 func finish_game() -> void:
 	in_game = false
+	post_game = true
+	_rematch_local = false
+	_rematch_remote = false
+
+func request_rematch() -> void:
+	if not post_game or _rematch_local:
+		return
+	_rematch_local = true
+	_send({"t": "rematch"})
+	_maybe_start_rematch()
+
+# Host only: both players asked, so start the next game with the sides
+# swapped (whoever had 後手 now moves first).
+func _maybe_start_rematch() -> void:
+	if role != Role.HOST or not (_rematch_local and _rematch_remote):
+		return
+	_begin_game(local_is_gote)
+
+func _begin_game(host_is_sente: bool) -> void:
+	game_id = "%08x" % (randi() & 0x7fffffff)
+	local_is_gote = not host_is_sente
+	moves = PackedStringArray()
+	in_game = true
+	post_game = false
+	_rematch_local = false
+	_rematch_remote = false
+	_send({"t": "start", "game_id": game_id, "host_is_sente": host_is_sente})
+	game_started.emit()
 
 # --- polling ---------------------------------------------------------------
 
@@ -217,7 +258,7 @@ func _on_connection_dropped() -> void:
 			_lost_since_msec = Time.get_ticks_msec()
 			peer_lost.emit()
 		return
-	if role == Role.HOST:
+	if role == Role.HOST and not post_game:
 		return  # a guest left the lobby; keep listening for the next one
 	var was_role := role
 	close()
@@ -291,6 +332,9 @@ func _handle(msg: Dictionary) -> void:
 			local_is_gote = bool(msg.get("host_is_sente", true))
 			moves = PackedStringArray()
 			in_game = true
+			post_game = false
+			_rematch_local = false
+			_rematch_remote = false
 			game_started.emit()
 		"sync":
 			if role != Role.GUEST:
@@ -316,6 +360,12 @@ func _handle(msg: Dictionary) -> void:
 			declare_received.emit()
 		"abort":
 			abort_received.emit()
+		"rematch":
+			if not post_game or _rematch_remote:
+				return
+			_rematch_remote = true
+			rematch_requested.emit()
+			_maybe_start_rematch()
 
 func _on_hello(msg: Dictionary) -> void:
 	if str(msg.get("app", "")) != APP_ID or int(msg.get("proto", -1)) != PROTO:
@@ -349,10 +399,4 @@ func _on_hello(msg: Dictionary) -> void:
 		_handshaken = false
 		return
 	handshake_done.emit()
-	game_id = "%08x" % (randi() & 0x7fffffff)
-	var host_is_sente := randi() % 2 == 0
-	local_is_gote = not host_is_sente
-	moves = PackedStringArray()
-	in_game = true
-	_send({"t": "start", "game_id": game_id, "host_is_sente": host_is_sente})
-	game_started.emit()
+	_begin_game(randi() % 2 == 0)

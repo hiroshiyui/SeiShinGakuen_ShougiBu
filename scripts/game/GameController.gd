@@ -101,6 +101,10 @@ var _ai_enabled: bool = false
 # the connection is down and NetSession is trying to restore it.
 var _lan: bool = false
 var _lan_waiting: bool = false
+# After a LAN game: whether 再戦 can still be offered (false once the
+# peer has left or the session broke), and the status line meanwhile.
+var _rematch_ok: bool = false
+var _rematch_status: String = ""
 
 
 enum SelState { IDLE, BOARD, HAND }
@@ -677,7 +681,9 @@ func _refresh_all() -> void:
 		_board_view.clear_check()
 	if _thinking_label.visible:
 		_place_thinking_label.call_deferred()
-	if _in_review:
+	if _lan and _game_over and _rematch_status != "" and not _in_review:
+		_status.text = _rematch_status
+	elif _in_review:
 		var review_ply: int = int(_review_core.move_log_size())
 		var live_ply: int = int(_core.move_log_size())
 		_status.text = "%d手目 / %d手目 (棋譜閲覧中)" % [review_ply, live_ply]
@@ -986,6 +992,9 @@ func _end_game(text: String, terminator: String, winner: String = "") -> void:
 	_game_over = true
 	if _lan:
 		NetSession.finish_game()
+		_rematch_ok = NetSession.post_game
+		_rematch_status = ""
+		_gameover_dialog.ok_button_text = "再戦" if _rematch_ok else "タイトルへ"
 	_gameover_terminator = terminator
 	_board_view.clear_check()
 	_undo_btn.disabled = true
@@ -1118,10 +1127,17 @@ func _auto_save_kif_message() -> String:
 
 func _on_restart() -> void:
 	if _lan:
-		# No rematch over the network yet: back to the title, where
-		# 通信対戦 starts a fresh game.
-		_back_to_title()
+		if _rematch_ok and NetSession.post_game:
+			NetSession.request_rematch()
+			if NetSession.post_game:  # not already started by the host
+				_rematch_status = "再戦の返事を待っています…"
+				_refresh_all()
+		else:
+			_back_to_title()
 		return
+	_reset_game()
+
+func _reset_game() -> void:
 	_stop_gameover_comment()
 	_ai_evals.clear()
 	_core.reset_starting()
@@ -1177,6 +1193,9 @@ func _on_undo() -> void:
 	_maybe_start_ai_turn()
 
 func _on_exit_pressed() -> void:
+	if _lan:
+		_quit_dialog.dialog_text = ("タイトル画面に戻りますか?" if _game_over
+			else "投了しますか?")
 	_quit_dialog.popup_centered()
 
 # 入玉宣言: query the rule. Ok → end the game with the declarer winning.
@@ -1298,6 +1317,11 @@ func _on_quit_confirmed() -> void:
 	var resigner := _resignation_side()
 	var winner := "後手" if resigner == "先手" else "先手"
 	print("[game] %s の投了 — %s の勝ち" % [resigner, winner])
+	if _lan:
+		# Stay on the board so the two players can agree on a rematch.
+		NetSession.send_resign()
+		_end_game("投了 — %s の勝ち (あなたが投了しました)" % winner, "投了", winner)
+		return
 	# A resignation ends the game too: archive it with 投了 as the
 	# closing line so the library shows who won.
 	_game_over = true
@@ -1305,11 +1329,7 @@ func _on_quit_confirmed() -> void:
 	_gameover_text = "投了 — %s の勝ち" % winner
 	_record_character_result(winner)
 	_auto_save_kif_message()
-	if _lan:
-		NetSession.send_resign()
-		NetSession.close()
-	else:
-		Settings.clear_saved_game()
+	Settings.clear_saved_game()
 	SceneTransition.go_to("res://scenes/MainMenu.tscn")
 
 # Best-effort attribution of who resigned. In AI modes the human is the
@@ -1637,11 +1657,13 @@ func _setup_lan() -> void:
 	NetSession.peer_lost.connect(_on_lan_peer_lost)
 	NetSession.peer_restored.connect(_on_lan_peer_restored)
 	NetSession.session_failed.connect(_on_lan_failed)
+	NetSession.rematch_requested.connect(_on_lan_rematch_requested)
+	NetSession.game_started.connect(_on_lan_rematch_started)
 	_opponent_label.text = "%s (%s)" % [NetSession.remote_name, _remote_side()]
 	_opponent_portrait_frame.visible = false
 	_opponent_strip.visible = true
 	_undo_btn.visible = false
-	_gameover_dialog.ok_button_text = "タイトルへ"
+	_gameover_dialog.ok_button_text = "再戦"
 
 func _local_side() -> String:
 	return "後手" if NetSession.local_is_gote else "先手"
@@ -1664,6 +1686,36 @@ func _on_lan_move(usi: String) -> void:
 	if _in_review:
 		_exit_review()
 	_commit_move(m)
+
+# The peer wants another game. Bring the result dialog back so the
+# player sees the request and can answer with 再戦.
+func _on_lan_rematch_requested() -> void:
+	if not _game_over or not _rematch_ok:
+		return
+	_rematch_status = "相手が再戦を希望しています"
+	_add_gameover_note("相手が再戦を希望しています。")
+	if not _gameover_dialog.visible:
+		_gameover_dialog.popup_centered()
+	_refresh_all()
+
+# Adds a line under the result in the 対局終了 dialog, which covers the
+# status line while it is open.
+func _add_gameover_note(note: String) -> void:
+	if not _gameover_label.text.ends_with(note):
+		_gameover_label.text += "\n\n" + note
+	_gameover_dialog.reset_size()
+
+# Both asked: NetSession started a new game with the sides swapped.
+func _on_lan_rematch_started() -> void:
+	_rematch_ok = false
+	_rematch_status = ""
+	_lan_waiting = false
+	_gameover_dialog.hide()
+	if _in_review:
+		_exit_review()
+	_apply_board_orientation()
+	_opponent_label.text = "%s (%s)" % [NetSession.remote_name, _remote_side()]
+	_reset_game()
 
 func _on_lan_resign() -> void:
 	if _game_over:
@@ -1719,6 +1771,13 @@ func _on_lan_peer_restored(usi_moves: PackedStringArray) -> void:
 func _on_lan_failed(reason: String) -> void:
 	_lan_waiting = false
 	if _game_over:
+		# The peer left after the game: no rematch any more.
+		if _rematch_ok:
+			_rematch_ok = false
+			_rematch_status = "相手は対局を終えました"
+			_gameover_dialog.ok_button_text = "タイトルへ"
+			_add_gameover_note("相手は対局を終えました。")
+			_refresh_all()
 		return
 	_end_game("%s — 中断" % reason, "")
 
