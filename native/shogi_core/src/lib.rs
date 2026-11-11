@@ -151,8 +151,6 @@ impl ShogiCore {
     #[func]
     fn apply_packed(&mut self, packed: PackedInt32Array) -> bool {
         self.board.reset_starting();
-        let key = sfen::position_key(&self.board);
-        *self.board.position_counts.entry(key).or_insert(0) += 1;
         for i in 0..packed.len() {
             let Some(mv) = kifu::unpack_move(packed.get(i).unwrap_or(0)) else {
                 return false;
@@ -202,10 +200,11 @@ impl ShogiCore {
     #[func]
     fn place(&mut self, file: i64, rank: i64, kind: i64, is_gote: bool) {
         let Some(k) = Kind::from_u8(kind as u8) else { return };
-        self.board.place(
-            Square::new(file as i8, rank as i8),
-            crate::types::Piece::new(k, Color::from_gote(is_gote)),
-        );
+        let sq = Square::new(file as i8, rank as i8);
+        if !sq.in_bounds() {
+            return;
+        }
+        self.board.place(sq, crate::types::Piece::new(k, Color::from_gote(is_gote)));
     }
 
     #[func]
@@ -364,12 +363,6 @@ impl ShogiCore {
         self.nn.is_some()
     }
 
-    /// Run MCTS from the current position and return the best move as a
-    /// `VarDictionary` (same shape as `legal_moves_from`). Returns `null` if
-    /// no model is loaded or the search found no legal moves.
-    ///
-    /// This is synchronous and will block for the duration of the search.
-    /// GDScript is expected to call it from a `Thread` to avoid UI stalls.
     /// Policy-only move suggestions for 先生 (teacher) mode. Runs a single
     /// NN forward pass, softmaxes the policy logits over legal moves, and
     /// returns the top `top_k` as move dicts with an added `score` field
@@ -452,6 +445,12 @@ impl ShogiCore {
         out
     }
 
+    /// Run MCTS from the current position and return the best move as a
+    /// `VarDictionary` (same shape as `legal_moves_from`). Returns `null` if
+    /// no model is loaded or the search found no legal moves.
+    ///
+    /// This is synchronous and will block for the duration of the search.
+    /// GDScript is expected to call it from a `Thread` to avoid UI stalls.
     #[func]
     fn think_best_move(&mut self, playouts: i64) -> Variant {
         self.think_sampled(playouts, 0.0)

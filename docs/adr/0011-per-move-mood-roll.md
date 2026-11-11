@@ -67,6 +67,12 @@ Shipped weights (weight / playouts / temperature):
 
 ## Consequences
 
+Amended 2026-11-11: a code review found `sample_move` was still giving
+unvisited root moves a sampling weight of 1, so at the lowest tiers
+roughly half of all moves were ones the search never examined. They now
+weigh 0, as this decision intended. The dials above were tuned against
+the old behaviour, so the weak tiers play stronger until re-tuned.
+
 **Makes easy:**
 
 - Tuning feel per character is a `.tres` edit, no code change. The

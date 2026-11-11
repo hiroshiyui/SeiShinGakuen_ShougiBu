@@ -15,6 +15,7 @@ const GOOD_MOVE_THRESHOLD := 0.05
 # mid-range phone while still giving the value head enough rollouts to
 # differentiate top moves.
 const PLAYOUTS := 128
+const UNVISITED := -1.0
 
 # Match Rust kifu::piece_kanji + the FILE_DIGITS / RANK_KANJI tables so
 # engine-recommended moves render in the same notation as the played
@@ -45,8 +46,6 @@ static func analyze_ply(core: Object, packed: PackedInt32Array, n: int,
 	if top.is_empty():
 		return {}
 	var best_q: float = float(top[0]["win_rate"])
-	var actual_q: float = find_q_for_move(top, decode_packed_move(packed[n]))
-	var delta: float = max(0.0, best_q - actual_q)
 	# best_q is from the perspective of whoever's about to move; project
 	# back to sente so the graph reads consistently across both colours.
 	var sente_winrate: float = best_q if not stm_is_gote else (1.0 - best_q)
@@ -56,13 +55,30 @@ static func analyze_ply(core: Object, packed: PackedInt32Array, n: int,
 	var prev_dest: Variant = null
 	if n > 0:
 		prev_dest = Vector2i(decode_packed_move(packed[n - 1])["to"])
+	var best_kifu: String = format_move_kifu(core, top[0], stm_is_gote, prev_dest)
+	var actual_q: float = find_q_for_move(top, decode_packed_move(packed[n]))
+	if actual_q < 0.0:
+		actual_q = _q_after_move(core, packed, n, playouts)
+	var delta: float = max(0.0, best_q - actual_q)
 	return {
 		sente_winrate = sente_winrate,
 		delta = delta,
 		classification = classify_delta(delta),
-		best_kifu = format_move_kifu(core, top[0], stm_is_gote, prev_dest),
+		best_kifu = best_kifu,
 		mover_is_gote = stm_is_gote,
 	}
+
+# Evaluates move `n` by searching the position after it, for a move the
+# root search never visited. Moves `core` past the analysed position.
+static func _q_after_move(core: Object, packed: PackedInt32Array, n: int,
+		playouts: int) -> float:
+	if not bool(core.apply_packed(packed.slice(0, n + 1))):
+		push_warning("analysis: apply_packed failed after ply %d" % n)
+		return 0.0
+	var replies: Array = core.suggest_moves_mcts(1, playouts)
+	if replies.is_empty():
+		return 1.0  # no legal reply: the move ended the game
+	return 1.0 - float(replies[0]["win_rate"])
 
 static func classify_delta(delta: float) -> String:
 	if delta < GOOD_MOVE_THRESHOLD:
@@ -113,8 +129,8 @@ static func format_move_kifu(core: Object, mv: Dictionary, mover_is_gote: bool,
 	return "%s%s%s%s" % [marker, dest, piece_kanji, promote_marker]
 
 # Walks suggest_moves_mcts output looking for the move actually played.
-# Returns 0.0 if it wasn't visited — that's the worst possible q anyway,
-# so the delta heuristic still flags it as a blunder.
+# Returns UNVISITED when the search has no value for it: the rows for
+# unvisited moves carry a placeholder 50 %, not an evaluation.
 static func find_q_for_move(top: Array, target: Dictionary) -> float:
 	var target_is_drop: bool = target.has("drop_kind")
 	for entry in top:
@@ -125,12 +141,15 @@ static func find_q_for_move(top: Array, target: Dictionary) -> float:
 			continue
 		if target_is_drop:
 			if int(entry["drop_kind"]) == int(target["drop_kind"]):
-				return float(entry["win_rate"])
+				return _visited_q(entry)
 		else:
 			if Vector2i(entry["from"]) == Vector2i(target["from"]) \
 					and bool(entry["promote"]) == bool(target["promote"]):
-				return float(entry["win_rate"])
-	return 0.0
+				return _visited_q(entry)
+	return UNVISITED
+
+static func _visited_q(entry: Dictionary) -> float:
+	return float(entry["win_rate"]) if int(entry["visits"]) > 0 else UNVISITED
 
 # The move worth talking about after a game: among the analysed moves
 # played by `for_gote`'s side, the one that gave up the most win rate,

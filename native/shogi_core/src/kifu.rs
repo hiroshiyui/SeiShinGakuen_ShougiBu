@@ -156,6 +156,8 @@ pub fn to_kif(
     result: &str,
 ) -> String {
     let mut out = String::new();
+    // `.kif` defaults to Shift-JIS in most viewers; declare what we write.
+    out.push_str("#KIF version=2.0 encoding=UTF-8\n");
     out.push_str("# ---- 清正学園将棋部 棋譜ファイル ----\n");
     out.push_str(&format!("開始日時：{}\n", started_at));
     out.push_str(&format!("先手：{}\n", sente_name));
@@ -344,8 +346,12 @@ fn parse_move(text: &str, prev_dest: Option<Square>) -> Result<Move, KifError> {
         let bytes = rest.as_bytes();
         let from_file = (bytes[0] as char).to_digit(10).ok_or_else(bad)? as i8;
         let from_rank = (bytes[1] as char).to_digit(10).ok_or_else(bad)? as i8;
+        let from = Square::new(from_file, from_rank);
+        if !from.in_bounds() {
+            return Err(bad());
+        }
         Ok(Move::Board {
-            from: Square::new(from_file, from_rank),
+            from,
             to,
             promote: promoted,
         })
@@ -479,6 +485,18 @@ mod tests {
         let parsed = parse_kif(&kif_text).expect("parse");
         let original = pack_log(&a);
         assert_eq!(parsed, original, "round-trip diverged");
+    }
+
+    #[test]
+    fn to_kif_declares_utf8() {
+        let kif = to_kif(&Board::default(), "A", "B", "2026/04/28 12:00:00", "", "");
+        assert!(kif.starts_with("#KIF version=2.0 encoding=UTF-8\n"));
+    }
+
+    #[test]
+    fn parse_kif_rejects_out_of_range_origin() {
+        let kif = "手数----指手---------消費時間--\n   1 ７六歩(00)\n";
+        assert!(matches!(parse_kif(kif), Err(KifError::BadMoveLine(_))));
     }
 
     #[test]

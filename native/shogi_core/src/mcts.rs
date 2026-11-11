@@ -12,9 +12,9 @@ use rand::RngExt;
 
 use crate::board::Board;
 use crate::encode::encode_position;
-use crate::move_index::{NUM_SQUARES, encode_move};
+use crate::move_index::encode_move;
 use crate::nn::NeuralNet;
-use crate::rules::{has_any_legal_move, is_check, legal_drops, legal_moves_from};
+use crate::rules::{is_check, legal_drops, legal_moves_from};
 use crate::types::{Color, Kind, Move, Square};
 
 const C_PUCT: f32 = 1.5;
@@ -57,7 +57,6 @@ impl<'a> Searcher<'a> {
     }
 
     /// Run `n_playouts` MCTS iterations from the current board state and
-    /// Run `n_playouts` MCTS iterations from the current board state and
     /// pick a root move by sampling from visit counts raised to
     /// `1/temperature`. `temperature == 0.0` → greedy (most-visited).
     /// Higher τ flattens the distribution; τ=1 is proportional to visits.
@@ -93,10 +92,7 @@ impl<'a> Searcher<'a> {
         let inv_t = 1.0_f32 / temperature;
         let weights: Vec<f64> = children
             .iter()
-            .map(|c| {
-                let n = c.node.map(|i| self.nodes[i].n).unwrap_or(0) as f32;
-                (n.max(1.0).powf(inv_t)) as f64
-            })
+            .map(|c| sample_weight(c.node.map(|i| self.nodes[i].n).unwrap_or(0), inv_t))
             .collect();
         let sum: f64 = weights.iter().sum();
         if sum <= 0.0 {
@@ -289,6 +285,16 @@ impl<'a> Searcher<'a> {
     }
 }
 
+/// Sampling weight of a root child with `visits` visits: `visits^(1/τ)`.
+/// A move the search never looked at gets 0, so temperature only ever
+/// chooses among examined moves (ADR-0011).
+fn sample_weight(visits: u32, inv_t: f32) -> f64 {
+    if visits == 0 {
+        return 0.0;
+    }
+    (visits as f32).powf(inv_t) as f64
+}
+
 fn build_child_priors(legal: &[Move], policy_logits: &[f32], stm: Color) -> Vec<Child> {
     // Softmax over only the legal moves' logits — the net's tensor is dense
     // but we only care about legal indices.
@@ -332,8 +338,6 @@ pub fn all_legal_moves(board: &mut Board) -> Vec<Move> {
     for k in kinds {
         out.extend(legal_drops(board, k));
     }
-    let _ = has_any_legal_move; // keep Rules export visible
-    let _ = NUM_SQUARES; // silence unused
     out
 }
 
@@ -376,3 +380,20 @@ fn sample_standard_normal<R: RngExt + ?Sized>(rng: &mut R) -> f32 {
     (-2.0 * u1.ln()).sqrt() * (2.0 * std::f32::consts::PI * u2).cos()
 }
 
+#[cfg(test)]
+mod tests {
+    use super::sample_weight;
+
+    #[test]
+    fn unvisited_moves_are_never_sampled() {
+        assert_eq!(sample_weight(0, 1.0 / 1.2), 0.0);
+        assert_eq!(sample_weight(0, 2.0), 0.0);
+    }
+
+    #[test]
+    fn visited_moves_are_weighted_by_visits() {
+        assert_eq!(sample_weight(1, 2.0), 1.0);
+        assert_eq!(sample_weight(4, 1.0), 4.0);
+        assert_eq!(sample_weight(3, 2.0), 9.0);
+    }
+}

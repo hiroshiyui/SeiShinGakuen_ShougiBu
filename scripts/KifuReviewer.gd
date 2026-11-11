@@ -32,6 +32,14 @@ var _ply: int = 0
 # terminal positions returning no legal moves).
 var _analyses: Array = []
 var _analyzing: bool = false
+# Whole-game analysis runs on this worker with its own ShogiCore, so the
+# screen stays responsive. Progress is a plain int the UI polls.
+var _analysis_thread: Thread = null
+var _analysis_cancel: bool = false
+var _analysis_progress: int = 0
+# Shown instead of the analysis line when the file can't be read or
+# replayed; empty when all is well.
+var _load_error: String = ""
 
 func _ready() -> void:
 	if not ClassDB.class_exists("ShogiCore"):
@@ -55,6 +63,8 @@ func _ready() -> void:
 
 	_core = ClassDB.instantiate("ShogiCore")
 	_packed = _core.parse_kif_to_packed(text)
+	if _packed.is_empty():
+		_load_error = "棋譜を読み込めませんでした"
 	# Start at the final position so the user sees the latest game state
 	# first, then can rewind for study.
 	_ply = _packed.size()
@@ -96,7 +106,19 @@ func _handle_back() -> void:
 	_pop_back()
 
 func _pop_back() -> void:
+	_stop_analysis()
 	SceneTransition.go_to("res://scenes/KifuLibrary.tscn")
+
+func _exit_tree() -> void:
+	_stop_analysis()
+
+# Abandon a running analysis and join its thread (at most one search away).
+func _stop_analysis() -> void:
+	_analysis_cancel = true
+	if _analysis_thread != null:
+		_analysis_thread.wait_to_finish()
+		_analysis_thread = null
+		_analyzing = false
 
 func _set_ply(n: int) -> void:
 	var clamped: int = clamp(n, 0, _packed.size())
@@ -109,6 +131,9 @@ func _replay_to_ply() -> void:
 	var prefix: PackedInt32Array = _packed.slice(0, _ply)
 	if not bool(_core.apply_packed(prefix)):
 		push_warning("kifu reviewer: apply_packed failed at ply %d" % _ply)
+		_load_error = "この棋譜は再生できません"
+	elif not _packed.is_empty():
+		_load_error = ""
 	_board_view.render(_core)
 	_sente_hand.render(_core)
 	_gote_hand.render(_core)
@@ -139,6 +164,11 @@ func _on_graph_ply_selected(ply: int) -> void:
 # (i.e. _packed[_ply - 1]) and renders the badge / win-rate. Hides the
 # label while at the starting position or when no analysis has run yet.
 func _refresh_analysis_label() -> void:
+	if _load_error != "":
+		_analysis_label.text = _load_error
+		_analysis_label.add_theme_color_override("font_color", Color(1, 0.55, 0.5, 1))
+		_analysis_label.visible = true
+		return
 	if _analyses.is_empty() or _ply == 0 or _ply > _analyses.size():
 		_analysis_label.visible = false
 		return
@@ -186,39 +216,52 @@ func _on_analyze() -> void:
 	# stays bright against the dark theme; the _analyzing guard above
 	# already swallows extra taps.
 	_analyze_btn.add_theme_color_override("font_color", Color(0.55, 1.0, 0.65, 1))
-	_back_btn.disabled = true
 	_first_btn.disabled = true
 	_prev_btn.disabled = true
 	_next_btn.disabled = true
 	_last_btn.disabled = true
 
-	var model_path: String = Settings.model_absolute_path()
-	if model_path == "" or not bool(_core.load_model(model_path)):
+	_analysis_cancel = false
+	_analysis_progress = 0
+	_analysis_thread = Thread.new()
+	_analysis_thread.start(_run_analysis.bind(_packed, Settings.model_absolute_path()))
+
+# Worker thread. Returns one entry per move, or null when the model
+# could not be loaded or the analysis was cancelled.
+func _run_analysis(packed: PackedInt32Array, model_path: String) -> Variant:
+	var core: Object = ClassDB.instantiate("ShogiCore")
+	if model_path == "" or not bool(core.load_model(model_path)):
+		return null
+	var out: Array = []
+	out.resize(packed.size())
+	out.fill({})
+	for n in packed.size():
+		if _analysis_cancel:
+			return null
+		out[n] = Analyzer.analyze_ply(core, packed, n)
+		_analysis_progress = n + 1
+	return out
+
+func _process(_delta: float) -> void:
+	if _analysis_thread == null:
+		return
+	_analyze_btn.text = "解析中… %d / %d" % [_analysis_progress, _packed.size()]
+	if not _analysis_thread.is_alive():
+		_finish_analysis()
+
+func _finish_analysis() -> void:
+	var result: Variant = _analysis_thread.wait_to_finish()
+	_analysis_thread = null
+	_analyzing = false
+	if result == null:
 		_analyze_btn.text = "解析失敗"
 		_analyze_btn.add_theme_color_override("font_color", Color(1, 0.55, 0.5, 1))
-		_analyzing = false
-		_back_btn.disabled = false
+		_replay_to_ply()
 		return
-
-	_analyses.clear()
-	_analyses.resize(_packed.size())
-	_analyses.fill({})
-	var total: int = _packed.size()
-	for n in range(total):
-		_analyses[n] = Analyzer.analyze_ply(_core, _packed, n)
-		_analyze_btn.text = "解析中… %d / %d" % [n + 1, total]
-		# Yield often enough that the UI stays responsive but not so often
-		# we tank the playouts/sec from frame churn.
-		if n % 2 == 0:
-			await get_tree().process_frame
-			if not is_inside_tree():
-				return
-
+	_analyses = result
 	_analyze_btn.text = "解析済"
 	# Settle on the theme's idle gold so the button reads as "done".
 	_analyze_btn.remove_theme_color_override("font_color")
-	_analyzing = false
-	_back_btn.disabled = false
 	_eval_graph.set_analyses(_analyses)
 	_eval_graph.visible = true
 	_refit_board()

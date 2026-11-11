@@ -145,6 +145,11 @@ func _ready() -> void:
 			push_warning("resume: apply_packed failed; falling back to SFEN. SFEN was: %s" % Settings.resume_sfen)
 			if Settings.resume_sfen != "" and not bool(_core.load_sfen(Settings.resume_sfen)):
 				push_warning("resume: load_sfen also failed; starting fresh.")
+				_core.reset_starting()
+				_resumed = false
+			elif Settings.resume_sfen == "":
+				_core.reset_starting()
+				_resumed = false
 		Settings.resume_packed = PackedInt32Array()
 		Settings.resume_sfen = ""
 	elif Settings.resume_sfen != "":
@@ -223,6 +228,8 @@ func _ready() -> void:
 	_refresh_all()
 	if not _resumed:
 		_say("start")
+	if Settings.mode != Settings.Mode.H_VS_H and not _ai_enabled:
+		_show_ai_load_error.call_deferred()
 	_maybe_start_ai_turn()
 
 # Board is a square sized to fit within the Layout. The Layout itself is
@@ -354,6 +361,14 @@ func _load_ai_if_needed() -> void:
 	_set_opponent_portrait(_character)
 	_opponent_strip.visible = true
 
+func _show_ai_load_error() -> void:
+	var dialog := AcceptDialog.new()
+	dialog.title = "AI エラー"
+	dialog.dialog_text = "AI の読み込みに失敗しました。\n人対人で続行します。"
+	add_child(dialog)
+	ModalBlur.attach(dialog)
+	dialog.popup_centered()
+
 func _load_opening_book() -> void:
 	const BOOK_PATH := "res://assets/opening_book.json"
 	if not ResourceLoader.exists(BOOK_PATH) and not FileAccess.file_exists(BOOK_PATH):
@@ -480,14 +495,12 @@ func _show_thinking_expression() -> void:
 	if Time.get_ticks_msec() >= _reaction_until_msec:
 		_set_opponent_expression("thinking")
 
-# Game-over face from the result text: victory / defeat for a decisive
-# game, neutral for a draw.
-func _expression_for_result(text: String) -> String:
-	var gote_won := text.contains("後手 の勝ち") or text.contains("後手の勝ち")
-	var sente_won := text.contains("先手 の勝ち") or text.contains("先手の勝ち")
-	if gote_won == sente_won:
+# Game-over face for `winner` ("先手" / "後手", "" on a draw): victory
+# or defeat from the AI's side, neutral for a draw.
+func _expression_for_winner(winner: String) -> String:
+	if winner == "":
 		return "neutral"
-	return "victory" if gote_won == Settings.ai_plays_gote() else "defeat"
+	return "victory" if (winner == "後手") == Settings.ai_plays_gote() else "defeat"
 
 # Shows one of the opponent's lines beside their portrait, then fades it.
 func _say(moment: String) -> void:
@@ -531,12 +544,12 @@ func _result_speech(result_expr: String) -> String:
 
 # Adds a finished game to the opponent's win/loss record. Draws and
 # games with no moves don't count.
-func _record_character_result(text: String) -> void:
+func _record_character_result(winner: String) -> void:
 	if not _ai_enabled or _result_recorded:
 		return
 	if int(_core.move_log_size()) == 0 and not _resumed:
 		return
-	var expr := _expression_for_result(text)
+	var expr := _expression_for_winner(winner)
 	if expr == "neutral":
 		return
 	_result_recorded = true
@@ -569,6 +582,7 @@ func _maybe_start_ai_turn() -> void:
 		_place_thinking_label.call_deferred()
 		_undo_btn.disabled = true
 		_teacher_btn.disabled = true
+		_history_btn.disabled = true
 		_show_thinking_expression()
 		_run_book_move_with_pause(book_move)
 		return
@@ -578,6 +592,7 @@ func _maybe_start_ai_turn() -> void:
 	_place_thinking_label.call_deferred()
 	_undo_btn.disabled = true
 	_teacher_btn.disabled = true
+	_history_btn.disabled = true
 	var playouts: int = int(params["playouts"])
 	_think_thread = Thread.new()
 	_think_thread.start(_run_ai_think.bind(playouts, temperature))
@@ -661,7 +676,7 @@ func _refresh_all() -> void:
 		var ply: int = int(_core.move_log_size()) + 1
 		_status.text = "%s の手番 (%d手目)" % [mover, ply]
 	_undo_btn.disabled = int(_core.move_log_size()) == 0 or _game_over or _in_review
-	_history_btn.disabled = int(_core.move_log_size()) == 0
+	_history_btn.disabled = int(_core.move_log_size()) == 0 or _thinking
 	var ai_turn := _ai_enabled and Settings.side_is_ai(side_gote)
 	_teacher_btn.disabled = _game_over or _thinking or ai_turn or not _ai_enabled or _in_review
 	# 入玉宣言: button is shown to whichever human side has their king
@@ -904,7 +919,7 @@ func _check_end_state() -> void:
 	if bool(_core.is_checkmate()):
 		var loser := "後手" if _core.side_to_move_gote() else "先手"
 		var winner := "先手" if _core.side_to_move_gote() else "後手"
-		_end_game("詰み\n%s の勝ち (%s を詰ました)" % [winner, loser], "詰み")
+		_end_game("詰み\n%s の勝ち (%s を詰ました)" % [winner, loser], "詰み", winner)
 		return
 	# 手詰まり: side to move has no legal reply but isn't in check. In
 	# practice nearly impossible with drops in play, but if it ever does
@@ -914,21 +929,20 @@ func _check_end_state() -> void:
 	if not bool(_core.has_any_legal_move()):
 		var loser2 := "後手" if _core.side_to_move_gote() else "先手"
 		var winner2 := "先手" if _core.side_to_move_gote() else "後手"
-		_end_game("手詰まり\n%s の勝ち (%s に指す手なし)" % [winner2, loser2], "詰み")
+		_end_game("手詰まり\n%s の勝ち (%s に指す手なし)" % [winner2, loser2], "詰み", winner2)
 		return
 	match str(_core.detect_sennichite()):
 		"draw":
 			_end_game("千日手 — 引き分け", "千日手")
 			return
 		"sente_loses":
-			_end_game("連続王手の千日手 — 後手の勝ち", "千日手")
+			_end_game("連続王手の千日手 — 後手の勝ち", "千日手", "後手")
 			return
 		"gote_loses":
-			_end_game("連続王手の千日手 — 先手の勝ち", "千日手")
+			_end_game("連続王手の千日手 — 先手の勝ち", "千日手", "先手")
 			return
-	# 持将棋 / AI auto-declaration. Check both sides every commit so a
-	# qualifying position fires the same turn it arises, regardless of
-	# whose move produced it.
+	# 持将棋 / AI auto-declaration. 持将棋 fires as soon as both sides
+	# qualify; the AI, like a player, may only declare on its own turn.
 	var sente_ok: bool = bool(_core.can_declare_jishogi(false)["ok"])
 	var gote_ok: bool = bool(_core.can_declare_jishogi(true)["ok"])
 	if sente_ok and gote_ok:
@@ -937,22 +951,23 @@ func _check_end_state() -> void:
 	if _ai_enabled:
 		var ai_is_gote: bool = Settings.ai_plays_gote()
 		var ai_qualifies: bool = (gote_ok if ai_is_gote else sente_ok)
-		if ai_qualifies:
+		if ai_qualifies and bool(_core.side_to_move_gote()) == ai_is_gote:
 			var winner := "後手" if ai_is_gote else "先手"
-			_end_game("入玉宣言 — %s の勝ち" % winner, "入玉勝ち")
+			_end_game("入玉宣言 — %s の勝ち" % winner, "入玉勝ち", winner)
 
-func _end_game(text: String, terminator: String) -> void:
+# `winner` is "先手" / "後手", or "" for a draw.
+func _end_game(text: String, terminator: String, winner: String = "") -> void:
 	_game_over = true
 	_gameover_terminator = terminator
 	_board_view.clear_check()
 	_undo_btn.disabled = true
 	_gameover_text = text
-	var result_expr := _expression_for_result(text)
+	var result_expr := _expression_for_winner(winner)
 	_set_opponent_expression(result_expr)
 	var result_tex := _expression_texture(result_expr) if _ai_enabled else null
 	_gameover_portrait.texture = result_tex
 	_gameover_portrait.visible = result_tex != null
-	_record_character_result(text)
+	_record_character_result(winner)
 	Settings.clear_saved_game()
 	print("[game] %s" % text.replace("\n", " "))
 	# Every finished game is archived to the 棋譜検討 library
@@ -1091,6 +1106,8 @@ func _on_restart() -> void:
 	_clear_selection()
 	_refresh_all()
 	_refresh_last_move_hint()
+	# The AI may be 先手; nothing else starts its first move.
+	_maybe_start_ai_turn()
 
 func _on_undo() -> void:
 	if _game_over or _thinking:
@@ -1133,13 +1150,13 @@ func _on_exit_pressed() -> void:
 # Otherwise pop an info dialog explaining what's missing so the player
 # can keep playing toward the threshold.
 func _on_jishogi_pressed() -> void:
-	if _game_over or _in_review:
+	if _game_over or _in_review or _thinking:
 		return
 	var side_gote: bool = _core.side_to_move_gote()
 	var result: Dictionary = _core.can_declare_jishogi(side_gote)
 	if bool(result["ok"]):
 		var winner := "後手" if side_gote else "先手"
-		_end_game("入玉宣言 — %s の勝ち" % winner, "入玉勝ち")
+		_end_game("入玉宣言 — %s の勝ち" % winner, "入玉勝ち", winner)
 		return
 	_jishogi_info_dialog.dialog_text = _jishogi_info_text(result)
 	_jishogi_info_dialog.popup_centered()
@@ -1213,15 +1230,20 @@ func _exit_tree() -> void:
 
 func _back_to_title() -> void:
 	_stop_gameover_comment()
-	# Drain any live worker threads so we don't leak join handles when the
-	# scene tears down (same rationale as _on_quit_confirmed).
-	if _thinking and _think_thread != null and _think_thread.is_alive():
-		_think_thread.wait_to_finish()
-	if _teacher_thinking and _teacher_thread != null and _teacher_thread.is_alive():
-		_teacher_thread.wait_to_finish()
+	_join_workers()
+	SceneTransition.go_to("res://scenes/MainMenu.tscn")
+
+# Join every search thread before touching _core or tearing down the
+# scene. is_started() also catches a worker that has finished but has
+# not been joined yet; abandoning its handle would leak.
+func _join_workers() -> void:
+	for worker: Thread in [_think_thread, _teacher_thread]:
+		if worker != null and worker.is_started():
+			worker.wait_to_finish()
+	_think_thread = null
+	_teacher_thread = null
 	_thinking = false
 	_teacher_thinking = false
-	SceneTransition.go_to("res://scenes/MainMenu.tscn")
 
 func _on_quit_confirmed() -> void:
 	# A finished game already has its result and KIF; the exit button
@@ -1229,13 +1251,7 @@ func _on_quit_confirmed() -> void:
 	if _game_over:
 		_back_to_title()
 		return
-	# Join every worker before touching _core or tearing down the scene:
-	# a search mutates the shared board, and abandoning a JoinHandle leaks.
-	for worker: Thread in [_think_thread, _teacher_thread]:
-		if worker != null and worker.is_started():
-			worker.wait_to_finish()
-	_thinking = false
-	_teacher_thinking = false
+	_join_workers()
 	var resigner := _resignation_side()
 	var winner := "後手" if resigner == "先手" else "先手"
 	print("[game] %s の投了 — %s の勝ち" % [resigner, winner])
@@ -1244,7 +1260,7 @@ func _on_quit_confirmed() -> void:
 	_game_over = true
 	_gameover_terminator = "投了"
 	_gameover_text = "投了 — %s の勝ち" % winner
-	_record_character_result(_gameover_text)
+	_record_character_result(winner)
 	_auto_save_kif_message()
 	Settings.clear_saved_game()
 	SceneTransition.go_to("res://scenes/MainMenu.tscn")
@@ -1303,6 +1319,8 @@ func _on_teacher_pressed() -> void:
 	_place_thinking_label.call_deferred()
 	_undo_btn.disabled = true
 	_teacher_btn.disabled = true
+	_history_btn.disabled = true
+	_jishogi_btn.visible = false
 	var playouts: int = int(Settings.ai_base_dials()["playouts"])
 	_teacher_thread = Thread.new()
 	_teacher_thread.start(_run_teacher_think.bind(playouts))
@@ -1434,6 +1452,8 @@ func _zoom_back_after_slide() -> void:
 # --- 棋譜 history dialog ---------------------------------------------------
 
 func _on_history_pressed() -> void:
+	if _thinking:
+		return
 	var lines: PackedStringArray = _core.move_log_kifu_lines()
 	# Highlight the row matching whatever ply is currently visible — the
 	# live tip if not in review, or the rewound ply if reopened mid-review.
@@ -1444,6 +1464,8 @@ func _on_history_pressed() -> void:
 # views over to it. _active_core() now returns the scratch — interactive
 # inputs are gated by _in_review and refuse to fire.
 func _on_history_ply_selected(ply: int) -> void:
+	if _thinking:
+		return
 	var packed: PackedInt32Array = _core.move_log_packed()
 	var clamped: int = clamp(ply, 0, packed.size())
 	var prefix: PackedInt32Array = packed.slice(0, clamped)
@@ -1463,6 +1485,8 @@ func _on_history_back_to_live() -> void:
 	_exit_review()
 
 func _on_history_share_requested() -> void:
+	if _thinking:
+		return
 	var saved_path := _export_kif()
 	if saved_path == "":
 		_history_dialog.show_save_result(false, "保存に失敗しました")

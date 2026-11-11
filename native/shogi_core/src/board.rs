@@ -205,6 +205,9 @@ impl Board {
     /// This checks geometry-level validity only; higher-level rule filters
     /// (self-check, nifu, uchifuzume) live in `rules`.
     pub fn apply_move(&mut self, mv: Move) -> bool {
+        if !mv.destination().in_bounds() {
+            return false;
+        }
         let ok = match mv {
             Move::Board { from, to, promote } => self.apply_board_move(from, to, promote),
             Move::Drop { kind, to } => self.apply_drop(kind, to),

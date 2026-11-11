@@ -86,10 +86,8 @@ func _ensure_default_character() -> void:
 # that's fine).
 #
 # Two paths: real key event via _unhandled_input, and Android
-# WM_GO_BACK_REQUEST via _notification. Settings.gd also synthesizes
-# an Esc press+release for back gestures, but release APKs have been
-# seen to drop the synthesized event, so we listen for the notification
-# directly here too. _back_handled_frame dedupes same-frame double-fires.
+# WM_GO_BACK_REQUEST via _notification. _back_handled_frame dedupes
+# same-frame double-fires.
 var _back_handled_frame: int = -1
 
 func _unhandled_input(event: InputEvent) -> void:

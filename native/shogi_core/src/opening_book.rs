@@ -29,7 +29,7 @@ use serde_json::Value;
 
 use crate::board::Board;
 use crate::sfen;
-use crate::types::{Color, Kind, Move, Square};
+use crate::types::{Kind, Move, Square};
 
 #[derive(Clone, Debug)]
 struct Entry {
@@ -93,7 +93,7 @@ impl OpeningBook {
         // than poison the AI's whole turn.
         let valid: Vec<&Entry> = candidates
             .iter()
-            .filter(|e| board.piece_at(e.mv.destination()).map_or(true, |_| true) && validate_move_on(board, e.mv))
+            .filter(|e| validate_move_on(board, e.mv))
             .collect();
         if valid.is_empty() {
             return None;
@@ -195,11 +195,6 @@ fn validate_move_on(board: &Board, mv: Move) -> bool {
         }
     }
 }
-
-// `Color` is referenced by validate_move_on above; bring it in scope explicitly
-// so the test module's `use super::*` doesn't need a separate import.
-#[allow(unused_imports)]
-use Color as _ColorBrand;
 
 #[cfg(test)]
 mod tests {

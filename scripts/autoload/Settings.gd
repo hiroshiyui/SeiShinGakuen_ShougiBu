@@ -276,10 +276,10 @@ func _load_prefs() -> void:
 	if side == "left" or side == "right":
 		teacher_side = side
 	selected_character_id = str(cfg.get_value("ai", "character_id", ""))
-	ai_level = clamp_level(int(cfg.get_value("ai", "level", ai_level)))
-	sound_enabled = bool(cfg.get_value("audio", "sound_enabled", true))
-	reduce_motion = bool(cfg.get_value("ui", "reduce_motion", false))
-	tsume_plies = int(cfg.get_value("tsume", "plies", tsume_plies))
+	ai_level = clamp_level(_cfg_int(cfg, "ai", "level", ai_level))
+	sound_enabled = _cfg_bool(cfg, "audio", "sound_enabled", true)
+	reduce_motion = _cfg_bool(cfg, "ui", "reduce_motion", false)
+	tsume_plies = _cfg_int(cfg, "tsume", "plies", tsume_plies)
 	var solved: Variant = cfg.get_value("tsume", "solved", [])
 	tsume_solved.clear()
 	if solved is Array:
@@ -295,6 +295,16 @@ func _load_prefs() -> void:
 					"wins": _record_count(rec.get("wins", 0)),
 					"losses": _record_count(rec.get("losses", 0)),
 				}
+
+# Typed reads for user-editable .cfg files. A wrong-typed value falls
+# back to the default; int() / bool() on it would abort the whole load.
+func _cfg_int(cfg: ConfigFile, section: String, key: String, default: int) -> int:
+	var value: Variant = cfg.get_value(section, key, default)
+	return value if value is int else default
+
+func _cfg_bool(cfg: ConfigFile, section: String, key: String, default: bool) -> bool:
+	var value: Variant = cfg.get_value(section, key, default)
+	return value if value is bool else default
 
 # A win/loss count read from prefs; anything but a non-negative int is 0.
 func _record_count(value: Variant) -> int:
@@ -409,12 +419,16 @@ func load_saved_game() -> Dictionary:
 	var cfg := ConfigFile.new()
 	if cfg.load(SAVE_PATH) != OK:
 		return {}
+	var saved_mode: int = _cfg_int(cfg, "game", "mode", Mode.H_VS_AI_GOTE)
+	if not Mode.values().has(saved_mode):
+		saved_mode = Mode.H_VS_AI_GOTE
+	var packed: Variant = cfg.get_value("game", "packed_log", PackedInt32Array())
 	return {
 		sfen = str(cfg.get_value("game", "sfen", "")),
-		mode = int(cfg.get_value("game", "mode", Mode.H_VS_AI_GOTE)),
-		level = clamp_level(int(cfg.get_value("game", "level", ai_level))),
+		mode = saved_mode,
+		level = clamp_level(_cfg_int(cfg, "game", "level", ai_level)),
 		character_id = str(cfg.get_value("game", "character_id", "")),
-		packed_log = PackedInt32Array(cfg.get_value("game", "packed_log", PackedInt32Array())),
+		packed_log = packed if packed is PackedInt32Array else PackedInt32Array(),
 	}
 
 func clear_saved_game() -> void:

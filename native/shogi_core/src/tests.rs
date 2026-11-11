@@ -325,3 +325,16 @@ fn jishogi_asymmetric_thresholds_27_for_gote_28_for_sente() {
     assert!(matches!(r, crate::rules::DeclareResult::Ok),
         "gote with 27 pts expected Ok, got {:?}", r);
 }
+
+#[test]
+fn apply_move_rejects_out_of_bounds_destination() {
+    let mut b = crate::board::Board::default();
+    let before = crate::sfen::to_sfen(&b);
+    let mv = crate::types::Move::Board {
+        from: crate::types::Square::new(7, 7),
+        to: crate::types::Square::new(0, 0),
+        promote: false,
+    };
+    assert!(!b.apply_move(mv));
+    assert_eq!(crate::sfen::to_sfen(&b), before);
+}

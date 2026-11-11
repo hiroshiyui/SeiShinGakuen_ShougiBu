@@ -18,6 +18,8 @@ func _initialize() -> void:
 	_run("uchifuzume: pawn drop that would mate is rejected", _test_uchifuzume)
 	_run("non-pawn drop delivering mate is legal", _test_silver_drop_mate_legal)
 	_run("undo restores SFEN after capture + promote", _test_undo_capture_promote)
+	_run("replayed game counts repetitions like the live game", _test_replay_repetition_count)
+	_run("analysis treats unvisited moves as having no value", _test_analyzer_unvisited)
 	if _fails > 0:
 		push_error("FAILED %d test(s)" % _fails)
 		quit(1)
@@ -37,6 +39,42 @@ func _run(name: String, fn: Callable) -> void:
 
 func _core() -> Object:
 	return ClassDB.instantiate("ShogiCore")
+
+func _shuffle_move(ff: int, fr: int, tf: int, tr: int) -> Dictionary:
+	return {"from": Vector2i(ff, fr), "to": Vector2i(tf, tr), "promote": false}
+
+func _test_replay_repetition_count() -> String:
+	var live := _core()
+	for i in 2:
+		live.apply_move(_shuffle_move(2, 8, 3, 8))
+		live.apply_move(_shuffle_move(8, 2, 7, 2))
+		live.apply_move(_shuffle_move(3, 8, 2, 8))
+		live.apply_move(_shuffle_move(7, 2, 8, 2))
+	var replay := _core()
+	if not bool(replay.apply_packed(live.move_log_packed())):
+		return "replay failed"
+	if str(live.detect_sennichite()) != "none":
+		return "live game: start seen 3 times must not be sennichite"
+	if str(replay.detect_sennichite()) != "none":
+		return "replay over-counted the starting position"
+	return ""
+
+func _test_analyzer_unvisited() -> String:
+	var analyzer: GDScript = load("res://scripts/KifuAnalyzer.gd")
+	var target := {"from": Vector2i(7, 7), "to": Vector2i(7, 6), "promote": false}
+	var visited := target.duplicate()
+	visited["visits"] = 3
+	visited["win_rate"] = 0.7
+	var unvisited := target.duplicate()
+	unvisited["visits"] = 0
+	unvisited["win_rate"] = 0.5
+	if analyzer.find_q_for_move([visited], target) != 0.7:
+		return "visited move should report its win rate"
+	if analyzer.find_q_for_move([unvisited], target) != analyzer.UNVISITED:
+		return "unvisited row must not report its placeholder 50%"
+	if analyzer.find_q_for_move([], target) != analyzer.UNVISITED:
+		return "missing move should be unvisited"
+	return ""
 
 func _setup(c: Object, pieces: Array, hands: Array, side_gote: bool) -> void:
 	c.clear_board()

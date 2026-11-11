@@ -49,6 +49,10 @@ func _initialize() -> void:
 		_test_character_records_roundtrip)
 	_run("corrupt character records load as zero without aborting",
 		_test_character_records_corrupt)
+	_run("wrong-typed prefs fall back without losing later keys",
+		_test_prefs_wrong_types)
+	_run("wrong-typed save fields fall back to defaults",
+		_test_save_wrong_types)
 
 	_clean()
 	if _fails > 0:
@@ -313,6 +317,29 @@ func _test_character_records_corrupt() -> String:
 		return "non-dictionary record should be skipped"
 	if c["wins"] != 2 or c["losses"] != 0:
 		return "c expected 2-0, got %s" % c
+	return ""
+
+func _test_prefs_wrong_types() -> String:
+	var f := FileAccess.open(_TEST_PREFS, FileAccess.WRITE)
+	f.store_string('[ai]\n\nlevel=[1]\n\n[audio]\n\nsound_enabled=false\n')
+	f.close()
+	_settings.sound_enabled = true
+	_settings._load_prefs()
+	if _settings.sound_enabled:
+		return "key after the bad value was not loaded"
+	return ""
+
+func _test_save_wrong_types() -> String:
+	var f := FileAccess.open(_TEST_SAVE, FileAccess.WRITE)
+	f.store_string('[game]\n\nsfen="x"\nmode=[1]\nlevel="y"\npacked_log="bad"\n')
+	f.close()
+	var saved: Dictionary = _settings.load_saved_game()
+	if saved.is_empty():
+		return "load aborted on wrong-typed fields"
+	if saved["mode"] != _settings.Mode.H_VS_AI_GOTE:
+		return "bad mode should fall back to the default"
+	if not (saved["packed_log"] as PackedInt32Array).is_empty():
+		return "bad packed_log should load as empty"
 	return ""
 
 func _test_atomic_copy_missing_source() -> String:
