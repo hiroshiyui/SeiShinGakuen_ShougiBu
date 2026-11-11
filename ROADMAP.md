@@ -252,6 +252,23 @@ Shipped differently:
 - [x] **Character speech lines.** Each `CharacterProfile` carries short lines for game start, giving check, losing a 飛 / 角, winning and losing. In-game lines show in a comic speech balloon (`scripts/game/SpeechBubble.gd`) below the opponent's portrait for 3.5 s, its tail pointing up at the portrait and the balloon temporarily covering the 持ち駒 row without blocking taps; the closing line appears in the 対局終了 dialog.
 - [x] **Check shown on the king's square.** The 王手！ banner is gone; a king in check gets a translucent red square behind it (`Square.set_check_hint`), alongside the existing check sound.
 
+### Phase 8 — Human vs Human on LAN (proposed)
+
+Two players on the same Wi-Fi play each other, each on their own phone. There is still no server and no internet traffic, so this does not conflict with the "Online multiplayer" non-goal. The "Single-player vs. AI" goal in §1 still needs a decision and an ADR before work starts.
+
+- [ ] **Discovery, v1: UDP broadcast beacon.** In pure GDScript with `PacketPeerUDP`. The host broadcasts a small beacon (protocol version, TCP port, display name) about once a second. The joiner listens and lists the games it finds. The same code runs on desktop and Android with no plugin.
+- [ ] **Discovery fallback: manual IP or QR code.** Some hotel, guest and router networks isolate clients, and then broadcast and mDNS both fail. The host shows its IP and port as text and as a QR code.
+- [ ] **Android multicast lock.** Many devices drop incoming broadcast and multicast packets unless a `WifiManager.MulticastLock` is held. This needs a small Kotlin Godot Android plugin and the `INTERNET` and `CHANGE_WIFI_MULTICAST_STATE` permissions. Check that it fits the F-Droid from-source build. See also `docs/android-gotchas.md`.
+- [ ] **Discovery, v2 (optional): mDNS / DNS-SD (Bonjour).** If broadcast proves unreliable, register and browse `_seishinshogi._tcp`. There are two ways to do it:
+  - Android `NsdManager`, in the same plugin as the multicast lock. Desktop would need its own path.
+  - The `mdns-sd` crate inside the Rust GDExtension. This keeps one code path for desktop and Android, but it still needs the Java-side multicast lock and adds a crate to the F-Droid build.
+- [ ] **Transport: TCP.** Use `TCPServer` / `StreamPeerTCP`, or `ENetMultiplayerPeer`. A shogi game is turn-based and needs very little bandwidth.
+- [ ] **Wire protocol.** The handshake carries the protocol and app version, the starting SFEN, and who plays 先手 (chosen at random or by the host). After that, each message is one USI move (`7g7f`, `P*5e`) with a sequence number, or one of resign, draw offer and ping.
+- [ ] **Validate every peer move in the Rust core.** Both sides check each incoming move for legality, 二歩, 打ち歩詰め and 千日手. A buggy or malicious peer then can't force an illegal position.
+- [ ] **Disconnect and reconnect.** Build on the existing SFEN plus packed-log save/resume. After a reconnect, the sequence numbers let the two sides resync. If the peer is gone for good, end the game as 中断.
+- [ ] **UI.** A lobby screen (host or join, the list of found games, manual IP), a waiting state, and an opponent shown by name without a character portrait. 待った and 先生のお薦め are off or need agreement from both players. Finished games auto-save to KIF with both players' names. New strings go through `tools/build_font_subsets.py`.
+- [ ] **Docs.** Write an ADR for the scope change and the discovery choice, and update the README and the F-Droid / itch.io descriptions.
+
 ---
 
 ## 5. Key Technical Decisions & Risks
