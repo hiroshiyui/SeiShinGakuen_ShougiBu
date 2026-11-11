@@ -8,6 +8,34 @@ All notable changes to this project. Format follows
 
 ## [Unreleased]
 
+## [1.0.15] — 2026-11-11
+
+### Added
+- 対局中、8 人の対戦相手が吹き出しでひと言話すように。対局開始・王手を
+  かけたとき・飛車や角を取られたときに肖像の下に表示され、終局時の
+  ひと言は対局終了ダイアログに表示。
+- 対戦相手選択の画面に、その相手とのあなたの戦績（勝敗数）を表示。
+
+### Changed
+- 「王手！」の表示をやめ、王手をかけられた玉のマスを半透明の赤で示すように。
+- 棋譜検討の解析をバックグラウンドで実行し、解析中も画面が固まらないように。
+- AI の思考中は棋譜ボタンを無効に。
+- 書き出す KIF に UTF-8 の宣言を追加。
+- タイトル背景の高橋ゆり子のアイシャドウを薄く修正。
+
+### Fixed
+- AI が先手のとき、再戦で AI が指さず対局が止まる問題を修正。
+- 弱いキャラクターが読んでいない手を指していた問題を修正。そのぶん
+  Lv 1〜3 は以前より手ごわくなった。
+- 棋譜検討で、AI が読まなかった手の評価が正しくなかった問題を修正。
+- 続きからの対局で、開始局面の千日手を早く判定していた問題を修正。
+- AI の入玉宣言を自分の手番のときだけに修正。
+- 終局後に投了すると誤った棋譜や敗戦が記録されることがある問題を修正。
+- 読み込めない棋譜や破損した設定・保存データの扱いを改善。
+
+[Full release notes](./docs/release-notes/1.0.15.md) ·
+[GitHub Release](https://github.com/hiroshiyui/SeiShinGakuen_ShougiBu/releases/tag/1.0.15)
+
 ## [1.0.14] — 2026-11-11
 
 ### Added
@@ -453,7 +481,8 @@ First public release.
 [Full release notes](./docs/release-notes/0.1.1.md) ·
 [GitHub Release](https://github.com/hiroshiyui/SeiShinGakuen_ShougiBu/releases/tag/0.1.1)
 
-[Unreleased]: https://github.com/hiroshiyui/SeiShinGakuen_ShougiBu/compare/1.0.14...HEAD
+[Unreleased]: https://github.com/hiroshiyui/SeiShinGakuen_ShougiBu/compare/1.0.15...HEAD
+[1.0.15]: https://github.com/hiroshiyui/SeiShinGakuen_ShougiBu/compare/1.0.14...1.0.15
 [1.0.14]: https://github.com/hiroshiyui/SeiShinGakuen_ShougiBu/compare/1.0.13...1.0.14
 [1.0.13]: https://github.com/hiroshiyui/SeiShinGakuen_ShougiBu/compare/1.0.12...1.0.13
 [1.0.12]: https://github.com/hiroshiyui/SeiShinGakuen_ShougiBu/compare/1.0.11...1.0.12
