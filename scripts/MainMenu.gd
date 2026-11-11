@@ -3,6 +3,10 @@ extends Control
 @onready var _title: Label = %Title
 @onready var _mode: OptionButton = %ModeSelect
 @onready var _opponent_btn: Button = %OpponentButton
+# The button's own text/icon stay empty: Godot can't centre an icon
+# next to centred text, so a centred icon + label row sits inside it.
+@onready var _opponent_icon: TextureRect = %OpponentIcon
+@onready var _opponent_name: Label = %OpponentName
 @onready var _start_btn: Button = %StartButton
 @onready var _resume_btn: Button = %ResumeButton
 @onready var _settings_btn: Button = %SettingsButton
@@ -121,11 +125,62 @@ func _on_kifu_library_pressed() -> void:
 
 func _refresh_opponent_label() -> void:
 	var profile := Settings.load_character(Settings.selected_character_id)
+	# Match the label to the button's own text style.
+	_opponent_name.add_theme_font_override("font", _opponent_btn.get_theme_font("font"))
+	_opponent_name.add_theme_font_size_override("font_size",
+		_opponent_btn.get_theme_font_size("font_size"))
+	_opponent_name.add_theme_color_override("font_color",
+		_opponent_btn.get_theme_color("font_color"))
 	if profile == null:
-		_opponent_btn.text = "選んでください"
+		_opponent_name.text = "選んでください"
+		_opponent_icon.texture = null
 	else:
-		_opponent_btn.text = "%s (Lv.%d %s)" % [
+		_opponent_name.text = "%s (Lv.%d %s)" % [
 			profile.display_name, profile.level, profile.strength_label]
+		_opponent_icon.texture = _round_portrait_icon(profile)
+	_opponent_icon.visible = _opponent_icon.texture != null
+
+# Size of the generated icon texture. Twice the 48 px display size
+# (`OpponentIcon`'s minimum size) so it stays sharp on dense screens.
+const _ICON_PX := 96
+
+# A round head-and-shoulders icon cut from the character's neutral
+# portrait, matching the pre-made 加藤先生 icon on the in-game
+# TeacherButton. Crop: a square 80 % of the portrait's width,
+# centred, starting 10 % from the top (tuned against all eight
+# portraits so every face sits in the middle of the circle).
+func _round_portrait_icon(profile: CharacterProfile) -> Texture2D:
+	if profile.portrait_dir == "":
+		return null
+	var path := profile.portrait_dir.path_join("neutral.webp")
+	if not ResourceLoader.exists(path):
+		return null
+	var tex := load(path) as Texture2D
+	if tex == null:
+		return null
+	var img := tex.get_image()
+	if img == null:
+		return null
+	if img.is_compressed():
+		img.decompress()
+	var side := int(img.get_width() * 0.8)
+	var x := (img.get_width() - side) / 2
+	var y := int(img.get_height() * 0.10)
+	side = mini(side, img.get_height() - y)
+	img = img.get_region(Rect2i(x, y, side, side))
+	img.convert(Image.FORMAT_RGBA8)
+	img.resize(_ICON_PX, _ICON_PX, Image.INTERPOLATE_LANCZOS)
+	# Circular alpha mask with a one-pixel soft edge.
+	var r := _ICON_PX / 2.0
+	for py in _ICON_PX:
+		for px in _ICON_PX:
+			var d := Vector2(px + 0.5 - r, py + 0.5 - r).length()
+			var a := clampf(r - d, 0.0, 1.0)
+			if a < 1.0:
+				var c := img.get_pixel(px, py)
+				c.a *= a
+				img.set_pixel(px, py, c)
+	return ImageTexture.create_from_image(img)
 
 func _on_opponent_pressed() -> void:
 	SceneTransition.go_to("res://scenes/CharacterPicker.tscn")
