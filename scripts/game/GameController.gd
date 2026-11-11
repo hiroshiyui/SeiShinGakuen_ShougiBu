@@ -101,6 +101,8 @@ var _ai_enabled: bool = false
 # the connection is down and NetSession is trying to restore it.
 var _lan: bool = false
 var _lan_waiting: bool = false
+# Set once the player leaves for the title; pending awaits must not act.
+var _leaving: bool = false
 # After a LAN game: whether 再戦 can still be offered (false once the
 # peer has left or the session broke), and the status line meanwhile.
 var _rematch_ok: bool = false
@@ -615,7 +617,7 @@ func _maybe_start_ai_turn() -> void:
 # absorbing their last move.
 func _run_book_move_with_pause(mv: Dictionary) -> void:
 	await get_tree().create_timer(randf_range(0.6, 1.4)).timeout
-	if not is_inside_tree() or _game_over:
+	if not is_inside_tree() or _leaving or _game_over:
 		return
 	_thinking = false
 	_thinking_label.visible = false
@@ -657,9 +659,11 @@ func _process(_delta: float) -> void:
 		# fast search. Keep the 思考中 label up during the delay so the
 		# transition reads as continuous deliberation.
 		await get_tree().create_timer(randf_range(1.0, 2.0)).timeout
-		_thinking_label.visible = false
-		if _game_over:
+		# The player may have left during the pause (the scene is fading
+		# out or already gone): don't play, sound or save the move.
+		if not is_inside_tree() or _leaving or _game_over:
 			return
+		_thinking_label.visible = false
 		var win_rate := float(_core.last_think_win_rate())
 		_commit_move(mv)
 		if win_rate >= 0.0:
@@ -1139,6 +1143,16 @@ func _on_restart() -> void:
 
 func _reset_game() -> void:
 	_stop_gameover_comment()
+	_join_workers()
+	# Leave whatever the finished game had open, or the new game starts
+	# with input blocked (review mode) or a stale hint panel.
+	if _in_review:
+		_exit_review()
+	if _suggestions_panel.visible:
+		_close_suggestions()
+	_pending_zoom_back = false
+	_comment_ply = -1
+	_gameover_kif_path = ""
 	_ai_evals.clear()
 	_core.reset_starting()
 	_game_over = false
@@ -1285,10 +1299,14 @@ func _handle_back() -> void:
 
 func _exit_tree() -> void:
 	_stop_gameover_comment()
+	# Any teardown (window closed mid-search, a future scene switch)
+	# must not free the scene while a worker still uses _core.
+	_join_workers()
 	if _lan and NetSession.in_game:
 		NetSession.close("abort")
 
 func _back_to_title() -> void:
+	_leaving = true
 	_stop_gameover_comment()
 	_join_workers()
 	if _lan:
@@ -1330,6 +1348,7 @@ func _on_quit_confirmed() -> void:
 	_record_character_result(winner)
 	_auto_save_kif_message()
 	Settings.clear_saved_game()
+	_leaving = true
 	SceneTransition.go_to("res://scenes/MainMenu.tscn")
 
 # Best-effort attribution of who resigned. In AI modes the human is the
@@ -1751,21 +1770,23 @@ func _on_lan_peer_restored(usi_moves: PackedStringArray) -> void:
 	_lan_waiting = false
 	if _game_over:
 		return
-	if usi_moves.size() != int(_core.move_log_size()):
-		if _in_review:
-			_exit_review()
-		_core.reset_starting()
-		var last: Dictionary = {}
-		for usi in usi_moves:
-			var m: Variant = _core.usi_to_move(usi)
-			if m == null or not bool(_core.is_legal_move(m)) or not bool(_core.apply_move(m)):
-				_lan_protocol_error()
-				return
-			last = m
-		_last_move = last
-		_clear_selection()
-		_refresh_last_move_hint()
-		_check_end_state()
+	# Always replay: NetSession has checked that the agreed list extends
+	# (or equals) what was played, and a same-length list that differs
+	# must not leave the board out of step with it.
+	if _in_review:
+		_exit_review()
+	_core.reset_starting()
+	var last: Dictionary = {}
+	for usi in usi_moves:
+		var m: Variant = _core.usi_to_move(usi)
+		if m == null or not bool(_core.is_legal_move(m)) or not bool(_core.apply_move(m)):
+			_lan_protocol_error()
+			return
+		last = m
+	_last_move = last
+	_clear_selection()
+	_refresh_last_move_hint()
+	_check_end_state()
 	_refresh_all()
 
 func _on_lan_failed(reason: String) -> void:
