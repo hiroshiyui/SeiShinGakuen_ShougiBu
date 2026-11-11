@@ -292,9 +292,13 @@ func _load_prefs() -> void:
 			var rec: Variant = records[cid]
 			if rec is Dictionary:
 				character_records[str(cid)] = {
-					"wins": maxi(int(rec.get("wins", 0)), 0),
-					"losses": maxi(int(rec.get("losses", 0)), 0),
+					"wins": _record_count(rec.get("wins", 0)),
+					"losses": _record_count(rec.get("losses", 0)),
 				}
+
+# A win/loss count read from prefs; anything but a non-negative int is 0.
+func _record_count(value: Variant) -> int:
+	return maxi(value, 0) if value is int else 0
 
 func _save_prefs() -> void:
 	var cfg := ConfigFile.new()

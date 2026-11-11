@@ -20,6 +20,8 @@ var _gameover_text: String = ""
 var _gameover_terminator: String = ""
 # Guards the per-character record against counting one game twice.
 var _result_recorded: bool = false
+# True when this game continued a save, even one with no move log.
+var _resumed: bool = false
 @onready var _speech_bubble: PanelContainer = %OpponentSpeech
 @onready var _speech_label: Label = %OpponentSpeechText
 var _speech_tween: Tween = null
@@ -133,6 +135,7 @@ func _ready() -> void:
 		return
 	_core = ClassDB.instantiate("ShogiCore")
 	_load_ai_if_needed()
+	_resumed = not Settings.resume_packed.is_empty() or Settings.resume_sfen != ""
 	if not Settings.resume_packed.is_empty():
 		# Prefer replay-from-start so the kifu panel + sennichite history
 		# rebuild correctly. Falls back to SFEN-load if the packed log
@@ -218,7 +221,7 @@ func _ready() -> void:
 	_apply_safe_area()
 	_refit_board()
 	_refresh_all()
-	if int(_core.move_log_size()) == 0:
+	if not _resumed:
 		_say("start")
 	_maybe_start_ai_turn()
 
@@ -529,7 +532,9 @@ func _result_speech(result_expr: String) -> String:
 # Adds a finished game to the opponent's win/loss record. Draws and
 # games with no moves don't count.
 func _record_character_result(text: String) -> void:
-	if not _ai_enabled or _result_recorded or int(_core.move_log_size()) == 0:
+	if not _ai_enabled or _result_recorded:
+		return
+	if int(_core.move_log_size()) == 0 and not _resumed:
 		return
 	var expr := _expression_for_result(text)
 	if expr == "neutral":
@@ -1074,6 +1079,7 @@ func _on_restart() -> void:
 	_core.reset_starting()
 	_game_over = false
 	_result_recorded = false
+	_resumed = false
 	_gameover_terminator = ""
 	_gameover_text = ""
 	_pending_move = {}
@@ -1218,12 +1224,18 @@ func _back_to_title() -> void:
 	SceneTransition.go_to("res://scenes/MainMenu.tscn")
 
 func _on_quit_confirmed() -> void:
-	# Ensure any AI worker thread has finished before tearing down the
-	# scene — wait_to_finish on a live thread blocks, but abandoning a
-	# JoinHandle leaks.
-	if _thinking and _think_thread != null:
-		_think_thread.wait_to_finish()
-		_thinking = false
+	# A finished game already has its result and KIF; the exit button
+	# stays reachable after Back closes the 対局終了 dialog.
+	if _game_over:
+		_back_to_title()
+		return
+	# Join every worker before touching _core or tearing down the scene:
+	# a search mutates the shared board, and abandoning a JoinHandle leaks.
+	for worker: Thread in [_think_thread, _teacher_thread]:
+		if worker != null and worker.is_started():
+			worker.wait_to_finish()
+	_thinking = false
+	_teacher_thinking = false
 	var resigner := _resignation_side()
 	var winner := "後手" if resigner == "先手" else "先手"
 	print("[game] %s の投了 — %s の勝ち" % [resigner, winner])

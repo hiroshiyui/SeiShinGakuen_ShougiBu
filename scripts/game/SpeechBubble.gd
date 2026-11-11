@@ -34,6 +34,10 @@ func set_tail_x(x: float) -> void:
 		queue_redraw()
 
 func _draw() -> void:
+	# Before the first line is placed the balloon has no usable size or
+	# tail position, and the outline would be a degenerate polygon.
+	if _tail_x <= 0.0 or size.y <= CORNER_RADIUS * 2.0:
+		return
 	var outline := _outline()
 	draw_colored_polygon(outline, PAPER)
 	var closed := outline.duplicate()

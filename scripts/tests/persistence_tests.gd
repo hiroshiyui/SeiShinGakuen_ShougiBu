@@ -47,6 +47,8 @@ func _initialize() -> void:
 		_test_needs_extract_detects_stale_copy)
 	_run("character records count wins/losses and round-trip through prefs",
 		_test_character_records_roundtrip)
+	_run("corrupt character records load as zero without aborting",
+		_test_character_records_corrupt)
 
 	_clean()
 	if _fails > 0:
@@ -295,6 +297,22 @@ func _test_character_records_roundtrip() -> String:
 		return "b-chara expected 0-1, got %s" % b
 	if _settings.character_records.has(""):
 		return "empty id must not be recorded"
+	return ""
+
+func _test_character_records_corrupt() -> String:
+	var f := FileAccess.open(_TEST_PREFS, FileAccess.WRITE)
+	f.store_string('[records]\n\ncharacters={"a":{"wins":[1],"losses":"x"},"b":7,"c":{"wins":2,"losses":-3}}\n')
+	f.close()
+	_settings.character_records.clear()
+	_settings._load_prefs()
+	var a: Dictionary = _settings.character_record("a")
+	var c: Dictionary = _settings.character_record("c")
+	if a["wins"] != 0 or a["losses"] != 0:
+		return "bad values should load as 0-0, got %s" % a
+	if _settings.character_records.has("b"):
+		return "non-dictionary record should be skipped"
+	if c["wins"] != 2 or c["losses"] != 0:
+		return "c expected 2-0, got %s" % c
 	return ""
 
 func _test_atomic_copy_missing_source() -> String:
