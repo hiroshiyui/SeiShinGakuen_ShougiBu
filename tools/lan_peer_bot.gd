@@ -9,8 +9,11 @@ extends SceneTree
 #   godot --headless -s res://tools/lan_peer_bot.gd --path . -- join
 #
 # Add `mdns-only` (with host) to announce over mDNS without the broadcast
-# beacon. Add `rematch` to stay for 再戦 after the game. Add `addr=<phone ip>` to join without discovery. Add `drop` to drop the connection once after the third move, to watch
-# the phone wait for the reconnect.
+# beacon. Add `rematch` to stay for 再戦 after the game. Add
+# `addr=<phone ip>` to join without discovery. Add `drop` to drop the
+# connection once after the third move, to watch the phone wait for the
+# reconnect. Add `name=<text>` to show the phone a name other than "Bot"
+# (e.g. for screenshots).
 
 const Net := preload("res://scripts/autoload/NetSession.gd")
 const Discovery := preload("res://scripts/net/LanDiscovery.gd")
@@ -22,6 +25,7 @@ var _drop_once: bool = false
 var _rematch: bool = false
 var _mdns_ad: Object = null
 var _move_at_msec: int = -1
+var _name: String = "Bot"
 
 func _initialize() -> void:
 	var args := OS.get_cmdline_user_args()
@@ -47,11 +51,13 @@ func _initialize() -> void:
 	for a in args:
 		if a.begins_with("addr="):
 			direct = a.substr(5)
+		elif a.begins_with("name="):
+			_name = a.substr(5)
 	if direct != "":
 		# Skips discovery, e.g. when this computer's firewall drops the
 		# phone's beacon: `-- join addr=192.168.1.23`.
 		print("[bot] joining %s directly" % direct)
-		_net.join(direct, Net.GAME_PORT, "Bot")
+		_net.join(direct, Net.GAME_PORT, _name)
 	elif "join" in args:
 		_disc.hosts_changed.connect(_on_hosts)
 		if not _disc.start_browse():
@@ -59,17 +65,17 @@ func _initialize() -> void:
 			return
 		print("[bot] browsing for a host…")
 	else:
-		if not _net.host("Bot"):
+		if not _net.host(_name):
 			_finish("cannot open game port")
 			return
 		if "mdns-only" in args:
 			# No broadcast beacon: the phone can only find this over mDNS.
 			_mdns_ad = ClassDB.instantiate("LanMdns")
-			if not bool(_mdns_ad.advertise("Bot (mDNS)", _net.listen_port, Net.PROTO)):
+			if not bool(_mdns_ad.advertise(_name + " (mDNS)", _net.listen_port, Net.PROTO)):
 				_finish("mDNS advertise failed")
 				return
 		else:
-			_disc.start_beacon(_net.listen_port, "Bot")
+			_disc.start_beacon(_net.listen_port, _name)
 		print("[bot] hosting on port %d" % _net.listen_port)
 
 func _on_hosts() -> void:
@@ -79,7 +85,7 @@ func _on_hosts() -> void:
 	var h: Dictionary = hosts[0]
 	print("[bot] joining %s at %s:%d" % [h["name"], h["address"], h["port"]])
 	_disc.stop()
-	_net.join(str(h["address"]), int(h["port"]), "Bot")
+	_net.join(str(h["address"]), int(h["port"]), _name)
 
 func _on_started() -> void:
 	_disc.stop()
