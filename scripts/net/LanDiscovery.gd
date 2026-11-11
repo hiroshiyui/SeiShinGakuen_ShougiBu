@@ -145,6 +145,8 @@ func _receive_beacons() -> void:
 		var port := int(msg.get("port", 0))
 		if port <= 0 or port > 65535:
 			continue
+		if not _is_lan_address(address):
+			continue
 		var key := "%s:%d" % [address, port]
 		if not _hosts.has(key):
 			if _hosts.size() >= MAX_HOSTS:
@@ -195,6 +197,8 @@ func _poll_mdns() -> bool:
 		if port <= 0 or port > 65535:
 			continue
 		var address := str(ev.get("address", ""))
+		if not _is_lan_address(address):
+			continue
 		var key := "%s:%d" % [address, port]
 		if not _hosts.has(key):
 			if _hosts.size() >= MAX_HOSTS:
@@ -232,3 +236,24 @@ func _release_multicast_lock() -> void:
 
 func _exit_tree() -> void:
 	stop()
+
+# --- address check ---------------------------------------------------------
+
+# Only offer hosts that are plausibly on this LAN: private, link-local or
+# loopback ranges, or the same /24 as one of this device's addresses
+# (some campus networks hand out public addresses). Applied to both the
+# beacon and mDNS, so a record pointing somewhere else is never listed.
+static func _is_lan_address(address: String) -> bool:
+	var p := address.split(".")
+	if p.size() != 4:
+		return false
+	var a := int(p[0])
+	var b := int(p[1])
+	if a == 10 or a == 127 or (a == 192 and b == 168) or (a == 169 and b == 254) \
+			or (a == 172 and b >= 16 and b <= 31):
+		return true
+	var prefix := "%s.%s.%s." % [p[0], p[1], p[2]]
+	for local: String in IP.get_local_addresses():
+		if local.begins_with(prefix):
+			return true
+	return false

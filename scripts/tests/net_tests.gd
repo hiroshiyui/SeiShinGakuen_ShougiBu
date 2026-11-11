@@ -27,6 +27,8 @@ func _main() -> void:
 	await _test_silent_stranger_cannot_block_host()
 	await _test_resync_rejects_rewritten_history()
 	await _test_reconnect_needs_token()
+	await _test_resync_rejects_move_for_other_side()
+	await _test_flood_does_not_bump_guest()
 	await _test_bad_types_end_session()
 	await _test_oversized_line_ends_session()
 	await _test_start_mid_game_ignored()
@@ -313,3 +315,47 @@ func _test_start_mid_game_ignored() -> void:
 		await process_frame
 	_check(g.game_id == gid and g.moves.size() == 1, "guest ignores a start during a game")
 	await _close_pair(pair)
+
+# A reconnecting guest one move ahead is fine only if that move is its
+# own; one more move for the host's side must be refused.
+func _test_resync_rejects_move_for_other_side() -> void:
+	print("resync: extra move for the wrong side")
+	var pair: Array = await _pair("w")
+	var h: Node = pair[0]
+	var g: Node = pair[1]
+	var sente: Node = g if h.local_is_gote else h
+	var gote: Node = h if sente == g else g
+	sente.send_move("7g7f")
+	await _wait_for(func(): return gote.moves.size() == 1, 2.0)
+	gote.send_move("3c3d")
+	await _wait_for(func(): return sente.moves.size() == 2, 2.0)
+	_events.clear()
+	g._on_connection_dropped()
+	# Ply 3 is 先手's. Legit only if the guest is 先手.
+	g.moves = PackedStringArray(["7g7f", "3c3d", "2g2f"])
+	var guest_is_sente: bool = not g.local_is_gote
+	await _wait_for(func():
+		return _events.any(func(e): return e.begins_with("wH:restored") or e.begins_with("wG:failed")), 12.0)
+	if guest_is_sente:
+		_check(Array(h.moves) == ["7g7f", "3c3d", "2g2f"], "guest's own extra move is accepted")
+	else:
+		_check(Array(h.moves) == ["7g7f", "3c3d"], "an extra move for the host's side is refused")
+	await _close_pair(pair)
+
+# Junk connections arriving while a real guest connects must not bump it.
+func _test_flood_does_not_bump_guest() -> void:
+	print("connection flood")
+	var h: Node = _make("fH")
+	h.host("H")
+	var junk: Array = []
+	for i in 6:
+		junk.append(await _raw_client(h.listen_port))
+	var g: Node = _make("fG")
+	g.join("127.0.0.1", h.listen_port, "G")
+	for i in 6:
+		junk.append(await _raw_client(h.listen_port))
+	var ok := await _wait_for(func(): return h.in_game and g.in_game, 4.0)
+	_check(ok, "guest gets in despite a flood of silent connections")
+	for c: StreamPeerTCP in junk:
+		c.disconnect_from_host()
+	await _close_pair([h, g])

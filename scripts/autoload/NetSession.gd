@@ -60,6 +60,10 @@ const HELLO_TIMEOUT_SEC := 5.0
 # Longest game we accept from a peer (a real game is a few hundred plies).
 const MAX_MOVES := 1000
 const NAME_MAX := 40
+# Host: connections that haven't said hello yet wait here, each with its
+# own deadline, instead of taking the seat. A flood of junk connections
+# then can't bump a real guest that is mid-handshake.
+const MAX_PENDING := 4
 
 enum Role { NONE, HOST, GUEST }
 
@@ -81,6 +85,8 @@ var _rematch_local: bool = false
 var _rematch_remote: bool = false
 
 var _server: TCPServer = null
+# Host only: [{peer: StreamPeerTCP, buf: PackedByteArray, since: int}]
+var _pending: Array = []
 var _peer: StreamPeerTCP = null
 var _buf: PackedByteArray = PackedByteArray()
 var _handshaken: bool = false
@@ -137,6 +143,9 @@ func close(notify: String = "") -> void:
 		_peer.disconnect_from_host()
 	if _server != null:
 		_server.stop()
+	for p in _pending:
+		(p["peer"] as StreamPeerTCP).disconnect_from_host()
+	_pending.clear()
 	_peer = null
 	_server = null
 	_buf.clear()
@@ -204,16 +213,10 @@ func _process(_delta: float) -> void:
 	if role == Role.NONE:
 		return
 	var now := Time.get_ticks_msec()
-	if role == Role.HOST and _server != null and _server.is_connection_available():
-		var incoming := _server.take_connection()
-		# A connection that hasn't said hello yet doesn't hold the seat:
-		# otherwise anything on the LAN could connect and sit silently.
-		if _peer == null or not _handshaken or _lost_since_msec > 0:
-			if _peer != null:
-				_peer.disconnect_from_host()
-			_adopt_peer(incoming)
-		else:
-			incoming.disconnect_from_host()  # already have an opponent
+	if role == Role.HOST:
+		_poll_pending(now)
+		if role == Role.NONE:
+			return
 	# Checked every frame, so a connection that never completes a
 	# handshake can't keep a lost game waiting forever.
 	_check_reconnect_window(now)
@@ -248,6 +251,54 @@ func _process(_delta: float) -> void:
 		_send({"t": "ping"})
 	if now - _last_rx_msec >= int(TIMEOUT_SEC * 1000.0):
 		_on_connection_dropped()
+
+# Host: new connections queue in `_pending` until they send a line. Only
+# a hello gets the seat (and only while it is free); anything else, or
+# silence past HELLO_TIMEOUT_SEC, is dropped. The seat holder is never
+# bumped by a newcomer.
+func _poll_pending(now: int) -> void:
+	while _server != null and _server.is_connection_available():
+		var incoming := _server.take_connection()
+		if _pending.size() >= MAX_PENDING:
+			(_pending.pop_front()["peer"] as StreamPeerTCP).disconnect_from_host()
+		incoming.set_no_delay(true)
+		_pending.append({"peer": incoming, "buf": PackedByteArray(), "since": now})
+	var i := 0
+	while i < _pending.size():
+		var entry: Dictionary = _pending[i]
+		var p: StreamPeerTCP = entry["peer"]
+		p.poll()
+		var status := p.get_status()
+		var expired := now - int(entry["since"]) >= int(HELLO_TIMEOUT_SEC * 1000.0)
+		if status == StreamPeerTCP.STATUS_CONNECTED and not expired:
+			# PackedByteArray is a value type: work on a copy, store it back.
+			var buf: PackedByteArray = entry["buf"]
+			var n := mini(p.get_available_bytes(), MAX_LINE + 1 - buf.size())
+			if n > 0:
+				var res: Array = p.get_partial_data(n)
+				if int(res[0]) == OK:
+					buf.append_array(res[1])
+					entry["buf"] = buf
+			var nl := buf.find(10)
+			if nl < 0 and buf.size() <= MAX_LINE:
+				i += 1
+				continue  # still waiting for its first line
+			_pending.remove_at(i)
+			var seat_free := _peer == null or _lost_since_msec > 0
+			var msg: Variant = JSON.parse_string(buf.slice(0, nl).get_string_from_utf8()) if nl >= 0 else null
+			if not seat_free or not (msg is Dictionary) or str(msg.get("t", "")) != "hello":
+				p.disconnect_from_host()
+				continue
+			if _peer != null:
+				_peer.disconnect_from_host()
+			_adopt_peer(p)
+			_buf = buf.slice(nl + 1)
+			_handle(msg)
+			if role == Role.NONE:
+				return
+			continue
+		_pending.remove_at(i)
+		p.disconnect_from_host()
 
 func _connect_to_host() -> bool:
 	_next_retry_msec = Time.get_ticks_msec() + int(RECONNECT_RETRY_SEC * 1000.0)
@@ -495,11 +546,14 @@ static func _is_usi(v: Variant) -> bool:
 static func _clean_text(v: Variant, max_len: int, fallback: String) -> String:
 	if not (v is String):
 		return fallback
-	var out := ""
-	for ch in v:
-		if ch.unicode_at(0) >= 0x20 and ch.unicode_at(0) != 0x7f:
-			out += ch
-	out = out.strip_edges().left(max_len)
+	# Cut first so a huge string costs nothing; keep some slack for the
+	# control characters dropped below.
+	var parts := PackedStringArray()
+	for ch in (v as String).left(max_len * 2):
+		var c := ch.unicode_at(0)
+		if c >= 0x20 and c != 0x7f:
+			parts.append(ch)
+	var out := "".join(parts).strip_edges().left(max_len)
 	return out if out != "" else fallback
 
 # The move list both sides continue from after a reconnect, or null if
@@ -513,11 +567,20 @@ func _resync_list(theirs_v: Variant) -> Variant:
 		if not _is_usi(m):
 			return null
 	var theirs := PackedStringArray(theirs_v)
-	var shorter := theirs if theirs.size() <= moves.size() else moves
-	var longer := moves if shorter == theirs else theirs
+	var peer_ahead := theirs.size() > moves.size()
+	var shorter := moves if peer_ahead else theirs
+	var longer := theirs if peer_ahead else moves
 	if longer.size() - shorter.size() > 1:
 		return null
 	for i in shorter.size():
 		if shorter[i] != longer[i]:
+			return null
+	# The one extra move the peer has must be the peer's own: ply i is
+	# 先手's when i is even (games always start from the initial
+	# position). Otherwise a reconnect could play a move for us.
+	if peer_ahead:
+		var extra_is_sente := (longer.size() - 1) % 2 == 0
+		var peer_is_sente := local_is_gote
+		if extra_is_sente != peer_is_sente:
 			return null
 	return longer
