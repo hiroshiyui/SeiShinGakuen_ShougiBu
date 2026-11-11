@@ -24,7 +24,7 @@ use crate::board::Board;
 use crate::encode::encode_position;
 use crate::mate::{DEFAULT_NODE_BUDGET, Defense, Solver, flipped};
 use crate::mcts::{Searcher, all_legal_moves};
-use crate::opening_book::OpeningBook;
+use crate::opening_book::{OpeningBook, format_usi, parse_usi};
 use crate::move_index::encode_move;
 use crate::nn::NeuralNet;
 use crate::rules::{DeclareResult, SennichiteStatus, can_declare_jishogi, detect_sennichite, has_any_legal_move, is_check, is_checkmate, jishogi_points, king_entered, legal_drops, legal_moves_from, pieces_in_opponent_camp};
@@ -235,6 +235,38 @@ impl ShogiCore {
         let key = sfen::position_key(&self.board);
         self.board.tag_last_move(was_check, key);
         true
+    }
+
+    // --- USI + legality, for moves from an untrusted source (LAN peer) ------
+
+    /// USI text for a move dictionary (`7g7f`, `2b3a+`, `P*5e`), or "" if
+    /// the dictionary isn't a well-formed move.
+    #[func]
+    fn move_to_usi(&self, move_dict: VarDictionary) -> GString {
+        dict_to_move(&move_dict)
+            .and_then(format_usi)
+            .map(|s| GString::from(s.as_str()))
+            .unwrap_or_default()
+    }
+
+    /// Move dictionary for USI text, or null on a syntax error. Says
+    /// nothing about legality — see `is_legal_move`.
+    #[func]
+    fn usi_to_move(&self, usi: GString) -> Variant {
+        match parse_usi(&usi.to_string()) {
+            Some(mv) => move_to_dict(mv).to_variant(),
+            None => Variant::nil(),
+        }
+    }
+
+    /// True only when the move is one of the side to move's fully legal
+    /// moves (own king safe, 二歩, 打ち歩詰め, forced promotion). Unlike
+    /// `apply_move`, which trusts the tap-driven UI, this is the check
+    /// for moves arriving from a peer.
+    #[func]
+    fn is_legal_move(&mut self, move_dict: VarDictionary) -> bool {
+        let Some(mv) = dict_to_move(&move_dict) else { return false };
+        all_legal_moves(&mut self.board).contains(&mv)
     }
 
     #[func]

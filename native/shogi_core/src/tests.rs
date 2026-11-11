@@ -338,3 +338,20 @@ fn apply_move_rejects_out_of_bounds_destination() {
     assert!(!b.apply_move(mv));
     assert_eq!(crate::sfen::to_sfen(&b), before);
 }
+
+#[test]
+fn all_legal_moves_rejects_peer_cheats() {
+    use crate::mcts::all_legal_moves;
+    use crate::opening_book::parse_usi;
+    let mut b = crate::board::Board::default();
+    let legal = all_legal_moves(&mut b);
+    // Ordinary opening move is legal.
+    assert!(legal.contains(&parse_usi("7g7f").unwrap()));
+    // Pawn two squares, a drop with an empty hand, and moving the
+    // opponent's piece are not.
+    assert!(!legal.contains(&parse_usi("7g7e").unwrap()));
+    assert!(!legal.contains(&parse_usi("P*5e").unwrap()));
+    assert!(!legal.contains(&parse_usi("3c3d").unwrap()));
+    // Promotion flag must match: no promotion outside the zone.
+    assert!(!legal.contains(&parse_usi("7g7f+").unwrap()));
+}

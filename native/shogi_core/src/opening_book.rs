@@ -176,6 +176,35 @@ pub fn parse_usi(s: &str) -> Option<Move> {
     Some(Move::Board { from, to, promote })
 }
 
+/// Inverse of [`parse_usi`]. Returns None for squares outside the board or
+/// a drop of a piece that can't be held (king, promoted pieces).
+pub fn format_usi(mv: Move) -> Option<String> {
+    fn sq(s: Square) -> Option<String> {
+        if !s.in_bounds() {
+            return None;
+        }
+        Some(format!("{}{}", s.file, (b'a' + (s.rank - 1) as u8) as char))
+    }
+    match mv {
+        Move::Board { from, to, promote } => {
+            Some(format!("{}{}{}", sq(from)?, sq(to)?, if promote { "+" } else { "" }))
+        }
+        Move::Drop { kind, to } => {
+            let letter = match kind {
+                Kind::Pawn => 'P',
+                Kind::Lance => 'L',
+                Kind::Knight => 'N',
+                Kind::Silver => 'S',
+                Kind::Gold => 'G',
+                Kind::Bishop => 'B',
+                Kind::Rook => 'R',
+                _ => return None,
+            };
+            Some(format!("{}*{}", letter, sq(to)?))
+        }
+    }
+}
+
 fn validate_move_on(board: &Board, mv: Move) -> bool {
     match mv {
         Move::Board { from, to, .. } => {
@@ -218,6 +247,21 @@ mod tests {
             to: Square::new(3, 1),
             promote: true,
         });
+    }
+
+    #[test]
+    fn format_usi_round_trips() {
+        for usi in ["7g7f", "2b3a+", "P*5e", "R*1i", "9a9i"] {
+            assert_eq!(format_usi(parse_usi(usi).unwrap()).as_deref(), Some(usi));
+        }
+    }
+
+    #[test]
+    fn format_usi_rejects_unholdable_drop() {
+        assert_eq!(format_usi(Move::Drop { kind: Kind::King, to: Square::new(5, 5) }), None);
+        assert_eq!(format_usi(Move::Board {
+            from: Square::new(0, 1), to: Square::new(1, 1), promote: false,
+        }), None);
     }
 
     #[test]
