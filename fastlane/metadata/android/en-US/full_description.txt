@@ -14,7 +14,7 @@ The user interface is in Japanese.
 
 <b>Privacy</b>
 
-No network permission. No ads, tracking or analytics. The AI model runs locally.
+No ads, tracking or analytics. The AI model runs locally. The network permission is used only for 通信対戦 (play against a friend on the same Wi-Fi); the app never contacts the internet.
 
 <b>License</b>
 

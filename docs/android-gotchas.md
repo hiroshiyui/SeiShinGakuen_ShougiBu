@@ -300,3 +300,24 @@ The arm64-only APK runs on the x86_64 image through Android's ARM
 translation, so no ARM64 system image is needed (and none runs on an
 x86_64 host). The emulator sits behind its own NAT (`10.0.2.x`), so it
 can't take part in LAN broadcast tests with a physical phone.
+
+## 通信対戦: the phone can't see a game hosted on the PC (or vice versa)
+
+**Symptom:** testing 通信対戦 between a phone and the desktop build (or
+`tools/lan_peer_bot.gd`), the phone never lists the PC's game, or
+lists it but 接続が切れました when tapped; a game hosted on the phone
+never shows up on the PC.
+
+**Cause:** the desktop firewall (firewalld on this machine) drops
+incoming UDP 47123 (beacons) and TCP 47124–47133 (game port).
+Outgoing traffic is allowed, so the PC can still join a phone directly
+by IP.
+
+**Fix:** open the ports for the session, e.g.
+`sudo firewall-cmd --add-port=47123/udp --add-port=47124-47133/tcp`
+(add `--permanent` to keep it), or let the bot join the phone directly
+with `-- join addr=<phone ip>`.
+
+Android itself needed nothing: a Nokia G50 (Android 13) receives the
+broadcast beacons without a `WifiManager.MulticastLock`, and the
+`INTERNET` permission is the only one requested.

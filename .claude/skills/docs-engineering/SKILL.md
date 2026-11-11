@@ -33,7 +33,7 @@ Read this before assuming files exist. The repo has solid technical documentatio
 **Does not yet exist** (don't pretend they do; ask before creating):
 
 - `NOTICES.md` / third-party attribution document
-- `PRIVACY-POLICY.md` — intentionally absent. The app requests no network permission and none of its channels (F-Droid, itch.io, GitHub Releases) requires one; Google Play, which would, is out of scope (see ROADMAP Open Questions). Don't propose creating it unless the user reopens that decision.
+- `PRIVACY-POLICY.md` — intentionally absent. The app does request `INTERNET`, but only for LAN-only 通信対戦 (no server, nothing leaves the local network — see `docs/privacy-policy.md`), and none of its channels (F-Droid, itch.io, GitHub Releases) requires one; Google Play, which would, is out of scope (see ROADMAP Open Questions). Don't propose creating it unless the user reopens that decision.
 
 When the user asks about one of the missing files, confirm whether to create it before writing — do not silently scaffold a tree of new docs.
 

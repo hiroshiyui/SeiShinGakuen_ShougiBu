@@ -11,6 +11,7 @@ MCTS against the Bonanza policy+value network).
 ### Goals
 - Full-rules 本将棋 (standard Shogi) playable on Android phones.
 - Single-player vs. AI, using `bonanza.onnx` (policy+value) with MCTS.
+- Human vs. human on the same local network (通信対戦, Phase 8), with no server.
 - Offline, single APK — no server dependency at runtime.
 - Traditional kanji pieces at early stages (sprites later, optional).
 - Portrait-first UI; tablet landscape is a stretch goal.
@@ -120,21 +121,19 @@ An arm64-v8a build through `cargo-ndk --platform 24` with NDK 30 (`docs/android-
 - **Game records:** a 棋譜 panel with tap-to-rewind review on a scratch core (ADR-0008). Every finished game auto-saves as KIF with its real result to app-private Documents (ADR-0009); there is no share intent. A 棋譜検討 library and reviewer offers MCTS analysis (◎/△/×, recommended move) and the 形勢グラフ. 加藤先生's post-game comment analyses only the three biggest drops in the AI's win rate, on a worker thread, instead of the whole game.
 - **詰将棋:** 160 mate problems (1, 3 and 5 moves) mined from self-play, so the set has no third-party content and suits F-Droid. They are judged by `mate.rs`, with 今日の一問 and hints. `tsume_tests.gd` re-solves every problem.
 
-### Phase 8 — Human vs Human on LAN (proposed)
+### Phase 8 — Human vs Human on LAN (通信対戦)
 
-Two players on the same Wi-Fi play each other, each on their own phone. There is still no server and no internet traffic, so this does not conflict with the "Online multiplayer" non-goal. The "Single-player vs. AI" goal in §1 still needs a decision and an ADR before work starts.
+Two players on the same Wi-Fi play each other, each on their own phone, over a direct connection with no server. The "Online multiplayer" non-goal stands. Decision and rationale: [ADR-0012](./docs/adr/0012-lan-play.md).
 
-- [ ] **Discovery, v1: UDP broadcast beacon.** In pure GDScript with `PacketPeerUDP`. The host broadcasts a small beacon (protocol version, TCP port, display name) about once a second. The joiner listens and lists the games it finds. The same code runs on desktop and Android with no plugin.
-- [ ] **Android multicast lock.** Many devices drop incoming broadcast and multicast packets unless a `WifiManager.MulticastLock` is held. This needs a small Kotlin Godot Android plugin and the `INTERNET` and `CHANGE_WIFI_MULTICAST_STATE` permissions. Check that it fits the F-Droid from-source build. See also `docs/android-gotchas.md`.
-- [ ] **Discovery, v2 (optional): mDNS / DNS-SD (Bonjour).** If broadcast proves unreliable, register and browse `_seishinshogi._tcp`. There are two ways to do it:
-  - Android `NsdManager`, in the same plugin as the multicast lock. Desktop would need its own path.
-  - The `mdns-sd` crate inside the Rust GDExtension. This keeps one code path for desktop and Android, but it still needs the Java-side multicast lock and adds a crate to the F-Droid build.
-- [ ] **Transport: TCP.** Use `TCPServer` / `StreamPeerTCP`, or `ENetMultiplayerPeer`. A shogi game is turn-based and needs very little bandwidth.
-- [ ] **Wire protocol.** The handshake carries the protocol and app version, the starting SFEN, and who plays 先手 (chosen at random or by the host). After that, each message is one USI move (`7g7f`, `P*5e`) with a sequence number, or one of resign, draw offer and ping.
-- [ ] **Validate every peer move in the Rust core.** Both sides check each incoming move for legality, 二歩, 打ち歩詰め and 千日手. A buggy or malicious peer then can't force an illegal position.
-- [ ] **Disconnect and reconnect.** Build on the existing SFEN plus packed-log save/resume. After a reconnect, the sequence numbers let the two sides resync. If the peer is gone for good, end the game as 中断.
-- [ ] **UI.** A lobby screen (host or join, the list of found games), a waiting state, and an opponent shown by name without a character portrait. 待った and 先生のお薦め are off or need agreement from both players. Finished games auto-save to KIF with both players' names. New strings go through `tools/build_font_subsets.py`.
-- [ ] **Docs.** Write an ADR for the scope change and the discovery choice, and update the README and the F-Droid / itch.io descriptions.
+- [x] **Discovery, v1: UDP broadcast beacon.** `scripts/net/LanDiscovery.gd`, pure GDScript. The host sends a JSON beacon (app id, protocol version, device name, TCP port) about once a second to 255.255.255.255, each local /24 broadcast address and loopback; the joiner listens on port 47123 and lists hosts heard in the last 4 s.
+- [x] ~~**Android multicast lock.**~~ — not needed so far: a Nokia G50 (Android 13) receives the beacons without one, so no Kotlin plugin. Revisit if a device misses them.
+- [ ] **Discovery, v2 (optional): mDNS / DNS-SD (Bonjour).** Only if broadcast proves unreliable. Either Android `NsdManager` in a plugin (desktop needs its own path), or the `mdns-sd` crate in the GDExtension (still needs a Java-side multicast lock).
+- [x] **Transport: TCP.** `TCPServer` / `StreamPeerTCP` in the `NetSession` autoload (`scripts/autoload/NetSession.gd`), so the connection survives the lobby → game scene change. Game port 47124, or the next free one of ten.
+- [x] **Wire protocol.** One JSON object per line: `hello` (protocol version, app id, name), `start` (game id, host plays 先手 or not — the host picks at random), `move` (ply number + USI), `resign`, `declare`, `abort`, `ping` / `pong`, `sync`, `error`. *Shipped differently:* no starting SFEN (games always start from the initial position) and no draw offer; 千日手 and 持将棋 still end in a draw automatically.
+- [x] **Validate every peer move in the Rust core.** New `ShogiCore.is_legal_move` checks the move against the full legal-move list (own king safe, 二歩, 打ち歩詰め, forced promotion); `move_to_usi` / `usi_to_move` convert. A bad move or a false 入玉宣言 ends the game as 中断.
+- [x] **Disconnect and reconnect.** For 60 s after a drop the guest redials every 2 s and the host keeps listening; the board is locked with 再接続を待っています…. On reconnect the guest sends its move list, the longer list wins (the other is a prefix of it), and both sides replay it move by move. After 60 s the game ends as 中断. *Shipped differently:* not built on the 続きから save — LAN games never use that slot, since one player can't resume alone.
+- [x] **UI.** `scenes/NetworkLobby.tscn`, opened by 通信対戦 on the title screen: 対局を作る / 対局に参加する, a list of found games, waiting and connecting states. In game the opponent is shown by name and side with no portrait; 待った, 先生のお薦め and the AI-only features are off; the status line says あなた / 相手 の手番. Leaving a LAN game asks to resign. Finished games auto-save to KIF with both device names. *Not yet:* rematch (the 対局終了 dialog goes back to the title), and flipping the board for the 後手 player, who plays from the top of the screen as in 先手(AI) 対 後手(人).
+- [x] **Docs.** ADR-0012; the privacy policy, store descriptions and `docs/distribution.md` now describe the `INTERNET` permission and the LAN-only traffic. Tests: `scripts/tests/net_tests.gd` (loopback host + guest, reconnect, version mismatch, discovery); `tools/lan_peer_bot.gd` is a headless random-move opponent for testing against a phone.
 
 ---
 
@@ -211,7 +210,7 @@ bump. `.gdextension` manifest declares `compatibility_minimum = 4.6`
 - [x] ~~App icon + main-menu art — source or commission?~~ — AI-generated in-house, both icon (`assets/branding/`) and backgrounds (`assets/backgrounds/`) plus the 8 character portraits (`assets/characters/**/neutral.webp`). 2026-04-27.
 - [x] ~~Cloud save / cross-device persistence?~~ — explicitly skipped to stay free of Google Play services dependencies. Players who uninstall lose `user://prefs.cfg` + `user://saved_game.cfg`; that's the trade-off. 2026-04-27.
 - [x] ~~Play Store distribution or sideload only?~~ — sideload only via signed APK on GitHub Releases. Play Store is explicitly out of scope; we don't want the Google Play ecosystem dependencies (developer account, policy compliance, mandatory privacy URL, upload-key custody) for a single-player offline game. AAB target left in `tools/build_all.sh --aab` for completeness but unused. 2026-04-27. *Since then:* the same signed APK also ships on itch.io, and the app was accepted on F-Droid (2026-11), which builds each release tag from source with its own signing key and updates automatically. Play Store remains out of scope.
-- [x] ~~Any telemetry (crash reporting)?~~ — none. The game is single-player and offline, and the app requests no network permission. 2026-11-11.
+- [x] ~~Any telemetry (crash reporting)?~~ — none. The app's only network traffic is LAN-only 通信対戦 (Phase 8); it never contacts a server. 2026-11-11.
 - [x] ~~UI string centralisation (e.g. `Strings.gd`)~~ — deferred; strings stay inline. Reopen if we internationalise or the font subsetter's grep becomes unwieldy. 2026-11-11.
 
 ---

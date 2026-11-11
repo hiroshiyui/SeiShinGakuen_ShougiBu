@@ -1,6 +1,6 @@
 # Privacy Policy — 清正学園将棋部 (SeiShinGakuen Shougi-bu)
 
-**Effective date:** 2026-04-30
+**Effective date:** 2026-11-11
 **Application:** 清正学園将棋部 (SeiShinGakuen Shougi-bu)
 **Contact:** hiroshiyui@gmail.com
 
@@ -10,9 +10,11 @@
 
 ### Summary
 
-清正学園将棋部 is a single-player offline Shogi (本将棋) game. **The
-application does not collect, transmit, or share any personal information
-or user data.** It stores only local gameplay data on your device.
+清正学園将棋部 is a Shogi (本将棋) game played against an on-device AI,
+or against another person on the same local network (通信対戦). **The
+application does not collect personal information or user data, and it
+never contacts the internet or any server.** It stores only local
+gameplay data on your device.
 
 ### Data we collect
 
@@ -26,8 +28,8 @@ None. The application:
 - Does not include analytics, crash reporting, telemetry, or any other
   data-collection SDKs.
 - Does not contain advertising.
-- Does not make any network requests. The application functions
-  entirely offline.
+- Does not contact the internet or any server. The only network traffic
+  is 通信対戦 (local network play), described below.
 
 ### Data stored on your device
 
@@ -44,12 +46,32 @@ storage**. This data is never transmitted anywhere:
 This data is removed when you uninstall the application or clear the
 app's storage from Android system settings.
 
+### Local network play (通信対戦)
+
+Only when you choose 通信対戦, the application talks directly to another
+copy of the game on your local network (for example, the same Wi-Fi):
+
+- While a device waits for an opponent, it broadcasts a small
+  announcement on the local network about once a second: the app's
+  identifier, protocol version, the device's model name (for example
+  "Pixel 8a") and a port number.
+- Once two devices connect, they exchange the device model names, the
+  moves, and game events (resign, 入玉宣言, leaving the game) directly
+  with each other.
+- Both devices save the finished game record (KIF), including both
+  model names, on their own local storage as described above.
+
+Nothing is sent outside your local network, and the traffic stops when
+you leave the game or the lobby.
+
 ### Permissions
 
-The application requests no special Android permissions beyond those
-implicit in installation. It does not access the network, camera,
-microphone, contacts, location, storage outside its own sandbox, or
-any other sensitive APIs.
+The application requests one Android permission, `INTERNET`, which
+Android requires for any network connection, including one on the
+local network. It is used only for 通信対戦 as described above. The
+application does not access the camera, microphone, contacts,
+location, storage outside its own sandbox, or any other sensitive
+APIs.
 
 ### Children's privacy
 
@@ -87,10 +109,11 @@ For privacy questions, contact: **hiroshiyui@gmail.com**
 
 ### 概要
 
-「清正学園将棋部」は、単独プレイ・オフライン動作の本将棋ゲームです。
-**本アプリケーションは、いかなる個人情報・利用者データも収集・送信・
-共有いたしません。** 端末内には、対局に必要なローカルデータのみを
-保存します。
+「清正学園将棋部」は、端末内の AI と、または同じローカルネットワーク上の
+相手と対局する(通信対戦)本将棋ゲームです。**本アプリケーションは、
+個人情報・利用者データを収集せず、インターネットや外部サーバーと
+通信することは一切ありません。** 端末内には、対局に必要なローカル
+データのみを保存します。
 
 ### 収集する情報
 
@@ -103,7 +126,8 @@ For privacy questions, contact: **hiroshiyui@gmail.com**
 - アナリティクス、クラッシュレポート、テレメトリ等のデータ収集
   SDK を一切含みません。
 - 広告を表示しません。
-- ネットワーク通信を一切行わず、完全にオフラインで動作します。
+- インターネットや外部サーバーとは一切通信しません。ネットワーク
+  通信は、下記の通信対戦(ローカルネットワーク対局)のみです。
 
 ### 端末内に保存されるデータ
 
@@ -120,12 +144,30 @@ For privacy questions, contact: **hiroshiyui@gmail.com**
 これらのデータはアプリをアンインストールするか、Android のシステム
 設定からアプリのデータを消去すると削除されます。
 
+### 通信対戦(ローカルネットワーク対局)
+
+通信対戦を選んだときに限り、本アプリケーションは同じローカル
+ネットワーク(同じ Wi-Fi など)上の別の端末の本アプリケーションと
+直接通信します。
+
+- 相手を待っている間、約 1 秒ごとに小さな告知をローカルネットワーク
+  内に一斉送信します。内容はアプリの識別子、プロトコルのバージョン、
+  端末の機種名(例:「Pixel 8a」)、ポート番号です。
+- 2 台が接続すると、端末の機種名、指し手、対局のできごと(投了、
+  入玉宣言、対局の中止)を互いに直接やり取りします。
+- 終局した棋譜(KIF、両者の機種名を含む)は、上記のとおり各端末の
+  ローカルストレージに保存されます。
+
+ローカルネットワークの外には何も送信されず、対局またはロビーを
+離れると通信は終わります。
+
 ### 権限
 
-本アプリケーションは、インストール時に暗黙的に付与される権限以外、
-特別な Android 権限を要求しません。ネットワーク、カメラ、マイク、
-連絡先、位置情報、サンドボックス外のストレージ、その他の機微な
-API に一切アクセスしません。
+本アプリケーションが要求する Android 権限は `INTERNET` の 1 つだけです。
+Android ではローカルネットワーク内の通信にもこの権限が必要なため、
+上記の通信対戦にのみ使用します。カメラ、マイク、連絡先、位置情報、
+サンドボックス外のストレージ、その他の機微な API には一切アクセス
+しません。
 
 ### 子どものプライバシー
 

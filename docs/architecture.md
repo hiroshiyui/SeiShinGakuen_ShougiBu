@@ -230,6 +230,32 @@ shared_storage=false` — see [ADR-0009](./adr/0009-kif-library-app-private-stor
 Background on why review mode keeps a separate core instead of
 rewinding `_core` in place: [ADR-0008](./adr/0008-review-mode-scratch-core.md).
 
+## 通信対戦 (LAN play)
+
+Two copies of the game on one local network play each other over a
+direct TCP connection; there is no server. See
+[ADR-0012](./adr/0012-lan-play.md).
+
+- [`scripts/net/LanDiscovery.gd`](../scripts/net/LanDiscovery.gd) —
+  the host broadcasts a JSON beacon on UDP 47123 about once a second;
+  the joiner listens and keeps a list of hosts heard in the last 4 s.
+- [`scripts/autoload/NetSession.gd`](../scripts/autoload/NetSession.gd)
+  — an autoload, so the connection outlives the lobby → game scene
+  switch. One JSON object per line (`hello`, `start`, `move`, `sync`,
+  `resign`, `declare`, `abort`, `ping` / `pong`, `error`). Keeps the
+  game's USI move list, which is the source of truth for resyncing
+  after a reconnect (60 s window; the longer list wins).
+- [`scripts/NetworkLobby.gd`](../scripts/NetworkLobby.gd) — host /
+  browse / connect states; switches to `Main.tscn` on `game_started`.
+- `GameController` — `_lan` is set when `NetSession.in_game` is true
+  at `_ready`. It blocks input on the peer's turn, sends each local
+  move after `apply_move` succeeds, and runs every received move
+  through `ShogiCore.usi_to_move` + `is_legal_move` before
+  `_commit_move`. LAN games never write the 続きから save.
+
+Test with `scripts/tests/net_tests.gd` (two sessions over loopback) and
+`tools/lan_peer_bot.gd` (a headless random-move opponent for a phone).
+
 ## Extension points
 
 **Where new features are expected to land:**

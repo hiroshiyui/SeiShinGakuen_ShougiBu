@@ -79,6 +79,16 @@ Godot is not on PATH — always invoke by full path.
 # GDScript tests (詰将棋 set — every problem re-solved by the mate solver)
 ~/.local/bin/Godot_v4.7.2-stable_linux.x86_64 \
   --headless -s res://scripts/tests/tsume_tests.gd --path .
+
+# GDScript tests (通信対戦 — loopback host/guest, reconnect, discovery)
+~/.local/bin/Godot_v4.7.2-stable_linux.x86_64 \
+  --headless -s res://scripts/tests/net_tests.gd --path .
+
+# Headless random-move LAN opponent for testing against a phone
+# (`-- host`, `-- join`, or `-- join addr=<phone ip>`; add `drop` to
+# test the reconnect). firewalld blocks UDP 47123 / TCP 47124-47133.
+~/.local/bin/Godot_v4.7.2-stable_linux.x86_64 \
+  --headless -s res://tools/lan_peer_bot.gd --path . -- host
 ```
 
 Rust:
