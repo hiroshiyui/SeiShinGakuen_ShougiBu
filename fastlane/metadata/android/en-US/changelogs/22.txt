@@ -1,0 +1,4 @@
+• Random title-screen background each launch: Yoshida-sensei and five club members, with a rare special picture of the two teachers.
+• Kifu review background picked from a ramen shop or the library.
+• Shogi boards in the backgrounds redrawn at a natural size.
+• Fix the AI's mood and thinking time coming out the same every game.

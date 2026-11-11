@@ -1,0 +1,6 @@
+• LAN play (通信対戦): two devices on the same Wi-Fi play each other, no server.
+• The player with gote sees the board turned round; a rematch swaps the sides.
+• Adds the INTERNET and Wi-Fi multicast permissions for LAN play. Traffic stays on the local network; the app never connects to the internet.
+• The AI now sees sennichite (repetition) in its search.
+• New main menu layout, with the opponent's portrait.
+• Fix oversized top and bottom margins, and more.

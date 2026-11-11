@@ -1,0 +1,6 @@
+• Club members now speak a line in a speech balloon during games.
+• The opponent picker shows your record against each character.
+• Check is shown as a translucent red on the king's square.
+• Fix weak characters playing moves they never searched (Lv 1–3 are a little tougher now).
+• Better kifu review analysis; the screen no longer freezes while it runs.
+• Fix a rematch stalling when the AI has sente, and more.

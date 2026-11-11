@@ -1,0 +1,5 @@
+• Opponent portraits change expression as the game goes.
+• Tsume shogi: 160 mate-in-1, 3 and 5 problems, with a daily problem and hints.
+• After a game, Kato-sensei points out the move you would most like to take back.
+• Evaluation graph in kifu review.
+• Smaller app size from reworked image imports.

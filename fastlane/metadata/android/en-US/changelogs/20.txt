@@ -1,0 +1,4 @@
+• Save the kifu (.kif) automatically when a game ends.
+• The kifu review list shows date, players, result and move count.
+• AI characters vary their strength move by move with their "mood"; Lv 1–2 now play like beginners.
+• Fade-to-black transitions between screens.
