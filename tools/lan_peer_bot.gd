@@ -8,7 +8,8 @@ extends SceneTree
 #   # phone taps 対局を作る, bot joins the first game it hears:
 #   godot --headless -s res://tools/lan_peer_bot.gd --path . -- join
 #
-# Add `rematch` to stay for 再戦 after the game. Add `addr=<phone ip>` to join without discovery. Add `drop` to drop the connection once after the third move, to watch
+# Add `mdns-only` (with host) to announce over mDNS without the broadcast
+# beacon. Add `rematch` to stay for 再戦 after the game. Add `addr=<phone ip>` to join without discovery. Add `drop` to drop the connection once after the third move, to watch
 # the phone wait for the reconnect.
 
 const Net := preload("res://scripts/autoload/NetSession.gd")
@@ -19,6 +20,7 @@ var _disc: Node
 var _core: Object
 var _drop_once: bool = false
 var _rematch: bool = false
+var _mdns_ad: Object = null
 var _move_at_msec: int = -1
 
 func _initialize() -> void:
@@ -60,7 +62,14 @@ func _initialize() -> void:
 		if not _net.host("Bot"):
 			_finish("cannot open game port")
 			return
-		_disc.start_beacon(_net.listen_port, "Bot")
+		if "mdns-only" in args:
+			# No broadcast beacon: the phone can only find this over mDNS.
+			_mdns_ad = ClassDB.instantiate("LanMdns")
+			if not bool(_mdns_ad.advertise("Bot (mDNS)", _net.listen_port, Net.PROTO)):
+				_finish("mDNS advertise failed")
+				return
+		else:
+			_disc.start_beacon(_net.listen_port, "Bot")
 		print("[bot] hosting on port %d" % _net.listen_port)
 
 func _on_hosts() -> void:

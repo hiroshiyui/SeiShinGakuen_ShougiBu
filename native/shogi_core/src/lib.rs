@@ -1,6 +1,7 @@
 mod board;
 mod encode;
 mod kifu;
+mod lan_mdns;
 mod mate;
 mod mcts;
 mod move_index;

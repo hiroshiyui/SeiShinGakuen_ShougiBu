@@ -25,6 +25,7 @@ func _main() -> void:
 	await _test_leaving_after_game_ends_session()
 	await _test_version_mismatch_rejected()
 	await _test_discovery_finds_beacon()
+	await _test_discovery_finds_mdns()
 	for n: Node in [_host, _guest]:
 		if n != null:
 			n.close()
@@ -168,4 +169,24 @@ func _test_discovery_finds_beacon() -> void:
 	var gone := await _wait_for(func():
 		return not browser.hosts().any(func(h): return int(h["port"]) == 47999), Discovery.HOST_TTL_SEC + 2.0)
 	_check(gone, "host drops off after it goes quiet")
+	browser.stop()
+
+# A host announced only over mDNS (no broadcast beacon) still shows up.
+func _test_discovery_finds_mdns() -> void:
+	print("discovery (mDNS)")
+	if not ClassDB.class_exists("LanMdns"):
+		_check(false, "LanMdns class loaded")
+		return
+	var browser: Node = Discovery.new()
+	root.add_child(browser)
+	browser.start_browse()
+	var ad: Object = ClassDB.instantiate("LanMdns")
+	_check(bool(ad.advertise("MdnsHost", 47998, Net.PROTO)), "advertise over mDNS")
+	var found := await _wait_for(func():
+		return browser.hosts().any(func(h): return int(h["port"]) == 47998 and h["name"] == "MdnsHost"), 6.0)
+	_check(found, "browser finds the mDNS-only host")
+	ad.stop()
+	var gone := await _wait_for(func():
+		return not browser.hosts().any(func(h): return int(h["port"]) == 47998), 6.0)
+	_check(gone, "host drops off when the announcement is withdrawn")
 	browser.stop()
