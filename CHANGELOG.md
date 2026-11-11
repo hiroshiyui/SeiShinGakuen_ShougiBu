@@ -8,6 +8,40 @@ All notable changes to this project. Format follows
 
 ## [Unreleased]
 
+## [1.1.0] — 2026-11-11
+
+### Added
+- 通信対戦：同じ Wi-Fi につながった 2 台の端末で、人と人とが対局できるように。
+  サーバーは使わず、端末どうしが直接つながる。対局モードの「通信対戦」から
+  対局を作るか、見つかった対局に参加する。
+- 相手の発見は UDP ブロードキャストと mDNS（Bonjour）の両方で行う。
+- 後手の端末では盤を 180° 回して、自分の駒が手前に来るように表示。
+- 通信対戦の再戦。先後を入れ替えて次の対局を始める。
+- 通信が途切れても 60 秒以内なら自動で再接続し、対局を続けられる。
+- 通信対戦のため、INTERNET と CHANGE_WIFI_MULTICAST_STATE の権限を使用。
+  通信は同じ LAN の中だけで、インターネットには接続しない。
+
+### Changed
+- メインメニューのパネルを画面下部に移し、「新規対局」を先頭に。
+- 対戦相手ボタンの名前の横に、相手の丸い肖像を表示。
+- AI が千日手を読みに入れるように。連続王手の千日手で反則負けになる
+  手順を繰り返さない。
+- 棋譜検討で、千日手になる手を引き分け（連続王手なら負け）として評価。
+
+### Fixed
+- 改ざんされた保存データや棋譜から、不正な局面が作られないように。
+- 通信対戦を終えると、中断していた AI との対局（続きから）が消えてしまう
+  問題を修正。
+- AI の思考中に画面を閉じたときの不具合と、タイトルへ戻る途中に AI の手が
+  指されて保存される問題を修正。
+- 画面上下の安全領域の余白が大きすぎた問題を修正。
+- 読み込めない棋譜を開くと、棋譜検討の「戻る」が効かなくなる問題を修正。
+- 「切れ負け」で終わる棋譜を読み込めるように。
+- 一手戻しの直後などに、駒のアニメーションが盤面と食い違う問題を修正。
+
+[Full release notes](./docs/release-notes/1.1.0.md) ·
+[GitHub Release](https://github.com/hiroshiyui/SeiShinGakuen_ShougiBu/releases/tag/1.1.0)
+
 ## [1.0.15] — 2026-11-11
 
 ### Added
@@ -481,7 +515,8 @@ First public release.
 [Full release notes](./docs/release-notes/0.1.1.md) ·
 [GitHub Release](https://github.com/hiroshiyui/SeiShinGakuen_ShougiBu/releases/tag/0.1.1)
 
-[Unreleased]: https://github.com/hiroshiyui/SeiShinGakuen_ShougiBu/compare/1.0.15...HEAD
+[Unreleased]: https://github.com/hiroshiyui/SeiShinGakuen_ShougiBu/compare/1.1.0...HEAD
+[1.1.0]: https://github.com/hiroshiyui/SeiShinGakuen_ShougiBu/compare/1.0.15...1.1.0
 [1.0.15]: https://github.com/hiroshiyui/SeiShinGakuen_ShougiBu/compare/1.0.14...1.0.15
 [1.0.14]: https://github.com/hiroshiyui/SeiShinGakuen_ShougiBu/compare/1.0.13...1.0.14
 [1.0.13]: https://github.com/hiroshiyui/SeiShinGakuen_ShougiBu/compare/1.0.12...1.0.13
