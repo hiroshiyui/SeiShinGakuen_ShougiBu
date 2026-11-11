@@ -10,6 +10,7 @@ signal tapped(file: int, rank: int)
 @onready var _highlight: ColorRect = $Highlight
 @onready var _move_hint: ColorRect = $MoveHint
 @onready var _last_move_hint: ColorRect = $LastMoveHint
+@onready var _check_hint: ColorRect = $CheckHint
 @onready var _highlight_border: Panel = $HighlightBorder
 @onready var _move_hint_dot: Panel = $MoveHintDot
 @onready var _invalid_flash: ColorRect = $InvalidFlash
@@ -22,6 +23,7 @@ func _ready() -> void:
 	_move_hint.visible = false
 	_move_hint_dot.visible = false
 	_last_move_hint.visible = false
+	_check_hint.visible = false
 	_invalid_flash.visible = false
 
 func _gui_input(event: InputEvent) -> void:
@@ -86,3 +88,7 @@ func flash_invalid() -> void:
 
 func set_last_move_hint(on: bool) -> void:
 	_last_move_hint.visible = on
+
+# Translucent red behind a king that is in check.
+func set_check_hint(on: bool) -> void:
+	_check_hint.visible = on

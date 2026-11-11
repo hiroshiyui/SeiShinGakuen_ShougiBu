@@ -16,6 +16,7 @@ var _squares: Dictionary = {}
 var _selected_key: Vector2i = Vector2i.ZERO
 var _hint_keys: Array = []
 var _last_move_keys: Array = []
+var _check_key: Vector2i = Vector2i.ZERO
 
 func _ready() -> void:
 	resized.connect(_on_resized)
@@ -108,6 +109,22 @@ func clear_last_move() -> void:
 		if _squares.has(k):
 			_squares[k].set_last_move_hint(false)
 	_last_move_keys.clear()
+
+# Marks the square of the `is_gote` side's king as being in check.
+func show_check(core: Object, is_gote: bool) -> void:
+	clear_check()
+	for key in _squares.keys():
+		var piece: Variant = core.piece_at(key.x, key.y)
+		if piece != null and int(piece["kind"]) == PieceScript.Kind.KING \
+				and bool(piece["is_gote"]) == is_gote:
+			_squares[key].set_check_hint(true)
+			_check_key = key
+			return
+
+func clear_check() -> void:
+	if _squares.has(_check_key):
+		_squares[_check_key].set_check_hint(false)
+	_check_key = Vector2i.ZERO
 
 func _on_square_tapped(file: int, rank: int) -> void:
 	square_tapped.emit(file, rank)

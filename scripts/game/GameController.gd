@@ -10,7 +10,6 @@ const HandViewScript := preload("res://scripts/game/HandView.gd")
 @onready var _sente_hand: HandViewScript = %SenteHand
 @onready var _gote_hand: HandViewScript = %GoteHand
 @onready var _status: Label = %StatusLabel
-@onready var _check_banner: Label = %CheckBanner
 @onready var _review_banner: Button = %ReviewBanner
 @onready var _history_btn: Button = %HistoryButton
 @onready var _history_dialog: Control = %MoveHistoryDialog
@@ -275,14 +274,14 @@ func _apply_board_side(side: float, animate: bool) -> void:
 	var target := Vector2(side, side)
 	if not animate or Settings.reduce_motion:
 		_board_view.custom_minimum_size = target
-		_place_check_banner.call_deferred()
+		_place_thinking_label.call_deferred()
 		return
 	_board_resize_tween = create_tween()
 	_board_resize_tween.set_trans(Tween.TRANS_SINE)
 	_board_resize_tween.set_ease(Tween.EASE_OUT)
 	_board_resize_tween.tween_property(
 		_board_view, "custom_minimum_size", target, _BOARD_RESIZE_DURATION)
-	_board_resize_tween.tween_callback(_place_check_banner)
+	_board_resize_tween.tween_callback(_place_thinking_label)
 
 # The 王手 banner is a root-level overlay (so it never perturbs the VBox)
 # but is positioned relative to the board: centred horizontally, sitting
@@ -290,12 +289,10 @@ func _apply_board_side(side: float, animate: bool) -> void:
 # it under the front-camera cutout on devices like the Pixel 8a.
 # ThinkingLabel follows the same scheme, right-aligned to the board's
 # top-right corner so it never collides with the StatusBar buttons.
-func _place_check_banner() -> void:
+func _place_thinking_label() -> void:
 	if _board_view == null:
 		return
 	var board_rect: Rect2 = _board_view.visual_global_rect()
-	if _check_banner.visible:
-		_place_above_board(_check_banner, board_rect, HORIZONTAL_ALIGNMENT_CENTER)
 	if _thinking_label.visible:
 		_place_above_board(_thinking_label, board_rect, HORIZONTAL_ALIGNMENT_RIGHT)
 
@@ -564,7 +561,7 @@ func _maybe_start_ai_turn() -> void:
 	if book_move != null:
 		_thinking = true  # so _refresh_all disables player input
 		_thinking_label.visible = true
-		_place_check_banner.call_deferred()
+		_place_thinking_label.call_deferred()
 		_undo_btn.disabled = true
 		_teacher_btn.disabled = true
 		_show_thinking_expression()
@@ -573,7 +570,7 @@ func _maybe_start_ai_turn() -> void:
 	_thinking = true
 	_thinking_label.visible = true
 	_show_thinking_expression()
-	_place_check_banner.call_deferred()
+	_place_thinking_label.call_deferred()
 	_undo_btn.disabled = true
 	_teacher_btn.disabled = true
 	var playouts: int = int(params["playouts"])
@@ -645,9 +642,12 @@ func _refresh_all() -> void:
 	var side_gote: bool = view_core.side_to_move_gote()
 	var mover := "後手" if side_gote else "先手"
 	var in_check: bool = view_core.is_check()
-	_check_banner.visible = in_check and not _game_over and not _in_review
-	if _check_banner.visible or _thinking_label.visible:
-		_place_check_banner.call_deferred()
+	if in_check and not _game_over and not _in_review:
+		_board_view.show_check(view_core, side_gote)
+	else:
+		_board_view.clear_check()
+	if _thinking_label.visible:
+		_place_thinking_label.call_deferred()
 	if _in_review:
 		var review_ply: int = int(_review_core.move_log_size())
 		var live_ply: int = int(_core.move_log_size())
@@ -939,7 +939,7 @@ func _check_end_state() -> void:
 func _end_game(text: String, terminator: String) -> void:
 	_game_over = true
 	_gameover_terminator = terminator
-	_check_banner.visible = false
+	_board_view.clear_check()
 	_undo_btn.disabled = true
 	_gameover_text = text
 	var result_expr := _expression_for_result(text)
@@ -1288,7 +1288,7 @@ func _on_teacher_pressed() -> void:
 	_teacher_thinking = true
 	_thinking_label.text = "先生が考え中..."
 	_thinking_label.visible = true
-	_place_check_banner.call_deferred()
+	_place_thinking_label.call_deferred()
 	_undo_btn.disabled = true
 	_teacher_btn.disabled = true
 	var playouts: int = int(Settings.ai_base_dials()["playouts"])

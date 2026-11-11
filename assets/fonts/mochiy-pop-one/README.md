@@ -2,7 +2,7 @@
 
 Rounded pop display face for headline text: the app title
 「清正学園将棋部」, screen headings (設定 / 棋譜検討 / 棋譜 / クレジット),
-the opponent's name on the character picker, and the 王手！ banner.
+and the opponent's name on the character picker.
 Body text and buttons stay on Noto Serif JP / M PLUS 2; piece kanji
 stay on `fude-goshirae`.
 

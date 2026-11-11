@@ -181,21 +181,6 @@ theme_override_fonts/font = ExtResource("8_mplus2")
 text = "思考中…"
 horizontal_alignment = 2
 
-[node name="CheckBanner" type="Label" parent="."]
-unique_name_in_owner = true
-visible = false
-offset_right = 160.0
-offset_bottom = 52.0
-mouse_filter = 2
-theme_override_colors/font_color = Color(0.9, 0.1, 0.08, 1)
-theme_override_colors/font_outline_color = Color(1, 1, 1, 1)
-theme_override_constants/outline_size = 14
-theme_override_font_sizes/font_size = 34
-theme_override_fonts/font = ExtResource("12_mochiy")
-text = "王手！"
-horizontal_alignment = 1
-vertical_alignment = 1
-
 [node name="OpponentSpeech" type="PanelContainer" parent="."]
 unique_name_in_owner = true
 modulate = Color(1, 1, 1, 0)
