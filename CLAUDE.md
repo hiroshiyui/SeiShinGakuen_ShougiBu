@@ -6,8 +6,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **清正学園将棋部** — a mobile Shogi (本将棋) game for Android. Godot 4.7.2
 Mobile renderer, Rust GDExtension for rules + AI, AlphaZero-style
-policy+value network (Bonanza) with PUCT MCTS. Single-player vs. AI,
-offline.
+policy+value network (Bonanza) with PUCT MCTS. Vs. an on-device AI,
+or human vs. human on the same LAN (通信対戦, no server); never
+contacts the internet.
 
 Read [`ROADMAP.md`](./ROADMAP.md) before planning new work — phase
 ordering and "shipped differently" notes under each completed phase are

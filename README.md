@@ -62,7 +62,7 @@ arm64-v8a 向け APK のビルド・インストールに対応している。�
 （王手・二歩・打ち歩詰め・千日手）と AI 対局は動作中。配布チャネル
 一覧と各窓口の商品説明原稿は
 [`docs/distribution.md`](./docs/distribution.md) に集約。ロードマップ
-の詳細は [`ROADMAP.md`](./ROADMAP.md) のフェーズ 7 を参照。
+の詳細は [`ROADMAP.md`](./ROADMAP.md) を参照（フェーズ 8 の通信対戦まで完了）。
 
 ## クイックスタート
 

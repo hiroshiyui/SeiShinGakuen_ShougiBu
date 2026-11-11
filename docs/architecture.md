@@ -29,8 +29,10 @@ is in service of them.
    [`tools/gen_fixtures.py`](../tools/gen_fixtures.py).
 3. **Main thread never blocks on AI inference.** MCTS runs on a Godot
    `Thread`; GameController polls `is_alive()` per-frame.
-4. **Offline single-APK ship.** No network dependency at runtime. Model
-   + fonts + native library are all packed into the APK.
+4. **Single-APK ship, no server.** Model + fonts + native library are
+   all packed into the APK, and nothing at runtime depends on the
+   internet. The only network traffic is 通信対戦 between devices on
+   the same LAN (see "通信対戦 (LAN play)" below).
 
 ## Layers
 

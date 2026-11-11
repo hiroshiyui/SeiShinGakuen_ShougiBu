@@ -17,6 +17,7 @@ alternative was rejected for non-obvious reasons.
 | [0009](./0009-kif-library-app-private-storage.md) | KIF library writes to app-private external Documents, not shared storage | Accepted |
 | [0010](./0010-gpl-3-or-later.md) | License the project under GPL-3.0-or-later | Accepted |
 | [0011](./0011-per-move-mood-roll.md) | Per-move "mood" roll for AI character strength | Accepted |
+| [0012](./0012-lan-play.md) | Human vs human over the local network (通信対戦) | Accepted |
 
 ## Authoring a new ADR
 

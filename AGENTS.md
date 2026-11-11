@@ -56,6 +56,8 @@ GDScript headless suites live in `scripts/tests/`:
 ~/.local/bin/Godot_v4.7.2-stable_linux.x86_64 --headless -s res://scripts/tests/characters_tests.gd --path .
 ~/.local/bin/Godot_v4.7.2-stable_linux.x86_64 --headless -s res://scripts/tests/persistence_tests.gd --path .
 ~/.local/bin/Godot_v4.7.2-stable_linux.x86_64 --headless -s res://scripts/tests/opening_book_tests.gd --path .
+~/.local/bin/Godot_v4.7.2-stable_linux.x86_64 --headless -s res://scripts/tests/tsume_tests.gd --path .
+~/.local/bin/Godot_v4.7.2-stable_linux.x86_64 --headless -s res://scripts/tests/net_tests.gd --path .
 ```
 
 Any change to `encode.rs` or `move_index.rs` must regenerate fixtures with
@@ -73,5 +75,6 @@ screenshots for UI changes.
 
 Never commit `.android-release-pass`, keystores, `build/`, `.godot/`,
 `android/`, `native/**/target`, or `native/bin/`. Android package id
-`org.seishingakuen.shougibu` is effectively immutable. Release builds are
-distributed as signed APKs via GitHub Releases unless the release plan changes.
+`org.seishingakuen.shougibu` is effectively immutable. Releases ship as a
+signed APK on GitHub Releases and itch.io, and on F-Droid, which builds each
+release tag from source with its own signing key.
