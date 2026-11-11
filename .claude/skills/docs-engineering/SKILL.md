@@ -6,7 +6,7 @@ argument-hint: task description
 
 # Documentation Engineering
 
-You are performing documentation tasks for **清正学園将棋部** (SeiShinGakuen_ShougiBu) — a single-player Android Shogi (本将棋) game built with Godot 4.7.2 (Mobile renderer) and a Rust GDExtension (`shogi_core`) for rules + AI.
+You are performing documentation tasks for **清正学園将棋部** (SeiShinGakuen_ShougiBu) — an Android Shogi (本将棋) game built with Godot 4.7.2 (Mobile renderer) and a Rust GDExtension (`shogi_core`) for rules + AI.
 
 ## Current state of project documentation
 
@@ -28,12 +28,13 @@ Read this before assuming files exist. The repo has solid technical documentatio
 | [docs/release-notes/](../../docs/release-notes/) | ✅ one file per release | Japanese highlights + commit list; doubles as the GitHub Release body |
 | [docs/distribution.md](../../docs/distribution.md) | ✅ exists (Japanese) | Distribution channels and the itch.io page text |
 | [fastlane/metadata/android/](../../fastlane/metadata/android/) | ✅ `ja` + `en-US` | F-Droid listing: title, descriptions, screenshots, per-versionCode changelogs |
+| [docs/privacy-policy.md](../../docs/privacy-policy.md) | ✅ exists (English + Japanese) | What the app stores and sends (only 通信対戦 traffic, LAN-only) and its two permissions; bump the effective date when it changes |
 | [LICENSE](../../LICENSE) | ✅ exists | GPL-3.0-or-later |
 
 **Does not yet exist** (don't pretend they do; ask before creating):
 
 - `NOTICES.md` / third-party attribution document
-- `PRIVACY-POLICY.md` — intentionally absent. The app does request `INTERNET`, but only for LAN-only 通信対戦 (no server, nothing leaves the local network — see `docs/privacy-policy.md`), and none of its channels (F-Droid, itch.io, GitHub Releases) requires one; Google Play, which would, is out of scope (see ROADMAP Open Questions). Don't propose creating it unless the user reopens that decision.
+- A root-level `PRIVACY-POLICY.md` — intentionally absent; the policy lives in `docs/privacy-policy.md` (see the table). The app requests `INTERNET` and `CHANGE_WIFI_MULTICAST_STATE`, but only for LAN-only 通信対戦 (no server, nothing leaves the local network), and none of its channels (F-Droid, itch.io, GitHub Releases) requires one; Google Play, which would, is out of scope (see ROADMAP Open Questions). Don't propose creating it unless the user reopens that decision.
 
 When the user asks about one of the missing files, confirm whether to create it before writing — do not silently scaffold a tree of new docs.
 
@@ -56,12 +57,13 @@ When writing or editing docs, double-check these from the source rather than cop
 - **Version**: read [`export_presets.cfg`](../../export_presets.cfg) `version/name` and `version/code` — single source of truth.
 - **Engine**: Godot 4.7.2 (Mobile renderer, Vulkan backend on Android), `~/.local/bin/Godot_v4.7.2-stable_linux.x86_64`.
 - **Native layer**: Rust GDExtension at [`native/shogi_core/`](../../native/shogi_core/), shipped as a cdylib loaded via [`addons/shogi_core.gdextension`](../../addons/shogi_core.gdextension). Same `.so` serves desktop (`x86_64-unknown-linux-gnu`) and Android (`aarch64-linux-android`).
-- **Inference**: AlphaZero-style policy + value network, Bonanza-trained, 1.3 MB ONNX at [`models/bonanza.onnx`](../../models/bonanza.onnx). Runs via the `tract` crate in Rust; on Android the model is extracted from the APK to `user://` on first launch.
+- **Inference**: AlphaZero-style policy + value network, Bonanza-trained, ~12 MB ONNX (Bonanza v2, 10 blocks × 128 filters) at [`models/bonanza.onnx`](../../models/bonanza.onnx). Runs via the `tract` crate in Rust; on Android the model is extracted from the APK to `user://` on first launch.
 - **Encoder invariant**: 45-plane position + 139-plane move index, byte-parity-tested against ShogiDojo's Python implementation via `tools/gen_fixtures.py` → `native/shogi_core/src/parity_tests.rs`. Don't describe the encoder casually — the project's defense against silent AI breakage is "the bytes are identical."
 - **Search**: single-threaded PUCT MCTS (no virtual loss, no transposition table) with Dirichlet noise at the root. Temperature-sampled — `tools/build_all.sh` and the Lv 1–8 strength presets in `Settings.gd` drive the playouts/τ pair.
+- **通信対戦 (LAN play)**: human vs. human between two devices on the same LAN, no server (ROADMAP Phase 8, ADR-0012). Discovery by UDP broadcast + mDNS, one TCP connection; every received move is checked by `ShogiCore.is_legal_move`. Permissions: `INTERNET` and `CHANGE_WIFI_MULTICAST_STATE`, used for nothing else — keep the privacy policy and store descriptions saying so.
 - **Rules**: full board + hand handling, check, 二歩, 打ち歩詰め, 千日手 (incl. perpetual-check variant), 入玉 detection. SFEN parse + serialize.
 - **Distribution**: three channels. **F-Droid** (accepted 2026-11; built from source and signed by F-Droid, updated automatically from release tags), **GitHub Releases** (signed APK + `.idsig` sidecar, the primary source of the sideload APK) and **itch.io** (the same APK, uploaded by hand). The F-Droid build carries a different signature, so it cannot update over, or be updated by, the sideload APK. Google Play is explicitly out of scope (see ROADMAP Open Questions).
-- **License**: not yet declared. The repo has no `LICENSE` file. Don't quote a license unless one lands.
+- **License**: GPL-3.0-or-later ([`LICENSE`](../../LICENSE), rationale in ADR-0010). The bundled fonts are SIL OFL 1.1; the model ships under GPL-3.0-or-later too.
 - **Author**: `Hui-Hong You` per `git log`.
 - **GitHub remote**: `git@github.com:hiroshiyui/SeiShinGakuen_ShougiBu.git`.
 
@@ -76,7 +78,7 @@ The existing README covers: tagline → screenshots → features → tech stack 
 - Preserve that structure.
 - Update the "Features" section in lockstep with code changes — it's currently the project's most authoritative description of behaviour for a casual reader.
 - The "Tech Stack" section names Godot 4.7.2 + Rust GDExtension + tract + bonanza.onnx. Keep the version numbers accurate.
-- Avoid over-promising AI strength. Lv 8 (2048 playouts) is strong for casual players but won't beat a kyu-ranked human — describe it honestly.
+- Avoid over-promising AI strength. Lv 8 (256 playouts, the cap on arm64) is strong for casual players but won't beat a kyu-ranked human — describe it honestly.
 
 ### ROADMAP.md
 
@@ -118,15 +120,14 @@ Numbered Architecture Decision Records, e.g. `0005-font-subset-pipeline.md`. New
 
 `assets/fonts/{fude-goshirae,noto-serif-jp}/README.md` describe vendored fonts and how the subset pipeline ([`tools/build_font_subsets.py`](../../tools/build_font_subsets.py)) trims them. If the subset pipeline changes (e.g. another font lands), update both READMEs in lockstep.
 
-### CHANGELOG.md (if/when created)
+### CHANGELOG.md
 
-Project has no changelog file yet — release notes live in GitHub
-Releases (see release-engineering skill). When the user asks for a
-proper `CHANGELOG.md`:
-
-1. Ask whether they want Keep-a-Changelog at the repo root in addition
-   to the GitHub Release notes, or as a replacement for them.
-2. Once they choose, stick with it.
+Keep a Changelog format at the repo root, Japanese bullets, one section
+per release — kept alongside the GitHub Release notes
+(`docs/release-notes/<X.Y.Z>.md`) and the F-Droid fastlane changelogs,
+not instead of them. When a release adds or changes an Android
+permission, say so in all three (F-Droid users see the permission
+change next to the fastlane changelog).
 
 To gather material since the previous tag:
 

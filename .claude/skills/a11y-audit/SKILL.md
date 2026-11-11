@@ -6,8 +6,8 @@ argument-hint: optional scope — a scene (Main.tscn), a screen (settings), or "
 
 # Accessibility Audit
 
-You are auditing **清正学園将棋部** (SeiShinGakuen_ShougiBu), a single-player
-Android Shogi game: Godot 4.7.2 Mobile renderer, GDScript UI, Rust rules
+You are auditing **清正学園将棋部** (SeiShinGakuen_ShougiBu), an
+Android Shogi game (vs. AI, plus LAN 通信対戦): Godot 4.7.2 Mobile renderer, GDScript UI, Rust rules
 core. There is no web DOM here, so WCAG applies by analogy: the targets
 are touch size, text legibility, non-colour cues, motion, and feedback
 redundancy. The output is a short findings list ranked by impact, with

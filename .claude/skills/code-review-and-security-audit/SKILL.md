@@ -6,14 +6,14 @@ argument-hint: file path, component name, or scope of review
 
 # Code Review and Security Audit
 
-You are performing code review and security auditing for **清正学園将棋部** (SeiShinGakuen_ShougiBu) — a single-player Android Shogi game built with Godot 4.7.2 (GDScript / scenes / Mobile renderer) on top of a Rust GDExtension (`native/shogi_core/`) that owns rules, position encoding, MCTS, and on-device ONNX inference via the `tract` crate.
+You are performing code review and security auditing for **清正学園将棋部** (SeiShinGakuen_ShougiBu) — an Android Shogi game (vs. an on-device AI, or human vs. human over the LAN as 通信対戦) built with Godot 4.7.2 (GDScript / scenes / Mobile renderer) on top of a Rust GDExtension (`native/shogi_core/`) that owns rules, position encoding, MCTS, and on-device ONNX inference via the `tract` crate.
 
 ## Scope
 
 Two complementary concerns:
 
 1. **Code Review** — correctness, readability, maintainability, adherence to project conventions.
-2. **Security Audit** — vulnerabilities, unsafe patterns, attack surfaces. The threat model is narrow (no network, no untrusted input from third parties), but it isn't empty — see "Threat model" below.
+2. **Security Audit** — vulnerabilities, unsafe patterns, attack surfaces. The threat model is narrow (no server, no internet), but since 通信対戦 it includes a peer on the local network sending data — see "Threat model" below — see "Threat model" below.
 
 ## Project context
 
@@ -21,14 +21,14 @@ Read this before assuming anything. The project's surface differs sharply from a
 
 - **Two layers, narrow FFI.** GDScript (`scripts/`, `scenes/`) owns UI, input, the scene graph, turn orchestration, and the MCTS `Thread`. Rust (`native/shogi_core/`) owns board state, rule enforcement, encoder, move index, MCTS, NN inference. Cross only via the `#[func]`s in [`native/shogi_core/src/lib.rs`](../../native/shogi_core/src/lib.rs).
 - **Same `.so` desktop + Android** — `x86_64-unknown-linux-gnu` for dev, `aarch64-linux-android` shipped in the APK. Built via [`tools/build_all.sh`](../../tools/build_all.sh).
-- **No network.** All inference is on-device via `tract` against [`models/bonanza.onnx`](../../models/bonanza.onnx) (1.3 MB). On Android, the model is extracted from the APK to `user://` on first launch (`Settings.model_absolute_path()`).
+- **No internet, LAN only.** All inference is on-device via `tract` against [`models/bonanza.onnx`](../../models/bonanza.onnx) (~12 MB). The only network code is 通信対戦: `scripts/net/LanDiscovery.gd` (UDP broadcast beacon + mDNS via the Rust `LanMdns` class in `lan_mdns.rs`) and the `NetSession` autoload (one TCP connection, one JSON object per line). See ADR-0012. On Android, the model is extracted from the APK to `user://` on first launch (`Settings.model_absolute_path()`).
 - **No untrusted document parsing.** No SAF, no Storage, no EPUBs, no biometric. Persistence is two `ConfigFile`s under `user://` (`prefs.cfg`, `saved_game.cfg`).
 - **MCTS runs on a worker thread.** GDScript's `Thread` calls into Rust; the AI's `&mut Board` is shared *only* with that worker. The main thread must not call `_core.*` while the worker is alive — `_thinking` / `_teacher_thinking` flags are the gate.
 - **Encoder byte-parity is load-bearing.** `native/shogi_core/src/encode.rs` (45 planes) and `native/shogi_core/src/move_index.rs` (139 planes) are byte-parity-tested against ShogiDojo's Python reference via `tools/gen_fixtures.py` → `native/shogi_core/src/parity_tests.rs`. Encoding drift = AI plays garbage with no error. **Treat any change here as Critical until parity tests pass.**
 
 ## Threat model
 
-The app accepts no third-party content over the network and has no IPC surface beyond what Godot's Android template provides. Real risks worth auditing:
+The app's only external input is 通信対戦: another device on the same LAN. It is supposed to be another copy of the game, but treat everything it sends as untrusted. There is no IPC surface beyond what Godot's Android template provides. Real risks worth auditing:
 
 1. **Encoder drift.** Silent — won't crash, won't log, just produces an AI that plays nonsense. Caught only by `cargo test`.
 2. **`undo_move` / `apply_move` desync.** The board log must round-trip exactly; an `undo_move` that doesn't perfectly reverse a capture corrupts hand counts. MCTS calls these millions of times, so any divergence accumulates.
@@ -36,7 +36,8 @@ The app accepts no third-party content over the network and has no IPC surface b
 4. **Saved-game tampering.** `user://saved_game.cfg` is user-writable and gets fed back through `_core.load_sfen(...)` on resume. A malformed SFEN must not crash the app.
 5. **Settings / prefs corruption.** Same — corrupt `prefs.cfg` shouldn't brick the title screen.
 6. **Android `tract` model extraction.** On first launch, the bundled `bonanza.onnx` is copied from the APK to `user://`. Audit that the destination is canonicalised under `user://`, the source path is bundled (not user-provided), and partial copies don't get used (atomic write).
-7. **Resource leakage / leaks.** `Thread.start()` + `wait_to_finish()` discipline; tween / timer leakage when scenes change.
+7. **LAN peer input.** Beacons (`LanDiscovery`), mDNS records (`LanMdns.poll`) and TCP messages (`NetSession._handle`) come from the network. Check that malformed or oversized data can't crash or hang the game (line-length cap, JSON type checks, port range checks, name truncation), and that every received move goes through `ShogiCore.is_legal_move` (and every received 入玉宣言 through `can_declare_jishogi`) before it touches the board. A peer must not be able to force an illegal position, write files, or keep the host waiting forever.
+8. **Resource leakage / leaks.** `Thread.start()` + `wait_to_finish()` discipline; tween / timer leakage when scenes change.
 
 Things you **don't** need to audit (don't waste time):
 
@@ -44,7 +45,7 @@ Things you **don't** need to audit (don't waste time):
 - JNI hand-rolled buffer handling — none.
 - SAF / persistable URI permissions — not used.
 - Biometric flow / private space — not in this project.
-- Network TLS / cleartext config — no network.
+- Network TLS / cleartext config — LAN-only plain TCP by design (ADR-0012); no internet endpoints exist.
 
 ## Review Checklist
 
