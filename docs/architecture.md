@@ -245,7 +245,7 @@ direct TCP connection; there is no server. See
   `WifiManager.MulticastLock` via Godot's Java bridge while running.
 - [`scripts/autoload/NetSession.gd`](../scripts/autoload/NetSession.gd)
   — an autoload, so the connection outlives the lobby → game scene
-  switch. One JSON object per line (`hello`, `start`, `move`, `sync`,
+  switch. The host listens on TCP 47124, or the next free port of ten. One JSON object per line (`hello`, `start`, `move`, `sync`,
   `resign`, `declare`, `abort`, `rematch`, `ping` / `pong`, `error`). After a game the connection stays open for 再戦; when both ask, the host starts the next game with the sides swapped. Keeps the
   game's USI move list, which is the source of truth for resyncing
   after a reconnect (60 s window; the longer list wins).
