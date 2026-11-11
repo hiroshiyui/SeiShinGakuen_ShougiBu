@@ -28,6 +28,9 @@ const Net := preload("res://scripts/autoload/NetSession.gd")
 const BEACON_PORT := 47123
 const BEACON_SEC := 1.0
 const HOST_TTL_SEC := 4.0
+# A real LAN has a handful of hosts; anything flooding announcements
+# (spoofed beacons, thousands of mDNS instances) stops at this many.
+const MAX_HOSTS := 32
 
 enum Mode { IDLE, BEACON, BROWSE }
 
@@ -144,6 +147,8 @@ func _receive_beacons() -> void:
 			continue
 		var key := "%s:%d" % [address, port]
 		if not _hosts.has(key):
+			if _hosts.size() >= MAX_HOSTS:
+				continue
 			changed = true
 			_hosts[key] = {"address": address, "port": port, "mdns_key": ""}
 		_hosts[key]["name"] = str(msg.get("name", "?")).left(40)
@@ -192,6 +197,8 @@ func _poll_mdns() -> bool:
 		var address := str(ev.get("address", ""))
 		var key := "%s:%d" % [address, port]
 		if not _hosts.has(key):
+			if _hosts.size() >= MAX_HOSTS:
+				continue
 			changed = true
 			_hosts[key] = {"address": address, "port": port, "seen_msec": -1}
 		_hosts[key]["name"] = str(ev.get("name", "?")).left(40)

@@ -24,6 +24,12 @@ func _main() -> void:
 	await _test_rematch_swaps_sides()
 	await _test_leaving_after_game_ends_session()
 	await _test_version_mismatch_rejected()
+	await _test_silent_stranger_cannot_block_host()
+	await _test_resync_rejects_rewritten_history()
+	await _test_reconnect_needs_token()
+	await _test_bad_types_end_session()
+	await _test_oversized_line_ends_session()
+	await _test_start_mid_game_ignored()
 	await _test_discovery_finds_beacon()
 	await _test_discovery_finds_mdns()
 	for n: Node in [_host, _guest]:
@@ -190,3 +196,120 @@ func _test_discovery_finds_mdns() -> void:
 		return not browser.hosts().any(func(h): return int(h["port"]) == 47998), 6.0)
 	_check(gone, "host drops off when the announcement is withdrawn")
 	browser.stop()
+
+# --- hardening -------------------------------------------------------------
+
+# A fresh host + guest that have started a game. Returns [host, guest].
+func _pair(tag: String) -> Array:
+	var h: Node = _make(tag + "H")
+	var g: Node = _make(tag + "G")
+	h.host("H")
+	g.join("127.0.0.1", h.listen_port, "G")
+	await _wait_for(func(): return h.in_game and g.in_game, 3.0)
+	return [h, g]
+
+func _close_pair(pair: Array) -> void:
+	for n: Node in pair:
+		n.close()
+		n.queue_free()
+	await process_frame
+
+# Sends raw lines from a plain TCP client; returns the client.
+func _raw_client(port: int) -> StreamPeerTCP:
+	var raw := StreamPeerTCP.new()
+	raw.connect_to_host("127.0.0.1", port)
+	await _wait_for(func():
+		raw.poll()
+		return raw.get_status() == StreamPeerTCP.STATUS_CONNECTED, 2.0)
+	return raw
+
+func _test_silent_stranger_cannot_block_host() -> void:
+	print("silent stranger")
+	var h: Node = _make("sH")
+	h.host("H")
+	var raw := await _raw_client(h.listen_port)
+	# Pings before hello used to keep the connection alive forever.
+	raw.put_data("{\"t\":\"ping\"}\n".to_utf8_buffer())
+	for i in 10:
+		await process_frame
+	var g: Node = _make("sG")
+	g.join("127.0.0.1", h.listen_port, "G")
+	var ok := await _wait_for(func(): return h.in_game and g.in_game, 3.0)
+	_check(ok, "real guest still gets in while a stranger is connected")
+	raw.disconnect_from_host()
+	await _close_pair([h, g])
+
+func _test_resync_rejects_rewritten_history() -> void:
+	print("rewritten history")
+	var pair: Array = await _pair("r")
+	var h: Node = pair[0]
+	var g: Node = pair[1]
+	var sente: Node = g if h.local_is_gote else h
+	sente.send_move("7g7f")
+	await _wait_for(func(): return h.moves.size() == 1 and g.moves.size() == 1, 2.0)
+	# The guest drops and comes back claiming a different game.
+	_events.clear()
+	g._on_connection_dropped()
+	g.moves = PackedStringArray(["2g2f", "8c8d"])
+	await _wait_for(func(): return _events.any(func(e): return e.begins_with("rG:failed")), 12.0)
+	_check(Array(h.moves) == ["7g7f"], "host keeps its own history")
+	_check(not _events.any(func(e): return e.begins_with("rH:restored")), "host does not adopt it")
+	await _close_pair(pair)
+
+func _test_reconnect_needs_token() -> void:
+	print("reconnect token")
+	var pair: Array = await _pair("t")
+	var h: Node = pair[0]
+	var g: Node = pair[1]
+	# The guest's link drops; a third party that knows the game id (but
+	# not the token) tries to take the seat.
+	g.close()
+	await _wait_for(func(): return h._lost_since_msec > 0, 12.0)
+	var raw := await _raw_client(h.listen_port)
+	var hello := {"t": "hello", "proto": Net.PROTO, "app": Net.APP_ID, "name": "X",
+		"game_id": h.game_id, "token": "deadbeef", "moves": []}
+	raw.put_data((JSON.stringify(hello) + "\n").to_utf8_buffer())
+	for i in 30:
+		await process_frame
+	_check(not h._handshaken and h.remote_name == "G", "wrong token does not take the seat")
+	_check(h._lost_since_msec > 0 and h.in_game, "host keeps waiting for its own guest")
+	raw.disconnect_from_host()
+	await _close_pair(pair)
+
+func _test_bad_types_end_session() -> void:
+	print("bad types")
+	var pair: Array = await _pair("b")
+	var h: Node = pair[0]
+	var g: Node = pair[1]
+	_events.clear()
+	g._send({"t": "move", "seq": "one", "usi": 7})
+	var failed := await _wait_for(func(): return _events.any(func(e): return e.begins_with("bH:failed")), 2.0)
+	_check(failed, "a move with wrong field types ends the session")
+	_check(h.moves.is_empty(), "and nothing was recorded")
+	await _close_pair(pair)
+
+func _test_oversized_line_ends_session() -> void:
+	print("oversized line")
+	var pair: Array = await _pair("o")
+	_events.clear()
+	var g: Node = pair[1]
+	var big := "x".repeat(Net.MAX_LINE + 100)
+	g._peer.put_data(("{\"t\":\"ping\",\"pad\":\"" + big + "\"}\n").to_utf8_buffer())
+	var failed := await _wait_for(func(): return _events.any(func(e): return e.begins_with("oH:failed")), 3.0)
+	_check(failed, "a line longer than MAX_LINE ends the session")
+	await _close_pair(pair)
+
+func _test_start_mid_game_ignored() -> void:
+	print("start mid-game")
+	var pair: Array = await _pair("m")
+	var h: Node = pair[0]
+	var g: Node = pair[1]
+	var sente: Node = g if h.local_is_gote else h
+	sente.send_move("7g7f")
+	await _wait_for(func(): return g.moves.size() == 1, 2.0)
+	var gid: String = g.game_id
+	h._send({"t": "start", "game_id": "ffffffff", "token": "x", "host_is_sente": true})
+	for i in 20:
+		await process_frame
+	_check(g.game_id == gid and g.moves.size() == 1, "guest ignores a start during a game")
+	await _close_pair(pair)

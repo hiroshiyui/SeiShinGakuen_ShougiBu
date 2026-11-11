@@ -8,10 +8,13 @@ extends Node
 # Discovery (how the guest finds the host) is LanDiscovery's job.
 #
 # Messages (`t` = type):
-#   hello   {proto, app, name, game_id, moves}  both ways, first message.
-#           game_id/moves are empty for a new game and filled when a
-#           guest reconnects to a game in progress.
-#   start   {game_id, host_is_sente}            host → guest, new game.
+#   hello   {proto, app, name, game_id, token, moves}  both ways, first
+#           message. game_id/token/moves are empty for a new game and
+#           filled when a guest reconnects to a game in progress.
+#   start   {game_id, token, host_is_sente}     host → guest, new game.
+#           `token` is a random secret only the guest learns; a
+#           reconnect must present it, so knowing the game id (which a
+#           LAN eavesdropper could see) isn't enough to take the seat.
 #   sync    {moves}                             host → guest, after a
 #           reconnect: the agreed move list both sides replay.
 #   move    {seq, usi}                          1-based ply number + USI.
@@ -24,7 +27,9 @@ extends Node
 #   error   {reason}                            sender is closing.
 #
 # The receiver never trusts a move: GameController checks every one with
-# ShogiCore.is_legal_move before applying it.
+# ShogiCore.is_legal_move before applying it. NetSession itself checks
+# the shape of every message (types, sizes, ordering) and drops a
+# connection that doesn't say hello within HELLO_TIMEOUT_SEC.
 
 signal handshake_done
 signal game_started
@@ -51,6 +56,10 @@ const TIMEOUT_SEC := 8.0
 const RECONNECT_WINDOW_SEC := 60.0
 const RECONNECT_RETRY_SEC := 2.0
 const MAX_LINE := 65536
+const HELLO_TIMEOUT_SEC := 5.0
+# Longest game we accept from a peer (a real game is a few hundred plies).
+const MAX_MOVES := 1000
+const NAME_MAX := 40
 
 enum Role { NONE, HOST, GUEST }
 
@@ -59,6 +68,7 @@ var local_name: String = ""
 var remote_name: String = ""
 var local_is_gote: bool = false
 var game_id: String = ""
+var _resume_token: String = ""
 # USI of every move played so far, in order. The resync source of truth.
 var moves: PackedStringArray = PackedStringArray()
 # True from `start` until the game ends or the session closes.
@@ -77,6 +87,7 @@ var _handshaken: bool = false
 # The guest's hello waits until the TCP connection is actually up.
 var _hello_pending: bool = false
 var _last_rx_msec: int = 0
+var _adopted_msec: int = 0
 var _last_ping_msec: int = 0
 var _host_address: String = ""
 var _host_port: int = 0
@@ -137,6 +148,7 @@ func close(notify: String = "") -> void:
 	_rematch_local = false
 	_rematch_remote = false
 	game_id = ""
+	_resume_token = ""
 	moves = PackedStringArray()
 	remote_name = ""
 	listen_port = 0
@@ -175,13 +187,15 @@ func _maybe_start_rematch() -> void:
 
 func _begin_game(host_is_sente: bool) -> void:
 	game_id = "%08x" % (randi() & 0x7fffffff)
+	_resume_token = _random_token()
 	local_is_gote = not host_is_sente
 	moves = PackedStringArray()
 	in_game = true
 	post_game = false
 	_rematch_local = false
 	_rematch_remote = false
-	_send({"t": "start", "game_id": game_id, "host_is_sente": host_is_sente})
+	_send({"t": "start", "game_id": game_id, "token": _resume_token,
+		"host_is_sente": host_is_sente})
 	game_started.emit()
 
 # --- polling ---------------------------------------------------------------
@@ -192,14 +206,22 @@ func _process(_delta: float) -> void:
 	var now := Time.get_ticks_msec()
 	if role == Role.HOST and _server != null and _server.is_connection_available():
 		var incoming := _server.take_connection()
-		if _peer == null or _lost_since_msec > 0:
+		# A connection that hasn't said hello yet doesn't hold the seat:
+		# otherwise anything on the LAN could connect and sit silently.
+		if _peer == null or not _handshaken or _lost_since_msec > 0:
+			if _peer != null:
+				_peer.disconnect_from_host()
 			_adopt_peer(incoming)
 		else:
 			incoming.disconnect_from_host()  # already have an opponent
+	# Checked every frame, so a connection that never completes a
+	# handshake can't keep a lost game waiting forever.
+	_check_reconnect_window(now)
+	if role == Role.NONE:
+		return
 	if _peer == null:
 		if role == Role.GUEST and _lost_since_msec > 0 and now >= _next_retry_msec:
 			_connect_to_host()
-		_check_reconnect_window(now)
 		return
 	_peer.poll()
 	match _peer.get_status():
@@ -216,6 +238,10 @@ func _process(_delta: float) -> void:
 			return
 	_read_available()
 	if _peer == null:
+		return
+	if not _handshaken:
+		if now - _adopted_msec >= int(HELLO_TIMEOUT_SEC * 1000.0):
+			_drop_stranger()
 		return
 	if now - _last_ping_msec >= int(PING_SEC * 1000.0):
 		_last_ping_msec = now
@@ -238,6 +264,7 @@ func _adopt_peer(p: StreamPeerTCP) -> void:
 	_handshaken = false
 	_last_rx_msec = Time.get_ticks_msec()
 	_last_ping_msec = _last_rx_msec
+	_adopted_msec = _last_rx_msec
 	# The guest speaks first; on a reconnect it carries the game so far.
 	_hello_pending = role == Role.GUEST
 
@@ -245,8 +272,25 @@ func _send_hello() -> void:
 	_send({
 		"t": "hello", "proto": PROTO, "app": APP_ID, "name": local_name,
 		"game_id": game_id if in_game else "",
+		"token": _resume_token if in_game else "",
 		"moves": Array(moves) if in_game else [],
 	})
+
+# A connection that didn't complete the handshake. On the host this only
+# frees the seat (the lobby keeps listening, a lost game keeps waiting);
+# on the guest it counts as a drop.
+func _drop_stranger() -> void:
+	if role == Role.HOST:
+		if _peer != null:
+			_peer.disconnect_from_host()
+		_peer = null
+		_handshaken = false
+		_buf.clear()
+	else:
+		_on_connection_dropped()
+
+static func _random_token() -> String:
+	return "%08x%08x%08x%08x" % [randi(), randi(), randi(), randi()]
 
 func _on_connection_dropped() -> void:
 	if _peer != null:
@@ -278,16 +322,19 @@ func _send(msg: Dictionary) -> void:
 	_peer.put_data((JSON.stringify(msg) + "\n").to_utf8_buffer())
 
 func _read_available() -> void:
-	var n := _peer.get_available_bytes()
+	# Never buffer more than one line's worth; a longer line is an error
+	# whether or not its newline arrived in the same read.
+	var n := mini(_peer.get_available_bytes(), MAX_LINE + 1 - _buf.size())
 	if n > 0:
 		var res: Array = _peer.get_partial_data(n)
 		if int(res[0]) == OK:
 			_buf.append_array(res[1])
 	while _peer != null:
 		var nl := _buf.find(10)  # '\n'
+		if nl > MAX_LINE or (nl < 0 and _buf.size() > MAX_LINE):
+			_fail("受信データが不正です")
+			return
 		if nl < 0:
-			if _buf.size() > MAX_LINE:
-				_fail("受信データが不正です")
 			return
 		var line := _buf.slice(0, nl).get_string_from_utf8()
 		_buf = _buf.slice(nl + 1)
@@ -309,27 +356,42 @@ func _fail(reason: String) -> void:
 
 func _handle(msg: Dictionary) -> void:
 	var t := str(msg.get("t", ""))
-	if t == "ping":
-		_send({"t": "pong"})
-		return
-	if t == "pong":
-		return
 	if t == "error":
+		if not _handshaken and role == Role.HOST:
+			_drop_stranger()
+			return
 		close()
-		session_failed.emit(str(msg.get("reason", "相手が接続を終了しました")))
+		session_failed.emit(_clean_text(msg.get("reason"), 80, "相手が接続を終了しました"))
 		return
 	if not _handshaken:
+		# Nothing but hello before the handshake — not even ping, which
+		# would otherwise keep a silent connection alive.
 		if t != "hello":
-			_fail("受信データが不正です")
+			if role == Role.HOST:
+				_drop_stranger()
+			else:
+				_fail("受信データが不正です")
 			return
 		_on_hello(msg)
 		return
 	match t:
+		"ping":
+			_send({"t": "pong"})
+		"pong":
+			pass
 		"start":
-			if role != Role.GUEST:
+			if role != Role.GUEST or in_game:
+				return  # a start in the middle of a game would reset the board
+			var gid: Variant = msg.get("game_id")
+			var token: Variant = msg.get("token")
+			var sente: Variant = msg.get("host_is_sente")
+			if not (gid is String and token is String and sente is bool) \
+					or gid.length() > 32 or token.length() > 64:
+				_fail("受信データが不正です")
 				return
-			game_id = str(msg.get("game_id", ""))
-			local_is_gote = bool(msg.get("host_is_sente", true))
+			game_id = gid
+			_resume_token = token
+			local_is_gote = sente
 			moves = PackedStringArray()
 			in_game = true
 			post_game = false
@@ -337,23 +399,31 @@ func _handle(msg: Dictionary) -> void:
 			_rematch_remote = false
 			game_started.emit()
 		"sync":
-			if role != Role.GUEST:
+			if role != Role.GUEST or not in_game:
 				return
-			moves = PackedStringArray(msg.get("moves", []))
+			var agreed: Variant = _resync_list(msg.get("moves"))
+			if agreed == null:
+				_fail("指し手の記録が合いません")
+				return
+			moves = agreed
 			_lost_since_msec = 0
 			peer_restored.emit(moves)
 		"move":
 			if not in_game:
 				return
-			var seq := int(msg.get("seq", 0))
+			var seq_v: Variant = msg.get("seq")
+			var usi_v: Variant = msg.get("usi")
+			if not (seq_v is int or seq_v is float) or not _is_usi(usi_v):
+				_fail("受信データが不正です")
+				return
+			var seq := int(seq_v)
 			if seq <= moves.size():
 				return  # duplicate after a resync
-			if seq != moves.size() + 1:
+			if seq != moves.size() + 1 or moves.size() >= MAX_MOVES:
 				_fail("指し手の順番が合いません")
 				return
-			var usi := str(msg.get("usi", ""))
-			moves.append(usi)
-			move_received.emit(usi)
+			moves.append(usi_v)
+			move_received.emit(usi_v)
 		"resign":
 			resign_received.emit()
 		"declare":
@@ -368,35 +438,86 @@ func _handle(msg: Dictionary) -> void:
 			_maybe_start_rematch()
 
 func _on_hello(msg: Dictionary) -> void:
-	if str(msg.get("app", "")) != APP_ID or int(msg.get("proto", -1)) != PROTO:
-		_fail("相手のアプリのバージョンが違います")
+	var proto: Variant = msg.get("proto")
+	if str(msg.get("app", "")) != APP_ID or not (proto is int or proto is float) \
+			or int(proto) != PROTO:
+		if role == Role.HOST:
+			_send({"t": "error", "reason": "相手のアプリのバージョンが違います"})
+			_drop_stranger()
+		else:
+			_fail("相手のアプリのバージョンが違います")
 		return
-	remote_name = str(msg.get("name", "相手"))
-	_handshaken = true
+	var their_name := _clean_text(msg.get("name"), NAME_MAX, "相手")
 	if role == Role.GUEST:
+		remote_name = their_name
+		_handshaken = true
 		# The host's hello answers ours; `start` or `sync` follows.
 		handshake_done.emit()
 		return
-	_send_hello()
-	var their_game := str(msg.get("game_id", ""))
-	if in_game and their_game == game_id:
-		# Reconnect: the longer move list is ahead (the other is a prefix
-		# of it); both sides replay it and carry on.
-		var theirs := PackedStringArray(msg.get("moves", []))
-		if theirs.size() > moves.size():
-			moves = theirs
+	var their_game: Variant = msg.get("game_id")
+	var their_token: Variant = msg.get("token")
+	if in_game and their_game is String and their_game == game_id \
+			and their_token is String and _resume_token != "" and their_token == _resume_token:
+		# Reconnect of our own guest. One side may be a move ahead; the
+		# other's list must be a prefix of it, or the peer is lying.
+		var agreed: Variant = _resync_list(msg.get("moves"))
+		if agreed == null:
+			_send({"t": "error", "reason": "指し手の記録が合いません"})
+			_drop_stranger()
+			return
+		remote_name = their_name
+		_handshaken = true
+		_send_hello()
+		moves = agreed
 		_lost_since_msec = 0
 		_send({"t": "sync", "moves": Array(moves)})
 		peer_restored.emit(moves)
 		return
-	if in_game:
-		# A different guest while our game waits for its own player:
-		# turn this one away but keep waiting.
+	if in_game or post_game:
+		# Anyone else while our game waits for its own player (or after
+		# it): turn them away but keep waiting.
 		_send({"t": "error", "reason": "対局中です"})
-		_peer.poll()
-		_peer.disconnect_from_host()
-		_peer = null
-		_handshaken = false
+		_drop_stranger()
 		return
+	remote_name = their_name
+	_handshaken = true
+	_send_hello()
 	handshake_done.emit()
 	_begin_game(randi() % 2 == 0)
+
+# --- validation ------------------------------------------------------------
+
+static func _is_usi(v: Variant) -> bool:
+	return v is String and v.length() >= 4 and v.length() <= 5
+
+# Text from the peer, shown in the UI: a string, no control characters,
+# at most `max_len` characters; `fallback` otherwise.
+static func _clean_text(v: Variant, max_len: int, fallback: String) -> String:
+	if not (v is String):
+		return fallback
+	var out := ""
+	for ch in v:
+		if ch.unicode_at(0) >= 0x20 and ch.unicode_at(0) != 0x7f:
+			out += ch
+	out = out.strip_edges().left(max_len)
+	return out if out != "" else fallback
+
+# The move list both sides continue from after a reconnect, or null if
+# the peer's list doesn't fit ours. One list must be a prefix of the
+# other and they may differ by at most one move: the one that was in
+# flight when the connection dropped.
+func _resync_list(theirs_v: Variant) -> Variant:
+	if not (theirs_v is Array) or theirs_v.size() > MAX_MOVES:
+		return null
+	for m in theirs_v:
+		if not _is_usi(m):
+			return null
+	var theirs := PackedStringArray(theirs_v)
+	var shorter := theirs if theirs.size() <= moves.size() else moves
+	var longer := moves if shorter == theirs else theirs
+	if longer.size() - shorter.size() > 1:
+		return null
+	for i in shorter.size():
+		if shorter[i] != longer[i]:
+			return null
+	return longer

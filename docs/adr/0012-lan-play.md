@@ -52,9 +52,16 @@ Choices to make:
   打ち歩詰め, forced promotion) before it is applied. A bad move ends the
   game as 中断. Received 入玉宣言 is re-checked the same way.
 - **Reconnect for 60 seconds.** On a drop, the guest redials every two
-  seconds and the host keeps listening. On reconnect the guest sends
-  its move list; the longer of the two lists wins (the other is always
-  a prefix of it) and both sides replay it, checking each move.
+  seconds and the host keeps listening. The guest must present a
+  random resume token it alone received in `start` (the game id alone
+  travels in plain text). It sends its move list; one list must be a
+  prefix of the other and at most one move longer, otherwise the
+  reconnect is refused, and both sides replay the agreed list,
+  checking each move.
+- **Untrusted framing.** A connection must say hello within 5 seconds
+  (nothing else, not even ping, is accepted before it), lines are
+  capped at 64 KiB, and every field is type-checked; a silent or
+  malformed connection can't hold the host's seat.
 - **Request `INTERNET`.** Android needs it for any socket, local or
   not. The privacy policy and store descriptions say what the traffic
   is and that it stays on the LAN.
