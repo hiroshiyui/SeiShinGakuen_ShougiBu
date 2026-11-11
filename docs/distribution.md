@@ -37,7 +37,7 @@ itch.io の Details → Description 欄は Markdown を解釈しないため、
 このブロックをそのまま貼り付ける。
 
 ```text
-清正学園将棋部は、シングルプレイヤー向けの本将棋（日本将棋）ゲームです。すべての処理は端末内で完結し、通信は一切行いません。
+清正学園将棋部は、端末内の AI と対局する本将棋（日本将棋）ゲームです。同じ Wi-Fi の相手との「通信対戦」もできます。インターネットには一切接続しません。
 
 ◎主な特徴
 
@@ -47,6 +47,7 @@ itch.io の Details → Description 欄は Markdown を解釈しないため、
 ・表情が変わる対戦相手 — 対局の流れに合わせて相手の表情が変わる。思考中は考える顔、優勢なら嬉しい顔、劣勢なら困った顔。王手をかけると一瞬たじろぎ、終局時は勝ち / 負けの表情を見せる。
 ・吹き出しでひと言 — 8 人の対戦相手が、対局開始や王手のときなどに、それぞれの性格に合った台詞を話す。
 ・あなたの戦績 — 対戦相手選択の画面に、その相手との勝敗数を表示。
+・通信対戦 — 同じ Wi-Fi につないだ 2 台で人対人の対局。サーバーは使わず端末どうしが直接つながり、後手の側は盤面が反転。終局後は先後を入れ替えて再戦できます。
 ・先生モード — 対局中に「加藤先生！教えてください！」ボタンを押すと、上位 3 候補手を勝率付きで提示。実際に指す手はプレイヤー自身が選びます。
 ・対局体験 — 待った（多段階 undo）、投了、最終手ハイライト、駒音／効果音、ハプティック振動、対局の中断と続きから再開。
 ・棋譜の保存と検討 — 対局を .kif で保存し、タイトル画面の「棋譜検討」から一覧・再生・解析が可能。MCTS で全手を評価し、◎好手 / △疑問手 / ×悪手 のバッジと推奨手を表示。解析後は形勢グラフで対局の流れを一目で確認できる。
@@ -82,7 +83,7 @@ https://github.com/hiroshiyui/SeiShinGakuen_ShougiBu/issues
 **Genre**: Strategy
 **Classification**: Game
 **Platforms**: Android
-**Tags**: `shogi`, `board-game`, `japanese`, `godot`, `singleplayer`, `ai-opponent`, `offline`, `android`
+**Tags**: `shogi`, `board-game`, `japanese`, `godot`, `singleplayer`, `local-multiplayer`, `ai-opponent`, `offline`, `android`
 **Language**: Japanese
 **Pricing**: No payments (free download)
 

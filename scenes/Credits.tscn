@@ -92,7 +92,7 @@ bbcode_enabled = true
 fit_content = true
 scroll_active = false
 text = "[font_size=26][b]清正学園将棋部[/b][/font_size]
-[color=#cfd0d6]a single-player Shogi game by hiroshiyui[/color]
+[color=#cfd0d6]a Shogi game by hiroshiyui[/color]
 
 [font_size=22][b]作者より[/b][/font_size]
 [color=#e6d8a8]このゲームは、ソフトウェア業界を離れる前に作る最後の作品です。長く無職の時期を過ごしてきました。ソフトウェア開発が大好きですが、ワーク・ライフ・バランスを保てる仕事にはなかなか巡り合えませんでした。このゲームを気に入っていただけたら嬉しいです。どうぞ将棋をお楽しみください。深い鬱の中にいた頃、将棋は私の心をそっと癒やしてくれた、そんな大切なゲームです。[/color]
@@ -107,7 +107,7 @@ Bonanza policy + value network
 推論ランタイム: [color=#a4c8ff]tract[/color] (ONNX runtime in Rust)
 
 [font_size=22][b]ゲームエンジン[/b][/font_size]
-[color=#a4c8ff]Godot Engine 4.6.2[/color] (MIT)
+[color=#a4c8ff]Godot Engine 4.7.2[/color] (MIT)
 [color=#a4c8ff]godot-rust[/color] — Rust bindings for the Godot engine (MIT)
 
 [font_size=22][b]フォント[/b][/font_size]
@@ -120,7 +120,7 @@ Bonanza policy + value network
 将棋という奥深いゲームを生み出した先人の方々
 オープンソースで開発を支えてくれた全てのコントリビューター
 
-[font_size=18][color=#9090a0]© 2026 hiroshiyui — Released under the project's repository license. Sideload only; not affiliated with any commercial Shogi service.[/color][/font_size]"
+[font_size=18][color=#9090a0]© 2026 hiroshiyui — Released under the project's repository license. Distributed on F-Droid, GitHub Releases and itch.io; not affiliated with any commercial Shogi service.[/color][/font_size]"
 theme_override_font_sizes/normal_font_size = 20
 theme_override_colors/default_color = Color(0.94, 0.94, 0.96, 1)
 theme_override_fonts/normal_font = ExtResource("3_mplus2")
