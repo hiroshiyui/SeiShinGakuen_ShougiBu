@@ -158,7 +158,7 @@ impl ShogiCore {
             };
             // The log comes from a save file or a KIF the player picked,
             // so check full legality, not just `apply_move`'s geometry.
-            if !all_legal_moves(&mut self.board).contains(&mv) || !self.board.apply_move(mv) {
+            if !is_legal_quick(&mut self.board, mv) || !self.board.apply_move(mv) {
                 return false;
             }
             let was_check = is_check(&self.board, self.board.side_to_move);
@@ -671,6 +671,16 @@ fn dict_to_move(d: &VarDictionary) -> Option<Move> {
         to: board_square(to.x as i64, to.y as i64)?,
         promote,
     })
+}
+
+/// Full legality of `mv`, generating only the moved piece's moves (or
+/// the dropped kind's drops) rather than every legal move — the replay
+/// paths call this once per ply, and the reviewer replays on every tap.
+fn is_legal_quick(board: &mut Board, mv: Move) -> bool {
+    match mv {
+        Move::Board { from, .. } => from.in_bounds() && legal_moves_from(board, from).contains(&mv),
+        Move::Drop { kind, .. } => legal_drops(board, kind).contains(&mv),
+    }
 }
 
 /// A square on the board, or None. Rejects values that a plain `as i8`

@@ -247,6 +247,7 @@ fn kind_from_kanji(s: &str) -> Option<Kind> {
 
 const TERMINATORS: &[&str] = &[
     "中断", "投了", "詰み", "千日手", "持将棋", "入玉勝ち", "反則勝ち", "反則負け", "不戦勝", "不戦敗",
+    "切れ負け",
 ];
 
 /// Parse a KIF document into the same packed-i32 log shape `pack_log`

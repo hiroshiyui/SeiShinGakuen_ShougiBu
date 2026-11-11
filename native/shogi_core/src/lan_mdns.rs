@@ -72,16 +72,13 @@ impl LanMdns {
         while let Ok(ev) = rx.try_recv() {
             match ev {
                 ServiceEvent::ServiceResolved(svc) => {
-                    // IPv4 only (the game's TCP side is v4), and only a
-                    // private / link-local address: a record pointing
-                    // off the LAN is ignored. Lowest address wins, so the
-                    // pick is stable across interfaces.
-                    let mut addrs: Vec<_> = svc
-                        .get_addresses_v4()
-                        .into_iter()
-                        .filter(|a| a.is_private() || a.is_link_local())
-                        .collect();
-                    addrs.sort();
+                    // IPv4 only (the game's TCP side is v4). Prefer a
+                    // private / link-local address, then the lowest, so the
+                    // pick is stable across interfaces; whether the address
+                    // is acceptable at all is LanDiscovery's call (the same
+                    // rule covers the UDP beacon).
+                    let mut addrs: Vec<_> = svc.get_addresses_v4().into_iter().collect();
+                    addrs.sort_by_key(|a| (!(a.is_private() || a.is_link_local()), *a));
                     let Some(addr) = addrs.first() else { continue };
                     let mut d = VarDictionary::new();
                     d.set("type", "found");
