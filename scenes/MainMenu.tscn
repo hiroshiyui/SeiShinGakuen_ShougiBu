@@ -46,11 +46,15 @@ anchor_bottom = 1.0
 mouse_filter = 2
 script = ExtResource("4_safe")
 
-[node name="Center" type="CenterContainer" parent="Layout"]
+[node name="Center" type="VBoxContainer" parent="Layout"]
 anchor_right = 1.0
 anchor_bottom = 1.0
+offset_bottom = -72.0
+mouse_filter = 2
+alignment = 2
 
 [node name="Panel" type="PanelContainer" parent="Layout/Center"]
+size_flags_horizontal = 4
 theme_override_styles/panel = SubResource("1_panel")
 
 [node name="Box" type="VBoxContainer" parent="Layout/Center/Panel"]
@@ -90,10 +94,10 @@ text = "選んでください"
 [node name="Spacer" type="Control" parent="Layout/Center/Panel/Box"]
 custom_minimum_size = Vector2(0, 8)
 
-[node name="SettingsButton" type="Button" parent="Layout/Center/Panel/Box"]
+[node name="StartButton" type="Button" parent="Layout/Center/Panel/Box"]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 72)
-text = "設定"
+text = "新規対局"
 theme_override_font_sizes/font_size = 24
 
 [node name="ResumeButton" type="Button" parent="Layout/Center/Panel/Box"]
@@ -115,10 +119,10 @@ custom_minimum_size = Vector2(0, 72)
 text = "詰将棋"
 theme_override_font_sizes/font_size = 24
 
-[node name="StartButton" type="Button" parent="Layout/Center/Panel/Box"]
+[node name="SettingsButton" type="Button" parent="Layout/Center/Panel/Box"]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 72)
-text = "新規対局"
+text = "設定"
 theme_override_font_sizes/font_size = 24
 
 [node name="VersionLabel" type="Label" parent="Layout"]
