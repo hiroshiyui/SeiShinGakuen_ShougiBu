@@ -84,173 +84,41 @@ SeiShinGakuen_ShougiBu/
 Each phase ends in a runnable, demoable state. Tag a git commit at the end
 of each phase.
 
+Phases 1–7 are complete. Each one is condensed below into what shipped and where it shipped differently from the plan. The full checklists are in git history (before commit "docs(roadmap): digest the completed phases").
+
 ### Phase 1 — Board & input skeleton (GDScript) ✅
-**Deliverable:** a 9×9 board renders on screen; tapping a square highlights it.
-
-- [x] Create `scenes/game/Board.tscn` with a 9×9 `GridContainer` of `Square` nodes
-- [x] `scripts/game/Square.gd` — handles touch, emits `tapped(file, rank)`
-- [x] `scripts/game/BoardView.gd` — renders a stub board state (all 40 pieces in starting position, kanji text in `Label`s)
-- [x] Portrait camera / layout; test on Android emulator or device
-- [x] Piece orientation: 先手 bottom (upright), 後手 top (rotated 180°)
-- [x] Pure presentation — no rules yet
-
-**Done when:** starting position displays correctly; taps print coordinates.
-
-Shipped differently: Android on-device test deferred to Phase 6 (portrait viewport configured in `project.godot`; desktop smoke-tested headless only).
+A 9×9 portrait board built from `Square` nodes in a `GridContainer`. It shows the starting position, with 先手 upright at the bottom and 後手 rotated 180° at the top, and taps print coordinates. The on-device test moved to Phase 6.
 
 ### Phase 2 — Movement rules & hands (GDScript) ✅
-**Deliverable:** two humans can play a full legal game locally, including
-drops and promotion.
-
-- [x] `scripts/game/BoardState.gd` — 9×9 array + two hands (`Dictionary[PieceType,int]`)
-- [x] Per-piece move tables (歩 香 桂 銀 金 角 飛 王 + promoted variants)
-- [x] Sliding piece ray logic (角 飛 香 and promoted 馬 龍)
-- [x] Tap-to-select → highlight legal destinations → tap-to-move
-- [x] Capture: move piece to hand (un-promoted)
-- [x] Drop flow: tap piece in 駒台 → highlight legal drop squares → tap to drop
-- [x] Promotion: when crossing the promotion zone, prompt dialog (must-promote for 歩/香 last rank, 桂 last two)
-- [x] SFEN export (for debugging; read-only first)
-- [x] Turn management, move log to console
-
-**Done when:** can play a complete game to checkmate without violating movement rules.
+Two humans could play a full legal game on one device: per-piece and sliding moves, captures into the 駒台, drops, promotion (forced where required), turns, and SFEN export.
 
 ### Phase 3 — Full rule enforcement (GDScript) ✅
-**Deliverable:** all illegal moves are refused; game ends correctly.
+Check and the legal-move filter, 二歩, 打ち歩詰め, checkmate and stalemate, and 千日手 (4-fold repetition is a draw; perpetual check loses). Also 入玉/持将棋 detection and a one-move undo. Shipped differently: 入玉 was detection-only until the Phase 7 宣言 button. Tests are headless GDScript (`scripts/tests/rules_tests.gd`) that build positions in code rather than loading SFEN fixtures.
 
-- [x] `is_check(side)` using reverse-attack lookup from king square
-- [x] Legal-move filter: no move may leave own king in check
-- [x] 二歩 (nifu): cannot drop 歩 on a file that already has own unpromoted 歩
-- [x] 打ち歩詰め (uchifuzume): cannot deliver mate with a dropped 歩
-- [x] Checkmate / stalemate detection → game-over screen
-- [x] 千日手 (sennichite): track position history by hashed SFEN; draw after 4-fold (perpetual-check variant = loss for checker)
-- [x] 入玉 / 持将棋 (entering-king / impasse) — 27-point rule, basic handling
-- [x] Undo last move (single-level) for convenience
+### Phase 4 — Rust core (GDExtension) ✅
+Move generation, legality checks and SFEN moved into `native/shogi_core/`, a cdylib exposed to GDScript as `ShogiCore`, and the GDScript rules were replaced by it. Shipped differently: it uses a mailbox board (`[Option<Piece>; 81]`), not bitboards, which is fast enough. The API is wider than planned, with test-setup helpers and `legal_moves_from` + `legal_drops` to match the tap-driven UI. Perft is checked at depths 1 and 2.
 
-**Done when:** the engine cannot be tricked into an illegal state; verified with a test suite of SFEN fixtures.
-
-Shipped differently:
-- 入玉 is detection-only (`Rules.king_entered` + `Rules.jishogi_points`). No in-game claim button yet; deferred to Phase 7 polish along with a resign button.
-- Test harness is pure GDScript headless (`scripts/tests/rules_tests.gd` runnable via `godot --headless -s`) rather than a SFEN-import-driven fixture set — fixtures are constructed programmatically through `BoardState.clear_board() / place() / set_hand_count() / set_side_to_move() / seal_initial_position()`.
-
-### Phase 4 — Rust core (GDExtension), desktop only ✅
-**Deliverable:** move gen + rule checks run in Rust; GDScript calls into it.
-Game still plays identically — this is a refactor, not a feature.
-
-- [x] `native/shogi_core/` Cargo crate, `cdylib`, `godot` dep (gdext)
-- [x] `addons/shogi_core.gdextension` manifest
-- [x] Desktop linux build via `cargo build --release`; copy `.so` to `native/bin/linux/x86_64/`
-- [x] Port types: `Piece`, `Color`, `Square`, `Move`, `Board`, `Hands`
-- [x] Port move generation (bitboards preferred; start with mailbox if faster to write)
-- [x] Port legality + special rules (二歩, 打ち歩詰め, check)
-- [x] SFEN parse/serialize
-- [x] Expose `ShogiCore` class to GDScript with:
-  - `load_sfen(s)`, `to_sfen()`
-  - `legal_moves() -> PackedArray`
-  - `apply_move(m)`, `undo()`
-  - `is_check()`, `is_checkmate()`, `result()`
-- [x] Replace GDScript rule code with calls into native
-- [x] Rust unit tests for rules (perft on known positions)
-
-**Done when:** `cargo test` passes perft suite; in-game behavior matches Phase 3.
-
-Shipped differently:
-- Rust edition 2024 (requires rustc ≥ 1.85; repo's 1.93 is fine).
-- godot-rust crate pinned at `0.2.4`; `.gdextension` declares `compatibility_minimum = 4.3` which works against Godot 4.6.
-- Representation is mailbox (`[Option<Piece>; 81]`) rather than bitboards — fast enough for interactive play; revisit if Phase 5 MCTS benchmarks demand it.
-- SFEN parser is not yet implemented (only serializer + `position_key`). Import will land with Phase 5 when the AI wants to round-trip positions.
-- Exposed API is superset of the target shape (adds `clear_board / place / set_hand_count / set_side_to_move_gote / seal_initial_position` for test setup and a future editor; `legal_moves` is split into `legal_moves_from(file, rank)` + `legal_drops(kind)` matching the tap-driven UI flow).
-- Perft suite verifies depth 1 (30) and depth 2 (900) from the starting position; deeper fixtures deferred until AI strength tuning needs them.
-
-### Phase 5 — AI: ONNX + MCTS (desktop) ✅
-**Deliverable:** playable vs. AI on desktop; configurable playout budget.
-
-- [x] Add `ort` dep; bundle `models/bonanza.onnx`
-- [x] `encode.rs`: implement the exact 45-plane board encoding used in ShogiDojo (verify against Python by diffing a tensor on a known SFEN)
-- [x] Implement the 139-plane move index (match ShogiDojo's convention)
-- [x] `nn.rs`: load session, run `(45,9,9) → (policy_logits, value)`
-- [x] `mcts.rs`: PUCT MCTS with Dirichlet noise at root, virtual loss optional, single-threaded first
-- [x] Expose `think(ms|playouts) -> best_move` to GDScript
-- [x] Main-menu mode select: Human vs Human / Human (sente) vs AI / Human (gote) vs AI
-- [x] Settings: playout count (128 / 400 / 1600), temperature
-- [x] Thinking runs on Rust thread; GDScript shows spinner, awaits via signal
-
-**Done when:** AI plays legal moves, beats a random-mover consistently, and responds within ~2s at default budget.
-
-**Encoding-parity test (critical):** a small Python script in `tools/` dumps `(planes, policy_index)` for 20 diverse SFENs using ShogiDojo's code; Rust test loads the same SFENs and asserts byte-exact match.
-
-Shipped differently:
-- **Inference runtime is `tract`, not `ort`.** `ort` rc builds had a TLS-config regression and the v2 ep-vitis bindings mismatch against the sys crate across rc.10/rc.11/rc.12, costing hours of toolchain pain for a 1.3 MB model. `tract-onnx` is pure-Rust, statically links with no shared-lib dependency, loads the Bonanza model identically, and makes Phase 6 cross-compilation trivial. Inference cost: ~5 ms per forward pass on desktop. Revisit `ort` only if Phase 6 arm64 throughput is inadequate.
-- **Fixture set is 13 SFENs**, not 20 — `tools/gen_fixtures.py` uses ShogiDojo's actual `encode_position` / `encode_move`. Tested on starting position (both colours-to-move), 8 mid-opening positions, a promoted-pieces-with-hand case, an edge-rank lance, and two kings-in-corners. All produce byte-exact tensor and u32-exact move-index output.
-- **Temperature knob is not exposed yet** — MCTS currently always picks the most-visited root move. Sampling with a temperature is a one-line change in `Searcher::best_move`; defer until AI-strength tuning surfaces a need.
-- **Async thinking runs on a Godot `Thread`**, not a Rust-owned thread. `ShogiCore::think_best_move` is synchronous; GameController spawns a `Thread` for it and polls `is_alive()` / `wait_to_finish()` in `_process`. Simpler than managing Rust threads across the FFI boundary.
-- **Model path is dev-only at `res://models/bonanza.onnx`.** Android (Phase 6) will need to extract from the PCK into `user://` at first launch before `load_model` can reach it.
+### Phase 5 — AI: ONNX + MCTS ✅
+`encode.rs` (45 planes) and `move_index.rs` (139 planes) are byte-exact with ShogiDojo. `tools/gen_fixtures.py` writes 13 parity SFENs that `cargo test` checks. Single-threaded PUCT MCTS with Dirichlet noise drives the Bonanza model. Shipped differently:
+- **`tract`, not `ort`.** `ort` had release-candidate regressions. `tract` is pure Rust and statically linked, at about 5 ms per forward pass on desktop, and it made Android cross-compilation trivial.
+- **Search runs on a Godot `Thread`.** `think_best_move` is synchronous; `GameController` runs it on the thread and polls for the result. This is simpler than owning Rust threads across the FFI.
+- Temperature and strength were later driven by each character's `CharacterProfile` (Phase 7).
 
 ### Phase 6 — Android build ✅
-**Deliverable:** signed APK runs on device, AI works offline.
+An arm64-v8a build through `cargo-ndk --platform 24` with NDK 30 (`docs/android-build.md`), min SDK 24, portrait-locked, and tested on a real phone. Gotchas found on the way, all now in `docs/android-gotchas.md`:
+- The export filter dropped `.onnx`, so the preset needs `include_filter="*.onnx"`. On first launch the model is copied from `res://` to `user://` because tract can't read files inside the PCK.
+- Orientation must be the int `1`; the string `"portrait"` silently falls back to landscape.
+- Mouse emulation fires every tap twice, so `Square` listens to touch only on mobile.
+- The board size is fitted to the viewport at runtime.
 
-- [x] Install Android NDK, Godot Android export templates
-- [x] Add `aarch64-linux-android` Rust target; `cargo-ndk` or manual `--target`
-- [x] Build `libshogi_core.so` for arm64-v8a; place in `native/bin/android/arm64-v8a/`
-- [x] Update `.gdextension` manifest with Android entry
-- [x] ~~`ort` Android feature: pull ONNX Runtime Mobile AAR~~ — obsolete, replaced by `tract` in Phase 5 (pure-Rust, no shared-lib plumbing on Android)
-- [x] Godot Android export preset; min SDK 24, target SDK 34
-- [x] Add signing config (debug keystore first)
-- [x] Test on physical device: APK size, first-move latency, battery
-- [x] Portrait-lock in manifest
-
-**Done when:** APK installs, game plays a full match vs. AI on a mid-range phone with <3s thinking time per move.
-
-Shipped differently:
-- NDK 30.0 via `cargo-ndk --platform 24 -t arm64-v8a`. Build doc at `docs/android-build.md`.
-- APK size: **58 MB**, dominated by `libgodot_android.so` (74 MB raw → compressed), `libshogi_core.so` (14 MB, tract-embedded), and the Fude Goshirae font (18 MB imported). Font-subsetting is the biggest remaining win.
-- **Model packaging:** `bonanza.onnx` is *not* a Godot-recognised resource type, so the default `all_resources` export filter silently dropped it. Export preset now carries `include_filter="*.onnx"`. On first launch `Settings.model_absolute_path()` copies it from `res://` to `user://` (tract mmaps the OS path; it can't open files that live inside the PCK).
-- **Portrait lock:** Godot 4.6's Android export reads `display/window/handheld/orientation` as an `int`, not a string — leaving it as `"portrait"` silently falls back to `0` (landscape). Must be `1`.
-- **Touch input:** `emulate_mouse_from_touch` (default `true`) fires both an `InputEventScreenTouch` and an `InputEventMouseButton` per tap, so naive `_gui_input` handlers fire twice and the second tap deselects the first. Square now dispatches on `OS.has_feature("mobile")` — mobile listens to touch only, desktop to mouse only.
-- **Layout auto-fit:** board side is computed at runtime from the viewport (`min(vw - 40, vh - reserved)`), clamped `[240, 1600]`, and re-fit on every `size_changed`. Status label was slimmed to `(N手目)` to kill the text-width feedback loop that was nudging the board off-centre each move.
-- **Signing:** debug keystore only; release signing deferred to Phase 7 polish alongside the GitHub Releases / sideload story.
-
-### Phase 7 — Polish
-- [x] **Subset Fude Goshirae piece font + scan-driven subsetting for the UI font.** Both done in `tools/build_font_subsets.py`. Piece font is subset to 15 fixed glyphs; Noto Serif JP Medium + Bold are subset against all Japanese characters grep'd from `scripts/` + `scenes/` plus an always-include ASCII range (`0020-007E`) and a safety set for runtime-injected glyphs (digits, `→`, `×`, Japanese punctuation). Re-run after editing UI strings.
-
-    Results: Fude Goshirae 39 MB → 175 KB; Noto Medium 24 MB → 79 KB; Noto Bold 25 MB → 79 KB. APK dropped from 103 MB to **42 MB** (the other fat items are `libgodot_android.so` and `libshogi_core.so` which are already at release/strip settings).
-
-    Originals live in repo under `assets/fonts/**/*-full.otf`, excluded from the APK by `export_presets.cfg`'s `exclude_filter="*-full.otf"`. Script reads from `-full.otf` and writes to the canonical filename referenced by `assets/themes/ui.tres` and `scripts/game/Square.gd`.
-
-    Watch-out: runtime-formatted strings (`"… %d手目" % n`) only have the literal in source, so digits are in the safety set. Add new characters there if future UI gets them via code rather than literals.
-
-    Pieces now render procedurally (pentagonal wooden tiles, see below) so a sprite-atlas migration is no longer needed to move past the flat-Label look. Could still be pursued as a theming option — no longer tracked as a stretch goal.
-- [x] **投了 (resign) button with confirmation dialog, returns to main menu.** `scenes/Main.tscn::ExitButton + QuitDialog`, `GameController._on_exit_pressed / _on_quit_confirmed`. Waits for any live AI Thread via `wait_to_finish()` before scene change to avoid leaked JoinHandles.
-- [x] **Multi-level undo.** Underlying `Board::undo_move` stack is unbounded; GameController's 待った button pops one entry per press. No explicit "undo N" UI, but pressing repeatedly rewinds indefinitely.
-- [x] **Haptic feedback on move.** `Input.vibrate_handheld(50)` in `GameController._commit_move`, gated by `OS.has_feature("mobile")`. Fires for both human and AI moves so the phone bumps when the AI replies.
-- [x] **Save / resume current game.** `Settings.save_game(sfen)` after every commit, `clear_saved_game()` on checkmate / sennichite / 投了 / 新規対局. MainMenu shows 続きから when `has_saved_game()` is true. ConfigFile at `user://saved_game.cfg`. Caveat: `move_log` + `position_counts` aren't serialised — sennichite tracking resets on resume, board state round-trips fine.
-- [x] **Last-move highlight.** Blue-tinted `LastMoveHint` overlay on the from + to squares of the most recent applied move, so the player can spot what the AI just did at a glance. Drops highlight only the to-square.
-- [x] **Wooden board + pentagonal piece rendering.** Custom `_draw()`-based board background (grid, hoshi) in `BoardBackground.gd` and pentagonal shogi-piece shapes with thickness, bevel, top-left highlight and soft drop shadow in `PieceView.gd`. Hand area gets a Koma-dai panel and tile-style pieces via `HandPiece.gd`. Still uses Fude Goshirae for the kanji glyph.
-- [x] **Real wood textures + 4% traditional board margin.** PNG Kaya textures (`assets/textures/shogi-ban-wood-texture.png`, `shogi-piece-wood-texture.png`) replace the procedural grain. Board inset is 4% on every side, mirroring the physical 将棋盤's border; `BoardView` wraps its 9×9 `GridContainer` in a `MarginContainer` that tracks the same inset at runtime so squares align with the painted grid lines. Each piece samples a random sub-rect of the piece-wood texture and UV-maps it onto the pentagonal polygon, so no two pieces have the same grain. Procedural palette remains as a fallback if the texture files go missing.
-- [x] **Sound: move / capture / promote / check / checkmate.** Procedurally-generated WAVs in `assets/sounds/` (wood-impact synth for moves, Koto/Shamisen instrumental cues for the rest) played by `SoundManager` autoload. `GameController._commit_move` picks the highest-priority cue (checkmate > check > promote > capture > plain move). `tools/gen_sounds.py` regenerates them.
-- [x] **Character picker — fighter-game-style opponent gallery + in-game portrait strip.** `scenes/CharacterPicker.tscn` replaces the original Lv 1〜8 dropdown with a dedicated picker screen: top half shows the highlighted character's 肖像画 + 名前 + Lv + 強さラベル + 紹介, bottom half is a 4×2 grid of cards (portrait thumbnail + Lv + name) with a gold-bordered selection cue, a tap-to-confirm shortcut, and 戻る / 決定 buttons. Each character is a `CharacterProfile` `.tres` under `assets/characters/{teachers,students}/` with a `level: int` field that maps the choice to `Settings.ai_level`. The 8-character cast: 佐藤竜太郎 (Lv 1, 加藤師範の甥っ子) / 鈴木すず (Lv 2, 副部長) / 高橋ゆり子 (Lv 3, 1年生・呉服店の娘) / 伊藤明 (Lv 4, 元部長・自作 AI を夢見る) / 中村アリス (Lv 5, 部長・冷ややか) / テリー・クラーク (Lv 6, 主将・海外からの転入生) / 吉田なな (Lv 7, 顧問・元プロ志望) / 加藤よしこ (Lv 8, 師範・元プロ棋士). In-game, `Main.tscn::OpponentStrip` renders a 64×64 rounded-corner avatar (rounded via `assets/shaders/rounded_corners.gdshader`) next to the opponent name above the board. AI characters can later gain `thinking.webp / happy.webp / worried.webp` to react in-game — the schema already supports it.
-- [x] **App icon + main-menu art.** Adaptive Android launcher icons under `assets/branding/` (192px + 432px foreground, classroom shogi-board crop), wired through `export_presets.cfg`. Main menu uses `assets/backgrounds/main_title_bg.webp`; in-game uses `assets/backgrounds/in_game_bg.webp`. Both AI-generated, in-repo.
-  - *Shipped differently (1.0.14):* the title screen, kifu library and kifu reviewer now pick a background at random each time they open. A `RandomBackground` script on the `BackgroundImage` node draws from a shared `BackgroundSet` resource (`assets/backgrounds/title_backgrounds.tres`, `kifu_reviewer_backgrounds.tres`) that lists images by path with optional weights, so only the chosen image is loaded. The title rotation is Yoshida-sensei plus five students (Ryutaro left out because of his age) at weight 1.0, and a rare two-teacher corridor scene at 0.3. The painted shogi board in every background was shrunk to a realistic tabletop size. The 詰将棋 screen keeps its single fixed background by choice.
-- [x] **Move history panel + tap-to-rewind review mode.** New 棋譜 button in the in-game StatusBar opens `scenes/MoveHistoryDialog.tscn`, a fullscreen modal listing every ply in standard 棋譜 notation (☗ / ☖ + ZENKAKU file + rank kanji + piece kanji + 成 / 打 / 同). Tap a row → dialog auto-dismisses, board rewinds to that ply via a scratch `_review_core` (replay-from-start, see below), gold banner button "棋譜閲覧中 — タップで現在に戻る" appears on the board; tap it to exit. While in review, board / hand input is locked and 待った / 先生のお薦め are disabled. The live `_core` is untouched — `_active_core()` routes only the read/render path to the scratch instance.
-
-    Engine plumbing: new `kifu` module on the Rust side formats each `LogEntry` to a 棋譜 string and packs every move into one i32 (drop bit + from/to + promote flag) for save/resume. `LogEntry::Board` gained a `promoted: bool` so the formatter doesn't have to re-derive 成 from the post-move squares. New `ShogiCore` methods: `move_log_kifu_lines() → PackedStringArray`, `move_log_packed() → PackedInt32Array`, `apply_packed(arr) → bool` (resets to start, replays each move with sennichite + check tags). v1 deliberately omits the right/left/直/上/寄/引 disambiguator — players just saw the move on the board so the line stays unambiguous in practice; full disambiguator is the meaty follow-up.
-
-    Save/resume: `Settings.save_game(sfen, packed_log)` now persists the packed log alongside the SFEN, so 続きから restores the full kifu history. Legacy saves without `packed_log` still load — the panel just starts empty until the next live move adds an entry. Font subsetter's safety set picks up the runtime-built kifu glyphs (☗ ☖ ZENKAKU 0-9, 一..九, 同 / 成 / 打, every piece kanji) so they don't render as tofu on device.
-- [x] **Settings screen — sound on/off + 先生ボタンの位置.** `scenes/SettingsScreen.tscn` + `scripts/SettingsScreen.gd`, reachable from MainMenu's 設定 button. Sound toggle persists as `audio.sound_enabled` in `user://prefs.cfg`; `SoundManager.play()` short-circuits when it's false, so both move SFX and the auto-wired BaseButton click hook fall silent together. Teacher-side selector moved off MainMenu into here to declutter the title screen — same `Settings.set_teacher_side()` setter, no behaviour change. Piece-style picker dropped from scope: pentagonal-with-wood is the canonical look, no alternative ships.
-- [x] **KIF export — 保存 button + Documents-folder write.** Mid-game 棋譜 dialog grows a 保存 button. Rust `kifu::to_kif(board, sente_name, gote_name, started_at)` emits a standard 柿木将棋 KIF (header + per-move lines + trailing 中断), which GameController writes to `OS.SYSTEM_DIR_DOCUMENTS` (app-private external Documents on Android: `/storage/emulated/0/Android/data/<pkg>/files/Documents/`, `~/Documents` on Linux). Falls back to `user://` if Documents is unreachable; the saved-path is shown back to the user. **Share intent is deliberately deferred** — Godot 4 has no built-in `Intent.ACTION_SEND` API and adding an Android plugin felt heavy for the Phase 7 stretch goal. App-private Documents is writable without any permission and visible to Android file managers (Material Files, FX, MiX), so save-then-attach via the OS share sheet covers the use case. See [ADR-0009](./docs/adr/0009-kif-library-app-private-storage.md).
-- [x] **棋譜検討 — saved-game library + reviewer with MCTS analysis.** New 棋譜検討 entry on MainMenu opens `scenes/KifuLibrary.tscn` (lists every `.kif` in the Documents dir + `user://` fallback, newest-first, with per-row 削除). Tapping a file opens `scenes/KifuReviewer.tscn`: parses via Rust `kifu::parse_kif` (tolerates Kifu-for-Windows time annotations, 不成, 同　, 中断 / 投了 / 詰み / 千日手 / 持将棋 terminators), replays on a private `ShogiCore`, exposes `<<` `<` `>` `>>` step nav + ply counter. The 解析 button runs MCTS at every ply (`suggest_moves_mcts(32, 128)` on a scratch core), finds the actual move's q in the search tree, computes delta vs best, and renders an analysis label per ply: 先手勝率 N% + classification badge (◎好手 / △疑問手 / ×悪手) + 推奨手 when the played move was 疑問手 or worse. Whole-game analysis ≈ 30s on a mid-range phone; button text glows green ("解析中… N / M") during the run. See [ADR-0008](./docs/adr/0008-review-mode-scratch-core.md) for why review mode keeps a separate `_review_core` rather than rewinding the live `_core`.
-- [x] **Android back gesture routes to ui_cancel, not OS quit.** Godot 4's default `application/config/quit_on_go_back=true` was calling `get_tree().quit()` on the Android back button / swipe, dropping players out of mid-game without 投了 confirmation or save. Now disabled in `project.godot`; `Settings._notification(NOTIFICATION_WM_GO_BACK_REQUEST)` synthesizes a `ui_cancel` `InputEventAction` so every existing scene's `_unhandled_input(ui_cancel)` handler — quit dialogs, scene back-out, MoveHistoryDialog dismiss — fires identically to desktop Esc.
-- [x] **加藤先生 avatar on the teacher button.** 48×48 circular alpha-masked WebP (north-cropped from the source so the face stays in frame) renders before "加藤先生！教えてください！" via `Button.icon`. Pre-sized at the source so no `expand_icon` / `icon_max_width` gymnastics needed.
-- [x] **入玉宣言 — in-game declaration button + 持将棋 / AI auto-declare.** Rust grows `pieces_in_opponent_camp(color)` and `can_declare_jishogi(color) → DeclareResult` (Ok / KingNotEntered / InCheck / InsufficientPieces{have,need} / InsufficientPoints{have,need}). Asymmetric thresholds: 28 points for sente, 27 for gote (matching 日本将棋連盟 / 柿木将棋 official rules — the one-point delta compensates for first-move advantage). 10-piece minimum (excluding the king) in the opponent's promotion zone. Exposed to GDScript as `ShogiCore.can_declare_jishogi(is_gote) → Dictionary` so the UI gets `{ok, reason, points_have, points_need, pieces_have, pieces_need}` in one call. In-game 入玉宣言 button appears in the StatusBar when the side-to-move's king has entered the opponent's camp on a human turn; tap → either ends the game with `入玉宣言 — N の勝ち` or pops an info dialog explaining the deficit (`持ち点が足りません (15点 / 必要 28点)` / `敵陣の自駒が足りません (8枚 / 必要 10枚)` / `玉が王手にかかっているため宣言できません`). `_check_end_state` runs the same check after every commit so the AI auto-declares on its turn when qualified, and 持将棋 (both sides qualify) ends in a draw.
-- [x] **Per-move AI "mood" roll + raised strength floor.** `CharacterProfile.playouts` / `temperature` now actually drive MCTS via `Settings.ai_dials()` (previously `GameController` still read `Settings.LEVEL_PARAMS`, so the `.tres` dials were dead). Each profile may carry a weighted `moods` list rolled every AI move, so Lv 1〜6 mostly play loosely but sometimes return a sharp 160〜256-playout greedy move. Floor raised from 8 playouts / τ 2.0 to 32 / 1.2, everything capped at 256 playouts for arm64 move time. Teacher hints use the baseline, not the roll. See ADR-0011.
-- [x] **Auto-saved KIF with the real result + descriptive library rows.** Every finished game (詰み / 手詰まり / 千日手 / 持将棋 / 入玉宣言 / 投了 via the exit dialog) is written to the Documents dir automatically; the 対局終了 dialog reports the filename, and games with no moves are skipped. `kifu::to_kif` gained `terminator` + `result` parameters: finished games end with the proper KIF closing line instead of an unconditional 中断, and carry a non-standard `結果：` header (e.g. `結果：詰み 先手の勝ち`) that viewers ignore. The parser also accepts 入玉勝ち / 不戦勝 / 不戦敗. `KifuLibrary` reads each file's header and shows three lines per row — date/time, 先手 対 後手, outcome・move count — falling back to file mtime and a winner derived from closing line + ply parity for files without the header (older saves, other apps).
-- [x] **Fade-to-black scene transitions.** New `SceneTransition` autoload (`scripts/autoload/SceneTransition.gd`, CanvasLayer 100) fades out 0.18 s, swaps the scene, waits two frames so the new screen is laid out behind the cover, then fades in 0.22 s. The overlay swallows input during the fade and ignores re-entrant calls; アニメーションを減らす makes it an instant cut. All scene switches (title / 設定 / クレジット / 対戦相手選択 / 棋譜検討 / 対局) go through `SceneTransition.go_to()`.
-- [x] **Opponent portrait reacts to the game.** Each character gained five expression portraits (`thinking / happy / worried / victory / defeat`) beside `neutral.webp`, generated from the neutral portrait with `tools/gen_portrait_variants.py` (FLUX.2 reference-image edit through a local ComfyUI; per-character persona prompts, no shogi vocabulary so the model never draws a board, and a reference-mouth blend for 吉田先生). `GameController` shows `thinking` while the AI searches, a brief `worried` flinch when the player gives check or takes a 飛 / 角, then `happy` / `worried` / `neutral` from a running blend of the new `ShogiCore.last_think_win_rate()` (≥ 62 % / ≤ 38 %), and `victory` / `defeat` at game end — also shown at 220 px inside the 対局終了 dialog. Swaps cross-fade over 0.25 s and the avatar grew from 64 to 96 px so the reactions are readable. All 48 portraits import as lossy WebP (quality 0.85): lossless import had grown the debug APK from 73 MB to 91 MB, lossy brings it to 71 MB. See "Opponent expressions" in `docs/architecture.md`.
-- [x] **形勢グラフ in 棋譜検討.** After 解析, the reviewer shows an evaluation graph under the analysis label (`scripts/EvalGraph.gd`, a `_draw()`-based control): one bar per move for the engine's 先手勝率 before that move (up = 先手 ahead), a yellow / red dot on 疑問手 / 悪手, and a cursor at the move on the board. Tap or drag to jump to a move. The per-move analysis moved out of `KifuReviewer.gd` into the shared `scripts/KifuAnalyzer.gd`.
-- [x] **加藤先生's post-game comment.** The 対局終了 dialog names the player's most costly move and the engine's alternative ("加藤先生「23手目の ☗４八銀 が惜しかったですね。☗３六歩 が良かったと思います。」"), or praises a game without one. A 検討 button opens the just-saved KIF in the reviewer on that move. Shipped differently from the idea of analysing the whole game: a full pass takes about a minute even on a desktop, so `GameController` records the AI's own win rate after each of its searches, treats the sharpest rises as candidate player mistakes, and analyses only the top three on a worker thread (a few seconds). Only moves from the current session are known; a resumed game comments on what was played since.
-- [x] **詰将棋 — mate problems as club homework.** New 詰将棋 entry on MainMenu opens `scenes/TsumeShogi.tscn`: 1手詰 / 3手詰 / 5手詰 tabs with solved counts, 今日の一問 (same problem for a given date), ヒント (selects the piece to move), やり直し, and previous / next. The player is always the attacker as 先手. Rust grows `mate.rs`, a depth-first forced-mate solver with a node budget, exposed as `ShogiCore.tsume_solve` / `tsume_defense` / `sfen_flipped`; it judges every move and picks the defender's longest reply, so any line that mates within the stated length is accepted. The 160 problems in `assets/tsume.json` are 実戦詰め mined from policy-sampled self-play by `tools/gen_tsume.gd` (unique first move, exact length, attacker not in check), which keeps the set free of third-party content for F-Droid. 無駄合 is not discounted — a problem counts as mate in N only if every legal defence is mated within N. `scripts/tests/tsume_tests.gd` re-verifies the whole set against the solver. Progress is stored in `user://prefs.cfg` by position, so it survives a regenerated set.
-- [x] **Per-character win/loss record.** The 対戦相手選択 detail panel shows the player's `あなたの戦績  N勝 N敗` against each character, stored in `user://prefs.cfg`. 投了 counts as a loss; draws and games with no moves are not counted. Shipped differently from the backlog idea: no club ranking or "beaten" stamp on the cards.
-- [x] **Character speech lines.** Each `CharacterProfile` carries short lines for game start, giving check, losing a 飛 / 角, winning and losing. In-game lines show in a comic speech balloon (`scripts/game/SpeechBubble.gd`) below the opponent's portrait for 3.5 s, its tail pointing up at the portrait and the balloon temporarily covering the 持ち駒 row without blocking taps; the closing line appears in the 対局終了 dialog.
-- [x] **Check shown on the king's square.** The 王手！ banner is gone; a king in check gets a translucent red square behind it (`Square.set_check_hint`), alongside the existing check sound.
+### Phase 7 — Polish ✅
+- **Look & feel:** a wooden board and pentagonal pieces drawn with `_draw()` over real Kaya textures, with each piece sampling its own patch of grain. A 4 % board margin like a real 将棋盤. Last-move highlight, and a red square under a king in check (instead of a 王手 banner). Fade-to-black transitions through the `SceneTransition` autoload, honouring the reduce-motion setting. App icon, and title, library and reviewer backgrounds chosen at random from `BackgroundSet` resources.
+- **APK size:** `tools/build_font_subsets.py` subsets the piece and UI fonts against the Japanese characters found in the source plus a list of characters added at runtime. This took the APK from 103 MB to 42 MB. The 48 expression portraits import as lossy WebP.
+- **Game flow:** 投了 with a confirmation, unlimited 待った, and save/resume of the SFEN plus the packed move log. 入玉宣言 checks the official thresholds (28/27 points, 10 pieces); the AI declares automatically and 持将棋 is a draw. The Android back gesture is mapped to `ui_cancel` instead of quitting. Vibration on every move, procedurally generated move and event sounds, and a settings screen (sound, teacher-button side).
+- **AI strength:** each `CharacterProfile`'s playouts and temperature drive MCTS, and a weighted mood is rolled on every move. The floor is 32 playouts at τ 1.2 and the cap is 256 (ADR-0011).
+- **Characters:** a fighter-game-style opponent picker with eight characters (Lv 1〜8), each with neutral, thinking, happy, worried, victory and defeat portraits that cross-fade with the AI's win rate. Speech balloons, a per-character win/loss record in `prefs.cfg`, and a 加藤先生 avatar on the hint button.
+- **Game records:** a 棋譜 panel with tap-to-rewind review on a scratch core (ADR-0008). Every finished game auto-saves as KIF with its real result to app-private Documents (ADR-0009); there is no share intent. A 棋譜検討 library and reviewer offers MCTS analysis (◎/△/×, recommended move) and the 形勢グラフ. 加藤先生's post-game comment analyses only the three biggest drops in the AI's win rate, on a worker thread, instead of the whole game.
+- **詰将棋:** 160 mate problems (1, 3 and 5 moves) mined from self-play, so the set has no third-party content and suits F-Droid. They are judged by `mate.rs`, with 今日の一問 and hints. `tsume_tests.gd` re-solves every problem.
 
 ### Phase 8 — Human vs Human on LAN (proposed)
 
