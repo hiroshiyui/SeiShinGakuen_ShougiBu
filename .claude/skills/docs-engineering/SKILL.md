@@ -18,7 +18,7 @@ Read this before assuming files exist. The repo has solid technical documentatio
 |---|---|---|
 | [README.md](../../README.md) | ✅ exists (Japanese) | Project overview, download badges, screenshots, build instructions, tech stack |
 | [CLAUDE.md](../../CLAUDE.md) | ✅ exists | Project context for Claude Code; what to read before planning |
-| [ROADMAP.md](../../ROADMAP.md) | ✅ exists | Phased plan + "shipped differently" notes per completed phase |
+| [ROADMAP.md](../../ROADMAP.md) | ✅ exists | Phased plan; completed phases condensed to digests with "shipped differently" notes |
 | [docs/architecture.md](../../docs/architecture.md) | ✅ exists | Two-layer architecture walkthrough (GDScript ↔ Rust GDExtension) |
 | [docs/adr/](../../docs/adr/) | ✅ has entries | Architecture Decision Records, e.g. `0005-font-subset-pipeline.md` |
 | [docs/android-build.md](../../docs/android-build.md) | ✅ exists | APK export pipeline notes |
@@ -80,7 +80,19 @@ The existing README covers: tagline → screenshots → features → tech stack 
 
 ### ROADMAP.md
 
-Phased plan. Each completed phase has a "shipped differently" subsection capturing where the implementation diverged from the original plan. **That's the canonical log of what the code actually does** — keep it accurate when phases complete or pivot. Don't rewrite history; add notes.
+Phased plan. Each completed phase has a "shipped differently" subsection capturing where the implementation diverged from the original plan. **That's the canonical log of what the code actually does** — keep it accurate when phases complete or pivot.
+
+**Condense completed phases.** Completed phases (✅) are kept as short digests, not full checklists. The full original text stays in git history, and the Phase Plan intro points readers there. When a phase completes, or a completed phase has grown long, condense it:
+
+1. Mark the heading ✅ once every item is checked.
+2. Write one paragraph on what shipped. For a large phase, use a few themed bullets instead (e.g. Phase 7: look & feel, game flow, characters, game records).
+3. Keep the "shipped differently" divergences that are **still true**, especially ones a future reader would otherwise get wrong (e.g. `tract` not `ort`, mailbox not bitboards). Fold each into one line.
+4. Drop notes that later work made obsolete (e.g. "not implemented yet" for a feature that later landed), interim numbers (old APK sizes), and planned API shapes that never shipped. Before dropping a note, check the code to confirm it is really stale.
+5. Keep cross-references (ADR numbers, `docs/android-gotchas.md`, `docs/architecture.md`, test scripts) so the detail stays findable. If a gotcha or rationale would be lost, move it into the right doc first.
+6. Leave in-progress and proposed phases, and the sections after the Phase Plan, untouched.
+7. Commit the condensing on its own, with a `docs(roadmap): …` message, so the full text can be found with `git log -p ROADMAP.md`.
+
+Don't rewrite history in any other way. Divergences are recorded as notes, and condensing only shortens them.
 
 ### CLAUDE.md
 
