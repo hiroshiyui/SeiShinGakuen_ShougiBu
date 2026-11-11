@@ -19,7 +19,7 @@ The release infrastructure is real and tested — confirm anything that looks am
 - **Signing — release.** Keystore outside the repo at `~/.local/share/godot/keystores/seishingakuen-release.keystore`, alias `seishingakuen`. Password in `.android-release-pass` at the repo root (gitignored). The script exports `GODOT_ANDROID_KEYSTORE_RELEASE_{PATH,USER,PASSWORD}` for one export only — **no signing secrets in `export_presets.cfg`** (its `keystore/*` fields stay empty), **no patches to Godot's global `editor_settings-4.7.tres`**. Expected cert: `CN=Hiroshi Y., …, C=TW`, SHA-256 `a00c27ca1d929a25f129d4c6bb6b6c36212e9f2c049628325caca4e3ec5fed8d`.
 - **Signing — debug.** Godot's own debug keystore (`CN=Godot, OU=Godot Engine, O=Stichting Godot, C=NL`), configured globally. Because it's a **different cert** from release, a device that has a debug build can't `adb install -r` a release build (and vice versa) — see the smoke-install step.
 - **Tags.** Annotated, no `v` prefix (e.g. `1.0.7`); each tag points at its `chore(release):` commit.
-- **Release docs** (all updated in the release commit — see "Release Docs" below): `CHANGELOG.md`, `docs/release-notes/<X.Y.Z>.md`, `fastlane/metadata/android/ja/changelogs/<versionCode>.txt`.
+- **Release docs** (all updated in the release commit — see "Release Docs" below): `CHANGELOG.md`, `docs/release-notes/<X.Y.Z>.md`, and the fastlane changelog in **both** locales: `fastlane/metadata/android/{ja,en-US}/changelogs/<versionCode>.txt`.
 - **Tests.** Rust unit + parity + perft in `native/shogi_core/src/`; GDScript headless suites in `scripts/tests/`. All six must pass — see "Test Gate".
 
 `package/unique_name="org.seishingakuen.shougibu"` — Android package id. Effectively immutable: changing it makes Android treat any new install as an unrelated app, breaks updates for sideloaders, and orphans every saved game in `user://`. Don't change it.
@@ -58,7 +58,7 @@ Confirm at each step that's user-visible.
    - Wake the screen first if needed (`adb shell input keyevent KEYCODE_WAKEUP; adb shell wm dismiss-keyguard`) — a black screencap usually means the display is dozing, not a crash.
    - First launch after a fresh install sits on the Godot boot splash ~10 s while the model is extracted to `user://`.
    - Confirm the menu badge shows `v<X.Y.Z>`, start a game vs AI, play a move (e.g. 7六歩), and confirm the AI replies — proves the native lib and model work in the signed bundle.
-10. **Release commit + tag** (see "Git Conventions"). Commit exactly: `export_presets.cfg`, `project.godot`, `CHANGELOG.md`, `docs/release-notes/<X.Y.Z>.md`, `fastlane/metadata/android/ja/changelogs/<code>.txt`.
+10. **Release commit + tag** (see "Git Conventions"). Commit exactly: `export_presets.cfg`, `project.godot`, `CHANGELOG.md`, `docs/release-notes/<X.Y.Z>.md`, `fastlane/metadata/android/ja/changelogs/<code>.txt`, `fastlane/metadata/android/en-US/changelogs/<code>.txt`.
 11. **Push** only after explicit confirmation: `git push origin main && git push origin <X.Y.Z>`.
 12. **Publish the GitHub Release** (see below) — confirm first.
 13. **itch.io** — once the GitHub Release is live, use the `publish-to-itch-dot-io` skill: it verifies the APK, then the user uploads it by hand in the web UI.
@@ -108,6 +108,7 @@ Gather material with `git log --oneline <prev-tag>..HEAD`. User-facing prose is 
    ```
    Commit hashes are of the commits being released (they exist before the release commit).
 3. **`fastlane/metadata/android/ja/changelogs/<versionCode>.txt`** — short Japanese bullets prefixed `・`, one line each. This is what the F-Droid listing shows for the version, so write it for every release; F-Droid reads it, and the screenshots and descriptions beside it, from the tagged source.
+4. **`fastlane/metadata/android/en-US/changelogs/<versionCode>.txt`** — **always**, alongside the Japanese one: the same points in English, bullets prefixed `•`. Without it, F-Droid clients in English show no "What's new" for the version (versions 20–24 went out without one and had to be backfilled). Use the English store text's terms (kifu, tsume shogi, sente / gote, Kato-sensei; 通信対戦 as "LAN play"). F-Droid caps each changelog at 500 characters — check both files' length. Before committing, confirm `ls fastlane/metadata/android/*/changelogs/<versionCode>.txt` lists two files.
 
 ## Test Gate
 
