@@ -133,9 +133,12 @@ if (( DO_APK )); then
             echo "Install via: $GODOT --headless --path . --install-android-build-template" >&2
             exit 1; }
         PRESET_FILE="$REPO_ROOT/export_presets.cfg"
-        cp "$PRESET_FILE" "$PRESET_FILE.bak"
-        cleanup_preset() { mv -f "$PRESET_FILE.bak" "$PRESET_FILE"; }
-        trap cleanup_preset EXIT
+        # Back up to a fresh temp file (never overwrite an older backup)
+        # and restore on any exit, including errors and Ctrl-C.
+        PRESET_BACKUP="$(mktemp "${TMPDIR:-/tmp}/export_presets.XXXXXX")"
+        cp "$PRESET_FILE" "$PRESET_BACKUP"
+        cleanup_preset() { mv -f "$PRESET_BACKUP" "$PRESET_FILE"; }
+        trap cleanup_preset EXIT INT TERM
         sed -i \
             -e 's|^gradle_build/use_gradle_build=.*|gradle_build/use_gradle_build=true|' \
             -e 's|^gradle_build/export_format=.*|gradle_build/export_format=1|' \

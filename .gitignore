@@ -18,3 +18,6 @@ tools/.cache/
 
 # Editor settings
 .vscode/
+
+# Editor / script backups (e.g. an interrupted preset patch)
+*.bak
