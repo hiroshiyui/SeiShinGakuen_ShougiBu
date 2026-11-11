@@ -271,3 +271,32 @@ adding the pad, so the bottom always reserves a navigation-bar-sized
 band (3-button height; the gesture zone is smaller). Every fullscreen
 screen goes through that helper, so don't hand-roll inset math in a
 new scene.
+
+## Black screen on the Android emulator — `Couldn't present to Vulkan queue`
+
+**Symptom:** on the x86_64 `Pixel_8a` emulator (API 36), the game
+starts, Godot reports a Vulkan device, and then every frame fails with
+`ERROR: Couldn't present to Vulkan queue (VkResult error 5)`. The
+screen stays black with both `-gpu host` and
+`-gpu swiftshader_indirect`.
+
+**Cause:** Godot's Android frame pacing (Swappy) can't present to the
+emulator's virtual display.
+
+**Fix:** `window/frame_pacing/android/enable_frame_pacing=false` in
+`project.godot`. Godot has no emulator-only feature tag, so it applies
+to phones too. For a turn-based game the cost is negligible; tested on
+an Adreno 619 phone with no visible change.
+
+Two related emulator traps:
+
+- **SIGBUS in `GodotLib_setup` right after installing:** adb's
+  incremental install on the 16 KB-page image. Install with
+  `adb install --no-incremental -r <apk>`.
+- **Emulator segfaults at launch with `-gpu auto`:** start it with
+  `-gpu host` (NVIDIA under Wayland).
+
+The arm64-only APK runs on the x86_64 image through Android's ARM
+translation, so no ARM64 system image is needed (and none runs on an
+x86_64 host). The emulator sits behind its own NAT (`10.0.2.x`), so it
+can't take part in LAN broadcast tests with a physical phone.

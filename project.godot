@@ -25,6 +25,8 @@ SceneTransition="*res://scripts/autoload/SceneTransition.gd"
 
 [display]
 
+window/frame_pacing/android/enable_frame_pacing=false
+
 window/size/viewport_width=720
 window/size/viewport_height=1280
 window/stretch/mode="canvas_items"
