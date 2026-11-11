@@ -86,8 +86,11 @@ Rust:
 ```bash
 # Desktop dev build + deploy
 cargo build --release --manifest-path native/shogi_core/Cargo.toml
+# Copy then rename: overwriting in place crashes an open editor
 cp native/shogi_core/target/release/libshogi_core.so \
-   native/bin/linux/x86_64/
+   native/bin/linux/x86_64/libshogi_core.so.tmp
+mv -f native/bin/linux/x86_64/libshogi_core.so.tmp \
+      native/bin/linux/x86_64/libshogi_core.so
 
 # Unit + parity + perft tests
 cargo test --manifest-path native/shogi_core/Cargo.toml

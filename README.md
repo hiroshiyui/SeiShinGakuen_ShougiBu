@@ -113,8 +113,11 @@ arm64-v8a 向け APK のビルド・インストールに対応している。�
 ```bash
 # 1. ネイティブ GDExtension をビルド
 cargo build --release --manifest-path native/shogi_core/Cargo.toml
+# エディタを開いたまま上書きするとクラッシュするため、コピーしてから rename する
 cp native/shogi_core/target/release/libshogi_core.so \
-   native/bin/linux/x86_64/
+   native/bin/linux/x86_64/libshogi_core.so.tmp
+mv -f native/bin/linux/x86_64/libshogi_core.so.tmp \
+      native/bin/linux/x86_64/libshogi_core.so
 
 # 2. プロジェクトを開く
 ~/.local/bin/Godot_v4.7.2-stable_linux.x86_64 --editor --path .

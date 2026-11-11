@@ -70,8 +70,14 @@ if (( DO_DESKTOP )); then
     log "Building libshogi_core.so (linux x86_64)"
     cargo build --release --manifest-path native/shogi_core/Cargo.toml
     mkdir -p native/bin/linux/x86_64
+    # Copy then rename rather than overwriting in place: an open Godot
+    # editor has the old .so mmapped, and rewriting its bytes crashes
+    # the editor (SIGBUS). The rename gives the new library a fresh
+    # inode, and `reloadable = true` hot-reloads it on editor focus.
     cp native/shogi_core/target/release/libshogi_core.so \
-       native/bin/linux/x86_64/
+       native/bin/linux/x86_64/libshogi_core.so.tmp
+    mv -f native/bin/linux/x86_64/libshogi_core.so.tmp \
+          native/bin/linux/x86_64/libshogi_core.so
 fi
 
 # --- Tests (optional) ---
