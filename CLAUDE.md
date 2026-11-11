@@ -140,9 +140,9 @@ APK export: [`docs/android-build.md`](./docs/android-build.md).
 - **Don't change the encoder** (`native/shogi_core/src/encode.rs`,
   `move_index.rs`) without regenerating fixtures and running parity
   tests. The model silently plays garbage if the encoding drifts.
-- **The ROADMAP's "Open Questions"** section flags decisions not yet
-  made (in-game 入玉 claim button, telemetry, UI string centralisation,
-  etc.). Distribution is settled: F-Droid (built from source by
+- **The ROADMAP's "Open Questions"** section logs settled
+  decisions (no telemetry; UI string centralisation deferred) and
+  flags any still open. Distribution is settled: F-Droid (built from source by
   F-Droid, updated automatically from release tags) plus the signed
   APK on GitHub Releases and itch.io; no Play Store. Don't invent
   answers — surface the question.

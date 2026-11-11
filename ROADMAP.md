@@ -325,9 +325,9 @@ bump. `.gdextension` manifest declares `compatibility_minimum = 4.6`
 - [x] ~~App icon + main-menu art — source or commission?~~ — AI-generated in-house, both icon (`assets/branding/`) and backgrounds (`assets/backgrounds/`) plus the 8 character portraits (`assets/characters/**/neutral.webp`). 2026-04-27.
 - [x] ~~Cloud save / cross-device persistence?~~ — explicitly skipped to stay free of Google Play services dependencies. Players who uninstall lose `user://prefs.cfg` + `user://saved_game.cfg`; that's the trade-off. 2026-04-27.
 - [x] ~~Play Store distribution or sideload only?~~ — sideload only via signed APK on GitHub Releases. Play Store is explicitly out of scope; we don't want the Google Play ecosystem dependencies (developer account, policy compliance, mandatory privacy URL, upload-key custody) for a single-player offline game. AAB target left in `tools/build_all.sh --aab` for completeness but unused. 2026-04-27. *Since then:* the same signed APK also ships on itch.io, and the app was accepted on F-Droid (2026-11), which builds each release tag from source with its own signing key and updates automatically. Play Store remains out of scope.
-- [ ] Any telemetry (crash reporting)? Default: none.
-- [ ] UI string centralisation (e.g. `Strings.gd`) — currently strings live inline. Deferred until we internationalise or until the font subsetter's grep becomes unwieldy.
+- [x] ~~Any telemetry (crash reporting)?~~ — none. The game is single-player and offline, and the app requests no network permission. 2026-11-11.
+- [x] ~~UI string centralisation (e.g. `Strings.gd`)~~ — deferred; strings stay inline. Reopen if we internationalise or the font subsetter's grep becomes unwieldy. 2026-11-11.
 
 ---
 
-*Last updated: 2026-11-10 (形勢グラフ, post-game comment, 詰将棋)*
+*Last updated: 2026-11-11 (closed the telemetry and UI string questions)*
