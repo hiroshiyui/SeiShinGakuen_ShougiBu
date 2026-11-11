@@ -188,8 +188,11 @@ func _restart_problem() -> void:
 	_refresh_header()
 
 func _refresh_header() -> void:
+	# No problems at this level (tsume.json missing or corrupt): there is
+	# no "current problem" to look up.
+	var solved := _count(_plies) > 0 and _is_solved(_plies, _index)
 	_title_label.text = "%d手詰  第%d問 / %d問%s" % [
-		_plies, _index + 1, _count(_plies), "  【済】" if _is_solved(_plies, _index) else ""]
+		_plies, _index + 1, _count(_plies), "  【済】" if solved else ""]
 	for plies in LEVELS:
 		var b: Button = _level_buttons[plies]
 		b.text = "%d手詰 %d/%d" % [plies, _solved_count(plies), _count(plies)]

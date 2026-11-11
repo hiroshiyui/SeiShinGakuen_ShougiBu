@@ -42,6 +42,10 @@ var _analysis_progress: int = 0
 var _load_error: String = ""
 
 func _ready() -> void:
+	# Consume the one-shot start ply up front, so an early return below
+	# can't leave it for the next file the player opens.
+	var start_ply: int = Settings.review_start_ply
+	Settings.review_start_ply = -1
 	if not ClassDB.class_exists("ShogiCore"):
 		push_error("ShogiCore GDExtension not loaded")
 		_pop_back()
@@ -68,10 +72,9 @@ func _ready() -> void:
 	# Start at the final position so the user sees the latest game state
 	# first, then can rewind for study.
 	_ply = _packed.size()
-	if Settings.review_start_ply >= 0:
+	if start_ply >= 0:
 		# Opened from the 対局終了 dialog on a specific move.
-		_ply = clampi(Settings.review_start_ply, 0, _packed.size())
-		Settings.review_start_ply = -1
+		_ply = clampi(start_ply, 0, _packed.size())
 	_replay_to_ply()
 
 	_back_btn.pressed.connect(_pop_back)
@@ -260,6 +263,8 @@ func _finish_analysis() -> void:
 		return
 	_analyses = result
 	_analyze_btn.text = "解析済"
+	# Running it again would only repeat the same ~30 s search.
+	_analyze_btn.disabled = true
 	# Settle on the theme's idle gold so the button reads as "done".
 	_analyze_btn.remove_theme_color_override("font_color")
 	_eval_graph.set_analyses(_analyses)

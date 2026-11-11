@@ -29,10 +29,15 @@ func _update_ui() -> void:
 	if _count_label:
 		_count_label.text = "×%d" % count if count > 1 else ""
 
+# Android delivers a tap twice (touch + emulated mouse); listen to one
+# source per platform, as Square.gd does (docs/android-gotchas.md).
 func _gui_input(event: InputEvent) -> void:
-	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
-		pressed.emit()
-		accept_event()
-	elif event is InputEventScreenTouch and event.pressed:
+	var is_press := false
+	if OS.has_feature("mobile"):
+		is_press = event is InputEventScreenTouch and event.pressed
+	else:
+		is_press = event is InputEventMouseButton and event.pressed \
+			and event.button_index == MOUSE_BUTTON_LEFT
+	if is_press:
 		pressed.emit()
 		accept_event()

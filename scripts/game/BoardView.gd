@@ -73,7 +73,13 @@ func set_flipped(f: bool) -> void:
 		var col: int = (key.x - 1) if f else (9 - key.x)
 		_grid.move_child(sq, row * 9 + col)
 
+# Bumped by every render(); a running slide animation checks it so it
+# doesn't put its piece back onto a board that has been redrawn since
+# (undo, the next 詰将棋 problem, …).
+var _render_gen: int = 0
+
 func render(core: Object) -> void:
+	_render_gen += 1
 	for key in _squares.keys():
 		var sq: SquareScript = _squares[key]
 		var piece: Variant = core.piece_at(key.x, key.y)
@@ -163,10 +169,12 @@ func animate_move(from: Vector2i, to: Vector2i, text: String, is_gote: bool, dur
 	ghost.global_position = from_sq.global_position
 	ghost.text = text
 	ghost.is_gote = is_gote != flipped
+	var gen := _render_gen
 	var tween := create_tween()
 	tween.set_trans(Tween.TRANS_SINE)
 	tween.set_ease(Tween.EASE_OUT)
 	tween.tween_property(ghost, "global_position", to_sq.global_position, duration)
 	await tween.finished
 	ghost.queue_free()
-	to_sq.set_piece(text, is_gote)
+	if gen == _render_gen:
+		to_sq.set_piece(text, is_gote)

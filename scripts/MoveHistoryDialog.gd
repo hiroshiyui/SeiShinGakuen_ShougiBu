@@ -24,6 +24,8 @@ const _SHARE_DONE := "保存しました"
 
 var _live_ply: int = 0  # which ply is "current" — bolded in the list
 
+const SHARE_COOLDOWN_SEC := 1.0
+
 func _ready() -> void:
 	# When this scene is instanced as a child of Main.tscn, the root
 	# Control sometimes lays out at its content's min size instead of the
@@ -96,13 +98,14 @@ func _on_close() -> void:
 	closed.emit()
 
 func _on_share_pressed() -> void:
-	# Disable so a double-tap doesn't trigger two writes.
+	# A second tap queued behind the first would write a second file, so
+	# keep the button off for a moment after the (synchronous) save;
+	# GameController has already updated the result label by then.
 	_share_btn.disabled = true
 	share_requested.emit()
-	# GameController calls show_save_result() synchronously from within
-	# the signal handler, so by the time we re-enable the button the
-	# label already reflects the save outcome.
-	_share_btn.disabled = false
+	await get_tree().create_timer(SHARE_COOLDOWN_SEC).timeout
+	if is_inside_tree():
+		_share_btn.disabled = false
 
 # Called by GameController after attempting the file write. `success`
 # false displays the message in a muted red so the user notices it

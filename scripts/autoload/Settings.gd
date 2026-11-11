@@ -340,7 +340,11 @@ const RANK_KANJI: Array[String] = ["", "一", "二", "三", "四", "五", "六",
 func apply_safe_area_to(node: Control) -> void:
 	if node == null:
 		return
-	var insets: Rect2 = safe_area_insets(get_tree().root.size)
+	# The viewport (canvas) size, not root.size: with canvas_items
+	# stretch the window is in physical pixels, and insets computed
+	# against it come out too large by the stretch factor (~1.5× on a
+	# 1080-wide phone). Matches GameController / MoveHistoryDialog.
+	var insets: Rect2 = safe_area_insets(node.get_viewport_rect().size)
 	node.offset_left = insets.position.x
 	node.offset_top = insets.position.y
 	node.offset_right = -insets.size.x

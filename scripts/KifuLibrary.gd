@@ -177,6 +177,7 @@ func _read_kif_summary(path: String) -> Dictionary:
 
 const _TERMINATORS: Array[String] = [
 	"中断", "投了", "詰み", "千日手", "持将棋", "入玉勝ち", "反則勝ち", "反則負け", "不戦勝", "不戦敗",
+	"切れ負け",
 ]
 
 # Winner for files without a 結果 header. The terminator's ply number
@@ -186,7 +187,8 @@ func _outcome_from_terminator(term: String, plies: int) -> String:
 	var last_mover := "先手" if plies % 2 == 1 else "後手"
 	var side_to_move := "後手" if plies % 2 == 1 else "先手"
 	match term:
-		"詰み", "投了", "反則負け", "不戦敗":
+		# 切れ負け: the side to move ran out of time, like 投了.
+		"詰み", "投了", "反則負け", "不戦敗", "切れ負け":
 			return "%s %sの勝ち" % [term, last_mover]
 		"入玉勝ち", "反則勝ち", "不戦勝":
 			return "%s %sの勝ち" % [term, side_to_move]

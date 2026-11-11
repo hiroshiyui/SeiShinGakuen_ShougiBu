@@ -103,6 +103,9 @@ var _lan: bool = false
 var _lan_waiting: bool = false
 # Set once the player leaves for the title; pending awaits must not act.
 var _leaving: bool = false
+# Bumped by _reset_game(). An AI move waiting out its natural pause
+# compares it, so a move from the previous game never lands in a new one.
+var _game_gen: int = 0
 # After a LAN game: whether 再戦 can still be offered (false once the
 # peer has left or the session broke), and the status line meanwhile.
 var _rematch_ok: bool = false
@@ -616,8 +619,9 @@ func _maybe_start_ai_turn() -> void:
 # doesn't snap onto the board instantly while the human is still
 # absorbing their last move.
 func _run_book_move_with_pause(mv: Dictionary) -> void:
+	var gen := _game_gen
 	await get_tree().create_timer(randf_range(0.6, 1.4)).timeout
-	if not is_inside_tree() or _leaving or _game_over:
+	if not is_inside_tree() or _leaving or _game_over or gen != _game_gen:
 		return
 	_thinking = false
 	_thinking_label.visible = false
@@ -658,10 +662,12 @@ func _process(_delta: float) -> void:
 		# Natural pause — avoid the AI snapping a move instantly after a
 		# fast search. Keep the 思考中 label up during the delay so the
 		# transition reads as continuous deliberation.
+		var gen := _game_gen
 		await get_tree().create_timer(randf_range(1.0, 2.0)).timeout
 		# The player may have left during the pause (the scene is fading
-		# out or already gone): don't play, sound or save the move.
-		if not is_inside_tree() or _leaving or _game_over:
+		# out or already gone), or a new game started: don't play, sound
+		# or save the move.
+		if not is_inside_tree() or _leaving or _game_over or gen != _game_gen:
 			return
 		_thinking_label.visible = false
 		var win_rate := float(_core.last_think_win_rate())
@@ -1142,6 +1148,8 @@ func _on_restart() -> void:
 	_reset_game()
 
 func _reset_game() -> void:
+	_game_gen += 1
+	_thinking_label.visible = false
 	_stop_gameover_comment()
 	_join_workers()
 	# Leave whatever the finished game had open, or the new game starts

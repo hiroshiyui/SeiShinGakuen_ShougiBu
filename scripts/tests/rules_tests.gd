@@ -20,6 +20,8 @@ func _initialize() -> void:
 	_run("undo restores SFEN after capture + promote", _test_undo_capture_promote)
 	_run("replayed game counts repetitions like the live game", _test_replay_repetition_count)
 	_run("analysis treats unvisited moves as having no value", _test_analyzer_unvisited)
+	_run("replay rejects an illegal move from a save / KIF", _test_replay_rejects_illegal)
+	_run("out-of-range squares are rejected, not wrapped", _test_out_of_range_square)
 	if _fails > 0:
 		push_error("FAILED %d test(s)" % _fails)
 		quit(1)
@@ -169,4 +171,27 @@ func _test_undo_capture_promote() -> String:
 		return "undo_move returned false"
 	if str(c.to_sfen()) != before:
 		return "SFEN mismatch after undo\n  before: %s\n  after:  %s" % [before, str(c.to_sfen())]
+	return ""
+
+# apply_move only checks geometry (the UI offers legal moves only), so it
+# can record a pawn jumping 7七→1一. A save or KIF carrying that must not
+# replay.
+func _test_replay_rejects_illegal() -> String:
+	var forged := _core()
+	if not bool(forged.apply_move({"from": Vector2i(7, 7), "to": Vector2i(1, 1), "promote": false})):
+		return "setup: geometry-only apply_move refused the forged move"
+	var replay := _core()
+	if bool(replay.apply_packed(forged.move_log_packed())):
+		return "apply_packed accepted an illegal move"
+	return ""
+
+func _test_out_of_range_square() -> String:
+	var c := _core()
+	# 257 would wrap to file 1 with a plain i8 cast.
+	if bool(c.apply_move({"from": Vector2i(7, 7), "to": Vector2i(257, 6), "promote": false})):
+		return "apply_move accepted file 257"
+	if c.piece_at(257, 7) != null:
+		return "piece_at(257, 7) returned a piece"
+	if bool(c.is_legal_move({"drop_kind": 256, "to": Vector2i(5, 5)})):
+		return "drop_kind 256 accepted"
 	return ""

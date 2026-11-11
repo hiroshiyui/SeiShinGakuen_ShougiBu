@@ -77,7 +77,18 @@ static func _q_after_move(core: Object, packed: PackedInt32Array, n: int,
 		return 0.0
 	var replies: Array = core.suggest_moves_mcts(1, playouts)
 	if replies.is_empty():
-		return 1.0  # no legal reply: the move ended the game
+		# The move ended the game. Mate (or 手詰まり) is a win for the
+		# mover, but the search also stops at 千日手: a draw, or a loss
+		# for the side that kept checking.
+		var mover_is_gote := not bool(core.side_to_move_gote())
+		match str(core.detect_sennichite()):
+			"draw":
+				return 0.5
+			"sente_loses":
+				return 0.0 if not mover_is_gote else 1.0
+			"gote_loses":
+				return 0.0 if mover_is_gote else 1.0
+		return 1.0
 	return 1.0 - float(replies[0]["win_rate"])
 
 static func classify_delta(delta: float) -> String:
