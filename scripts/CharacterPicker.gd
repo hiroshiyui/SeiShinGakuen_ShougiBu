@@ -6,6 +6,7 @@ extends Control
 @onready var _portrait_missing: Label = %PortraitMissingLabel
 @onready var _name: Label = %DisplayName
 @onready var _level_strength: Label = %LevelStrength
+@onready var _record: Label = %Record
 @onready var _tagline: Label = %Tagline
 @onready var _intro: Label = %Introduction
 @onready var _back_btn: Button = %BackButton
@@ -76,6 +77,8 @@ func _highlight(idx: int) -> void:
 func _update_detail(profile: CharacterProfile) -> void:
 	_name.text = profile.display_name
 	_level_strength.text = "Lv.%d  %s" % [profile.level, profile.strength_label]
+	var rec := Settings.character_record(profile.id)
+	_record.text = "あなたの戦績  %d勝 %d敗" % [rec["wins"], rec["losses"]]
 	_tagline.text = profile.tagline
 	_intro.text = profile.introduction
 	var tex := _try_load_portrait(profile)

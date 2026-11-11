@@ -140,6 +140,21 @@ func mark_tsume_solved(position_key: String) -> void:
 	tsume_solved[position_key] = true
 	_save_prefs()
 
+# Player's results against each character: id -> {wins, losses}.
+# Draws are not counted.
+var character_records: Dictionary = {}
+
+func character_record(cid: String) -> Dictionary:
+	return character_records.get(cid, {"wins": 0, "losses": 0})
+
+func record_character_result(cid: String, player_won: bool) -> void:
+	if cid == "":
+		return
+	var rec: Dictionary = character_record(cid).duplicate()
+	rec["wins" if player_won else "losses"] += 1
+	character_records[cid] = rec
+	_save_prefs()
+
 const CHARACTERS_DIR := "res://assets/characters"
 
 func _ready() -> void:
@@ -270,6 +285,16 @@ func _load_prefs() -> void:
 	if solved is Array:
 		for key in solved:
 			tsume_solved[str(key)] = true
+	var records: Variant = cfg.get_value("records", "characters", {})
+	character_records.clear()
+	if records is Dictionary:
+		for cid in records:
+			var rec: Variant = records[cid]
+			if rec is Dictionary:
+				character_records[str(cid)] = {
+					"wins": maxi(int(rec.get("wins", 0)), 0),
+					"losses": maxi(int(rec.get("losses", 0)), 0),
+				}
 
 func _save_prefs() -> void:
 	var cfg := ConfigFile.new()
@@ -280,6 +305,7 @@ func _save_prefs() -> void:
 	cfg.set_value("ui", "reduce_motion", reduce_motion)
 	cfg.set_value("tsume", "plies", tsume_plies)
 	cfg.set_value("tsume", "solved", tsume_solved.keys())
+	cfg.set_value("records", "characters", character_records)
 	var err: int = cfg.save(PREFS_PATH)
 	if err != OK:
 		push_warning("save_prefs: ConfigFile.save returned %d" % err)

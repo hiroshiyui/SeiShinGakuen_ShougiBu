@@ -45,6 +45,8 @@ func _initialize() -> void:
 		_test_atomic_copy_missing_source)
 	_run("model extraction re-runs when user:// copy is stale",
 		_test_needs_extract_detects_stale_copy)
+	_run("character records count wins/losses and round-trip through prefs",
+		_test_character_records_roundtrip)
 
 	_clean()
 	if _fails > 0:
@@ -271,6 +273,28 @@ func _test_needs_extract_detects_stale_copy() -> String:
 	DirAccess.remove_absolute(_DUMMY_DST)
 	if not stale:
 		return "size-mismatched copy should need extraction"
+	return ""
+
+func _test_character_records_roundtrip() -> String:
+	_settings.character_records.clear()
+	var empty: Dictionary = _settings.character_record("a-chara")
+	if empty["wins"] != 0 or empty["losses"] != 0:
+		return "unplayed character should be 0-0"
+	_settings.record_character_result("a-chara", true)
+	_settings.record_character_result("a-chara", true)
+	_settings.record_character_result("a-chara", false)
+	_settings.record_character_result("b-chara", false)
+	_settings.record_character_result("", true)
+	_settings.character_records.clear()
+	_settings._load_prefs()
+	var a: Dictionary = _settings.character_record("a-chara")
+	var b: Dictionary = _settings.character_record("b-chara")
+	if a["wins"] != 2 or a["losses"] != 1:
+		return "a-chara expected 2-1, got %s" % a
+	if b["wins"] != 0 or b["losses"] != 1:
+		return "b-chara expected 0-1, got %s" % b
+	if _settings.character_records.has(""):
+		return "empty id must not be recorded"
 	return ""
 
 func _test_atomic_copy_missing_source() -> String:

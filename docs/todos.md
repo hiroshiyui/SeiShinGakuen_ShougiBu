@@ -9,7 +9,7 @@ portraits and bios, yet once a game starts they are just an avatar and a
 strength dial.
 
 **Selected for implementation (2026-11-09): 1, 2, 4, 7, 8, 9.** They
-are marked ★ below. Done so far: 1, 7, 8, 9. Still to do: 4, then 2.
+are marked ★ below. Done so far: 1, 4, 7, 8, 9. Still to do: 2.
 Items 3, 5, 6, 10 and 11 stay in the backlog.
 
 ## Make the characters come alive
@@ -33,9 +33,10 @@ Items 3, 5, 6, 10 and 11 stay in the backlog.
 
 ## Give the player a reason to come back
 
-- [ ] **★ 4. Win/loss record and club ranking (部内ランキング).** Nothing
-  tracks results today. Per-character records in `prefs.cfg`, plus a
-  "beaten" stamp on the picker card, turn eight levels into a ladder.
+- [x] **★ 4. Win/loss record on each character's profile.** Done
+  2026-11-11 — the picker's detail panel shows あなたの戦績 per character,
+  stored in `prefs.cfg`. Rescoped from a club ranking with "beaten"
+  stamps on the picker cards.
 - [ ] **5. Unlockables tied to wins.** Beating a character unlocks a
   second bio paragraph, a victory portrait, or a short club-room scene.
   Rewards progress without a full story mode.

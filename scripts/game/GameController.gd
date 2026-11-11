@@ -19,6 +19,8 @@ const HandViewScript := preload("res://scripts/game/HandView.gd")
 var _gameover_text: String = ""
 # KIF closing line for the finished game ("" while in progress → 中断).
 var _gameover_terminator: String = ""
+# Guards the per-character record against counting one game twice.
+var _result_recorded: bool = false
 @onready var _undo_btn: Button = %UndoButton
 @onready var _exit_btn: Button = %ExitButton
 @onready var _jishogi_btn: Button = %JishogiButton
@@ -480,6 +482,17 @@ func _expression_for_result(text: String) -> String:
 		return "neutral"
 	return "victory" if gote_won == Settings.ai_plays_gote() else "defeat"
 
+# Adds a finished game to the opponent's win/loss record. Draws and
+# games with no moves don't count.
+func _record_character_result(text: String) -> void:
+	if not _ai_enabled or _result_recorded or int(_core.move_log_size()) == 0:
+		return
+	var expr := _expression_for_result(text)
+	if expr == "neutral":
+		return
+	_result_recorded = true
+	Settings.record_character_result(Settings.selected_character_id, expr == "defeat")
+
 func _sync_portrait_shader_size() -> void:
 	var mat := _opponent_portrait.material as ShaderMaterial
 	if mat == null:
@@ -881,6 +894,7 @@ func _end_game(text: String, terminator: String) -> void:
 	var result_tex := _expression_texture(result_expr) if _ai_enabled else null
 	_gameover_portrait.texture = result_tex
 	_gameover_portrait.visible = result_tex != null
+	_record_character_result(text)
 	Settings.clear_saved_game()
 	print("[game] %s" % text.replace("\n", " "))
 	# Every finished game is archived to the 棋譜検討 library
@@ -1001,6 +1015,7 @@ func _on_restart() -> void:
 	_ai_evals.clear()
 	_core.reset_starting()
 	_game_over = false
+	_result_recorded = false
 	_gameover_terminator = ""
 	_gameover_text = ""
 	_pending_move = {}
@@ -1157,6 +1172,7 @@ func _on_quit_confirmed() -> void:
 	_game_over = true
 	_gameover_terminator = "投了"
 	_gameover_text = "投了 — %s の勝ち" % winner
+	_record_character_result(_gameover_text)
 	_auto_save_kif_message()
 	Settings.clear_saved_game()
 	SceneTransition.go_to("res://scenes/MainMenu.tscn")

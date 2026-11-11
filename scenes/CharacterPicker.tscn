@@ -103,6 +103,12 @@ text = ""
 theme_override_font_sizes/font_size = 28
 theme_override_colors/font_color = Color(0.95, 0.82, 0.45, 1)
 
+[node name="Record" type="Label" parent="Root/DetailPanel/DetailRow/Info"]
+unique_name_in_owner = true
+text = ""
+theme_override_font_sizes/font_size = 24
+theme_override_colors/font_color = Color(0.95, 0.82, 0.45, 1)
+
 [node name="Tagline" type="Label" parent="Root/DetailPanel/DetailRow/Info"]
 unique_name_in_owner = true
 text = ""
