@@ -137,8 +137,14 @@ if (( DO_APK )); then
         # and restore on any exit, including errors and Ctrl-C.
         PRESET_BACKUP="$(mktemp "${TMPDIR:-/tmp}/export_presets.XXXXXX")"
         cp "$PRESET_FILE" "$PRESET_BACKUP"
-        cleanup_preset() { mv -f "$PRESET_BACKUP" "$PRESET_FILE"; }
-        trap cleanup_preset EXIT INT TERM
+        # Idempotent: on Ctrl-C the INT trap restores, then the EXIT trap
+        # runs again and must find nothing left to do.
+        cleanup_preset() {
+            [[ -f "$PRESET_BACKUP" ]] && mv -f "$PRESET_BACKUP" "$PRESET_FILE"
+            return 0
+        }
+        trap cleanup_preset EXIT
+        trap 'cleanup_preset; exit 130' INT TERM
         sed -i \
             -e 's|^gradle_build/use_gradle_build=.*|gradle_build/use_gradle_build=true|' \
             -e 's|^gradle_build/export_format=.*|gradle_build/export_format=1|' \
@@ -177,7 +183,7 @@ if (( DO_APK )); then
 
     if (( AAB )); then
         cleanup_preset
-        trap - EXIT
+        trap - EXIT INT TERM
     fi
     if (( RELEASE )); then
         unset GODOT_ANDROID_KEYSTORE_RELEASE_PATH GODOT_ANDROID_KEYSTORE_RELEASE_USER GODOT_ANDROID_KEYSTORE_RELEASE_PASSWORD

@@ -60,7 +60,8 @@ UI_SAFETY = (
 
 # Codepoint-range regex covering every Japanese glyph we care about:
 # hiragana, katakana, chouon, iteration marks, CJK unified ideographs
-# (BMP range — matches what the old shell scan tried to cover).
+# (BMP range), plus CJK punctuation and fullwidth forms — UI text uses
+# ：【】（） etc., which used to fall back to a system font.
 JAPANESE_CHARS_RE = re.compile(
     "["
     "ぁ-ん"   # ぁ-ん
@@ -68,6 +69,8 @@ JAPANESE_CHARS_RE = re.compile(
     "ー"          # ー
     "々-〇"   # 々 〆 〇
     "一-龥"   # 一-龥
+    "\u3000-\u303f"  # CJK punctuation: 【】「」『』〜 …
+    "\uff01-\uff60"  # fullwidth forms: ：（）！？ …
     "]"
 )
 
