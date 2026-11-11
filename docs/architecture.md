@@ -237,8 +237,12 @@ direct TCP connection; there is no server. See
 [ADR-0012](./adr/0012-lan-play.md).
 
 - [`scripts/net/LanDiscovery.gd`](../scripts/net/LanDiscovery.gd) —
-  the host broadcasts a JSON beacon on UDP 47123 about once a second;
-  the joiner listens and keeps a list of hosts heard in the last 4 s.
+  two discovery paths feeding one list: a JSON beacon broadcast on UDP
+  47123 about once a second (hosts expire after 4 s of silence), and
+  mDNS / DNS-SD `_seishinshogi._tcp` through the Rust `LanMdns` class
+  ([`lan_mdns.rs`](../native/shogi_core/src/lan_mdns.rs), `mdns-sd`
+  crate; hosts stay until withdrawn). On Android it holds a
+  `WifiManager.MulticastLock` via Godot's Java bridge while running.
 - [`scripts/autoload/NetSession.gd`](../scripts/autoload/NetSession.gd)
   — an autoload, so the connection outlives the lobby → game scene
   switch. One JSON object per line (`hello`, `start`, `move`, `sync`,

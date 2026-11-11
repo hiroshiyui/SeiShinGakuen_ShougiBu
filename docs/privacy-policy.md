@@ -51,10 +51,12 @@ app's storage from Android system settings.
 Only when you choose 通信対戦, the application talks directly to another
 copy of the game on your local network (for example, the same Wi-Fi):
 
-- While a device waits for an opponent, it broadcasts a small
-  announcement on the local network about once a second: the app's
-  identifier, protocol version, the device's model name (for example
-  "Pixel 8a") and a port number.
+- While a device waits for an opponent, it announces itself on the
+  local network, both as a UDP broadcast about once a second and as a
+  multicast DNS (Bonjour) service: the app's identifier, protocol
+  version, the device's model name (for example "Pixel 8a") and a port
+  number. A device looking for a game sends multicast DNS queries for
+  that service.
 - Once two devices connect, they exchange the device model names, the
   moves, and game events (resign, 入玉宣言, leaving the game) directly
   with each other.
@@ -66,9 +68,11 @@ you leave the game or the lobby.
 
 ### Permissions
 
-The application requests one Android permission, `INTERNET`, which
-Android requires for any network connection, including one on the
-local network. It is used only for 通信対戦 as described above. The
+The application requests two Android permissions, both used only for
+通信対戦 as described above: `INTERNET`, which Android requires for any
+network connection, including one on the local network, and
+`CHANGE_WIFI_MULTICAST_STATE`, which lets the app receive the multicast
+DNS announcements while it is looking for or hosting a game. The
 application does not access the camera, microphone, contacts,
 location, storage outside its own sandbox, or any other sensitive
 APIs.
@@ -150,9 +154,11 @@ For privacy questions, contact: **hiroshiyui@gmail.com**
 ネットワーク(同じ Wi-Fi など)上の別の端末の本アプリケーションと
 直接通信します。
 
-- 相手を待っている間、約 1 秒ごとに小さな告知をローカルネットワーク
-  内に一斉送信します。内容はアプリの識別子、プロトコルのバージョン、
-  端末の機種名(例:「Pixel 8a」)、ポート番号です。
+- 相手を待っている間、ローカルネットワーク内に自分を告知します。
+  約 1 秒ごとの UDP ブロードキャストと、マルチキャスト DNS(Bonjour)
+  のサービス登録の 2 通りで、内容はアプリの識別子、プロトコルの
+  バージョン、端末の機種名(例:「Pixel 8a」)、ポート番号です。
+  対局を探す側は、このサービスをマルチキャスト DNS で問い合わせます。
 - 2 台が接続すると、端末の機種名、指し手、対局のできごと(投了、
   入玉宣言、対局の中止)を互いに直接やり取りします。
 - 終局した棋譜(KIF、両者の機種名を含む)は、上記のとおり各端末の
@@ -163,9 +169,11 @@ For privacy questions, contact: **hiroshiyui@gmail.com**
 
 ### 権限
 
-本アプリケーションが要求する Android 権限は `INTERNET` の 1 つだけです。
-Android ではローカルネットワーク内の通信にもこの権限が必要なため、
-上記の通信対戦にのみ使用します。カメラ、マイク、連絡先、位置情報、
+本アプリケーションが要求する Android 権限は次の 2 つで、どちらも
+上記の通信対戦にのみ使用します。`INTERNET` は、ローカルネットワーク
+内の通信にも Android が必要とする権限です。
+`CHANGE_WIFI_MULTICAST_STATE` は、対局を探している間や相手を待って
+いる間にマルチキャスト DNS の告知を受信するための権限です。カメラ、マイク、連絡先、位置情報、
 サンドボックス外のストレージ、その他の機微な API には一切アクセス
 しません。
 

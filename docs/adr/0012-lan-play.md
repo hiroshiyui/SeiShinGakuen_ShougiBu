@@ -36,6 +36,11 @@ Choices to make:
 - **No Android multicast-lock plugin.** A Nokia G50 (Android 13)
   receives the beacons without one, so the plugin is left out until a
   device shows it is needed.
+  *Amended 2026-11-11:* mDNS was added as a second discovery path
+  (`mdns-sd` crate in the GDExtension, `LanMdns`), running alongside
+  the broadcast beacon. The multicast lock it needs on Android is taken
+  through Godot's Java bridge (`AndroidRuntime`), so there is still no
+  plugin; the app now also requests `CHANGE_WIFI_MULTICAST_STATE`.
 - **No manual-IP / QR fallback.** On client-isolated networks 通信対戦
   is simply unavailable.
 - **Session in an autoload** (`scripts/autoload/NetSession.gd`) so the

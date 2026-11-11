@@ -314,10 +314,12 @@ Outgoing traffic is allowed, so the PC can still join a phone directly
 by IP.
 
 **Fix:** open the ports for the session, e.g.
-`sudo firewall-cmd --add-port=47123/udp --add-port=47124-47133/tcp`
+`sudo firewall-cmd --add-service=mdns --add-port=47123/udp --add-port=47124-47133/tcp`
 (add `--permanent` to keep it), or let the bot join the phone directly
 with `-- join addr=<phone ip>`.
 
-Android itself needed nothing: a Nokia G50 (Android 13) receives the
-broadcast beacons without a `WifiManager.MulticastLock`, and the
-`INTERNET` permission is the only one requested.
+On Android, a Nokia G50 (Android 13) receives the broadcast beacons
+without a `WifiManager.MulticastLock`, but mDNS needs one;
+`LanDiscovery` takes it through Godot's Java bridge (look for
+`acquireMulticastLock … lockTag=seishin-shogi` in logcat), backed by
+the `CHANGE_WIFI_MULTICAST_STATE` permission.
