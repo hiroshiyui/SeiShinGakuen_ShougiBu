@@ -13,4 +13,4 @@ temperature = 0.1
 strength_label = "顧問"
 tagline = "将棋部の顧問"
 introduction = "清正学園の英語科教員。日本人とアメリカ人のハーフで、将棋部の顧問を務めている。加藤師範に将棋を学び、若くしてプロ入りも期待されるほどの才を見せたが、ある対局中の事故をきっかけに棋士の道を諦めた。"
-lines = {"start": ["Okay, class! 始めましょう", "よろしくね。Do your best!"], "check": ["Check! 気づいていた？", "王手よ。Think carefully."], "lose_piece": ["Oh my! いい手ね", "Nice move! 先生、油断したわ"], "win": ["Good try! 復習しておいてね", "今日の授業はここまで"], "lose": ["Excellent! 花丸をあげるわ", "参りました。Well done!"]}
+lines = {"start": ["さあ、始めましょうか", "よろしくね。Do your best!"], "check": ["王手よ。気づいていた？", "王手。よく考えてね"], "lose_piece": ["あら、いい手ね", "先生、油断したわ"], "win": ["惜しかったわね。復習しておいてね", "今日の授業はここまで"], "lose": ["お見事！花丸をあげるわ", "参りました。Well done!"]}
