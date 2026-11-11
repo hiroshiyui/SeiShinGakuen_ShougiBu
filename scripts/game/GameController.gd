@@ -1015,7 +1015,10 @@ func _end_game(text: String, terminator: String, winner: String = "") -> void:
 	_gameover_portrait.texture = result_tex
 	_gameover_portrait.visible = result_tex != null
 	_record_character_result(winner)
-	Settings.clear_saved_game()
+	# A LAN game never filled the 続きから slot, so the slot still holds
+	# the paused AI game; ending the LAN game must not throw it away.
+	if not _lan:
+		Settings.clear_saved_game()
 	print("[game] %s" % text.replace("\n", " "))
 	# Every finished game is archived to the 棋譜検討 library
 	# automatically; the dialog just reports where it went.
