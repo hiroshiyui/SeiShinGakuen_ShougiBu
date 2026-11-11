@@ -29,7 +29,7 @@ Android 7.0（API 24）以降 / arm64-v8a。Google Play ストアは方針とし
 
 | タイトル画面 | 対戦相手選択 | 対局画面 |
 |:---:|:---:|:---:|
-| <img src="docs/screenshots/01_main_menu.png" width="220" alt="タイトル画面 — 対局モード・対戦相手を選び、設定 / 棋譜検討 / 詰将棋 / 新規対局へ進む（中断した対局があれば「続きから」も表示）。背景は部員・先生の絵から毎回ランダムに選ばれる。"> | <img src="docs/screenshots/02_character_picker.png" width="220" alt="対戦相手選択画面 — 8 人の部員・先生から指す相手を選ぶ。上半分に選択中キャラの肖像と紹介、その相手とのあなたの戦績、下半分に Lv 1〜8 のグリッド。"> | <img src="docs/screenshots/03_in_game_start.png" width="220" alt="Lv 4（伊藤明）との対局開始。上部バーに対戦相手の肖像と名前、その下に吹き出しでひと言、下部に「加藤先生！教えてください！」ボタンを配置。肖像は対局の流れで表情が変わる。"> |
+| <img src="docs/screenshots/01_main_menu.png" width="220" alt="タイトル画面 — 対局モードと対戦相手（丸い肖像付き）を選び、新規対局 / 棋譜検討 / 詰将棋 / 設定へ進む。「通信対戦」からは LAN での人対人の対局へ（中断した対局があれば「続きから」も表示）。背景は部員・先生の絵から毎回ランダムに選ばれる。"> | <img src="docs/screenshots/02_character_picker.png" width="220" alt="対戦相手選択画面 — 8 人の部員・先生から指す相手を選ぶ。上半分に選択中キャラの肖像と紹介、その相手とのあなたの戦績、下半分に Lv 1〜8 のグリッド。"> | <img src="docs/screenshots/03_in_game_start.png" width="220" alt="Lv 4（伊藤明）との対局開始。上部バーに対戦相手の肖像と名前、その下に吹き出しでひと言、下部に「加藤先生！教えてください！」ボタンを配置。肖像は対局の流れで表情が変わる。"> |
 
 | 先生モード | 棋譜検討（一覧） | 棋譜検討（解析） |
 |:---:|:---:|:---:|
@@ -38,6 +38,10 @@ Android 7.0（API 24）以降 / arm64-v8a。Google Play ストアは方針とし
 | 詰将棋（出題） | 詰将棋（正解） | 表情の変化（思考中） |
 |:---:|:---:|:---:|
 | <img src="docs/screenshots/07_tsume_problem.png" width="220" alt="詰将棋の出題画面 — 1手詰・3手詰・5手詰のタブに解いた数、今日の一問、盤面の下にヒント / やり直し / 前後の問題ボタン。"> | <img src="docs/screenshots/08_tsume_solved.png" width="220" alt="詰将棋を解いたところ — 「正解！ 詰みです」と表示され、問題名に【済】、タブの解いた数が 1/40 に増える。"> | <img src="docs/screenshots/09_thinking_face.png" width="220" alt="AI の思考中 — 盤の右上に「思考中…」、上部バーの対戦相手が考える表情に変わっている。"> |
+
+| 通信対戦（対局を探す） | 通信対戦（後手の盤面） | 通信対戦（再戦） |
+|:---:|:---:|:---:|
+| <img src="docs/screenshots/10_lan_lobby.png" width="220" alt="通信対戦のロビー — 同じ Wi-Fi で見つかった対局が端末名と IP アドレス付きで並び、タップで参加する。"> | <img src="docs/screenshots/11_lan_gote_board.png" width="220" alt="通信対戦で後手を持った側の画面 — 盤が 180° 回り、自分の駒が手前に来る。上部に相手の端末名と手番（先手）。"> | <img src="docs/screenshots/12_lan_rematch.png" width="220" alt="通信対戦の終局ダイアログ — 相手が再戦を希望していることが表示され、「再戦」で先後を入れ替えて次の対局を始める。"> |
 
 ## 主な機能
 
