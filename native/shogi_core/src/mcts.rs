@@ -14,7 +14,7 @@ use crate::board::Board;
 use crate::encode::encode_position;
 use crate::move_index::encode_move;
 use crate::nn::NeuralNet;
-use crate::rules::{is_check, legal_drops, legal_moves_from};
+use crate::rules::{SennichiteStatus, detect_sennichite, is_check, legal_drops, legal_moves_from};
 use crate::types::{Color, Kind, Move, Square};
 
 const C_PUCT: f32 = 1.5;
@@ -169,7 +169,10 @@ impl<'a> Searcher<'a> {
                 let c = &self.nodes[cur].children.as_ref().unwrap()[chosen_idx];
                 (c.mv, c.node)
             };
-            board.apply_move(mv);
+            let applied = board.apply_move(mv);
+            debug_assert!(applied, "MCTS child move rejected: {mv:?}");
+            // Needed by the perpetual-check rule in ensure_expanded.
+            board.set_last_move_check(is_check(board, board.side_to_move));
             moves_applied.push(mv);
             let next = match child_slot {
                 Some(idx) => idx,
@@ -215,6 +218,20 @@ impl<'a> Searcher<'a> {
             // Already expanded — fall back to a single NN eval.
             let (_, v) = self.nn.forward(&encode_position(board)).map_err(|_| ())?;
             return Ok(v);
+        }
+        // 千日手 inside the tree: a fourth repetition ends the game, as a
+        // draw or as a loss for the side that kept giving check. Without
+        // this the AI could repeat a checking line into a forfeit.
+        let repetition = match detect_sennichite(board) {
+            SennichiteStatus::None => None,
+            SennichiteStatus::Draw => Some(0.0),
+            SennichiteStatus::SenteLoses => Some(if board.side_to_move == Color::Sente { -1.0 } else { 1.0 }),
+            SennichiteStatus::GoteLoses => Some(if board.side_to_move == Color::Gote { -1.0 } else { 1.0 }),
+        };
+        if let Some(terminal) = repetition {
+            self.nodes[idx].children = Some(Vec::new());
+            self.nodes[idx].terminal_value = Some(terminal);
+            return Ok(terminal);
         }
         let legal = all_legal_moves(board);
         if legal.is_empty() {
@@ -334,7 +351,10 @@ pub fn all_legal_moves(board: &mut Board) -> Vec<Move> {
             }
         }
     }
-    let kinds: Vec<Kind> = board.hand(side).keys().copied().collect();
+    let mut kinds: Vec<Kind> = board.hand(side).keys().copied().collect();
+    // HashMap order is random; sort so the move order (and greedy
+    // tie-breaks) is reproducible.
+    kinds.sort_by_key(|k| *k as u8);
     for k in kinds {
         out.extend(legal_drops(board, k));
     }

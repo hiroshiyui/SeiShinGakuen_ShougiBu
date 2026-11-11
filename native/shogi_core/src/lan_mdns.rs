@@ -35,27 +35,9 @@ impl LanMdns {
     #[func]
     fn advertise(&mut self, name: GString, port: i64, proto: i64) -> bool {
         self.stop();
-        let Some(daemon) = start_daemon() else { return false };
-        let name = name.to_string();
-        let suffix: u32 = rand::random::<u32>() & 0xffff;
-        let instance = format!("{}-{suffix:04x}", sanitize(&name));
-        let host = format!("seishin-{suffix:04x}.local.");
-        let proto = proto.to_string();
-        let props = [("proto", proto.as_str()), ("name", name.as_str())];
-        let Ok(port) = u16::try_from(port) else { return false };
-        let info = match ServiceInfo::new(SERVICE_TYPE, &instance, &host, "", port, &props[..]) {
-            Ok(i) => i.enable_addr_auto(),
-            Err(e) => {
-                godot_warn!("mdns: bad service info: {e}");
-                return false;
-            }
-        };
-        let fullname = info.get_fullname().to_string();
-        if let Err(e) = daemon.register(info) {
-            godot_warn!("mdns: register failed: {e}");
-            let _ = daemon.shutdown();
+        let Some((daemon, fullname)) = register_service(&name.to_string(), port, proto) else {
             return false;
-        }
+        };
         self.registered = Some(fullname);
         self.daemon = Some(daemon);
         true
@@ -90,12 +72,22 @@ impl LanMdns {
         while let Ok(ev) = rx.try_recv() {
             match ev {
                 ServiceEvent::ServiceResolved(svc) => {
-                    // Prefer an IPv4 address: the game's TCP side is v4.
-                    let Some(addr) = svc.get_addresses_v4().into_iter().next() else { continue };
+                    // IPv4 only (the game's TCP side is v4), and only a
+                    // private / link-local address: a record pointing
+                    // off the LAN is ignored. Lowest address wins, so the
+                    // pick is stable across interfaces.
+                    let mut addrs: Vec<_> = svc
+                        .get_addresses_v4()
+                        .into_iter()
+                        .filter(|a| a.is_private() || a.is_link_local())
+                        .collect();
+                    addrs.sort();
+                    let Some(addr) = addrs.first() else { continue };
                     let mut d = VarDictionary::new();
                     d.set("type", "found");
                     d.set("key", svc.get_fullname());
-                    d.set("name", svc.get_property_val_str("name").unwrap_or("?"));
+                    let name = svc.get_property_val_str("name").unwrap_or("?");
+                    d.set("name", truncate_bytes(name, NAME_MAX_BYTES));
                     d.set("address", addr.to_string().as_str());
                     d.set("port", svc.get_port() as i64);
                     let proto = svc
@@ -140,6 +132,34 @@ impl Drop for LanMdns {
     }
 }
 
+/// Registers the game service and returns the running daemon and the
+/// service's full name. Every failure path shuts the daemon down.
+fn register_service(name: &str, port: i64, proto: i64) -> Option<(ServiceDaemon, String)> {
+    let port = u16::try_from(port).ok()?;
+    let name = truncate_bytes(name, NAME_MAX_BYTES);
+    let suffix: u32 = rand::random::<u32>() & 0xffff;
+    let instance = format!("{}-{suffix:04x}", sanitize(name));
+    let host = format!("seishin-{suffix:04x}.local.");
+    let proto = proto.to_string();
+    let props = [("proto", proto.as_str()), ("name", name)];
+    let info = match ServiceInfo::new(SERVICE_TYPE, &instance, &host, "", port, &props[..]) {
+        Ok(i) => i.enable_addr_auto(),
+        Err(e) => {
+            godot_warn!("mdns: bad service info: {e}");
+            return None;
+        }
+    };
+    let fullname = info.get_fullname().to_string();
+    // Started only after everything that can fail cheaply has passed.
+    let daemon = start_daemon()?;
+    if let Err(e) = daemon.register(info) {
+        godot_warn!("mdns: register failed: {e}");
+        let _ = daemon.shutdown();
+        return None;
+    }
+    Some((daemon, fullname))
+}
+
 fn start_daemon() -> Option<ServiceDaemon> {
     match ServiceDaemon::new() {
         Ok(d) => Some(d),
@@ -150,10 +170,30 @@ fn start_daemon() -> Option<ServiceDaemon> {
     }
 }
 
+/// Longest device name carried in the TXT record (one TXT string may be
+/// at most 255 bytes including the `name=` key).
+const NAME_MAX_BYTES: usize = 120;
+/// A DNS label is at most 63 bytes; leave room for the `-xxxx` suffix.
+const LABEL_MAX_BYTES: usize = 57;
+
+/// `s` cut to at most `max` bytes on a UTF-8 character boundary.
+fn truncate_bytes(s: &str, max: usize) -> &str {
+    if s.len() <= max {
+        return s;
+    }
+    let mut end = max;
+    while !s.is_char_boundary(end) {
+        end -= 1;
+    }
+    &s[..end]
+}
+
 /// DNS-SD instance labels allow most characters, but keep it tidy: no
-/// dots (they would read as extra labels), at most 40 characters.
+/// dots (they would read as extra labels), no control characters, and
+/// short enough for one DNS label once the suffix is added.
 fn sanitize(name: &str) -> String {
-    let s: String = name.chars().filter(|c| *c != '.').take(40).collect();
+    let s: String = name.chars().filter(|c| *c != '.' && !c.is_control()).collect();
+    let s = truncate_bytes(&s, LABEL_MAX_BYTES).to_string();
     if s.trim().is_empty() { "seishin".to_string() } else { s }
 }
 
@@ -167,7 +207,19 @@ mod tests {
         assert_eq!(sanitize("Pixel 8a"), "Pixel 8a");
         assert_eq!(sanitize("my.host.name"), "myhostname");
         assert_eq!(sanitize("..."), "seishin");
-        assert_eq!(sanitize(&"x".repeat(60)).len(), 40);
+        assert_eq!(sanitize(&"x".repeat(80)).len(), LABEL_MAX_BYTES);
+        // 30 kanji = 90 bytes: cut to fit a DNS label, on a char boundary.
+        let jp = sanitize(&"将".repeat(30));
+        assert!(jp.len() <= LABEL_MAX_BYTES && jp.chars().all(|c| c == '将'));
+    }
+
+    /// Needs a multicast-capable interface, like the test below.
+    #[test]
+    #[ignore]
+    fn long_japanese_name_still_registers() {
+        let name = "清正学園将棋部のタブレット端末です".repeat(4);
+        let (daemon, _) = register_service(&name, 47997, 1).expect("registered");
+        let _ = daemon.shutdown();
     }
 
     /// Registers and browses on this machine through the real daemon.

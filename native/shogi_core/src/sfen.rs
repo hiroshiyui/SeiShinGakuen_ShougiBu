@@ -153,6 +153,9 @@ fn parse_board_field(board_str: &str, board: &mut Board) -> Result<(), SfenError
                     return Err(SfenError(format!("board: empty run {n} out of range")));
                 }
                 file -= n;
+                if file < 0 {
+                    return Err(SfenError("board: rank has more than 9 files".into()));
+                }
                 continue;
             }
             let color = if c.is_ascii_uppercase() { Color::Sente } else { Color::Gote };
@@ -223,7 +226,12 @@ fn parse_hand_field(hand_str: &str, board: &mut Board) -> Result<(), SfenError> 
             return Err(SfenError(format!("hand: non-droppable piece {letter:?}")));
         }
         let entry = board.hand_mut(color).entry(kind).or_insert(0);
-        *entry += count;
+        // No side can hold more than 18 of one kind; also keeps a hostile
+        // count from overflowing.
+        *entry = entry.saturating_add(count);
+        if *entry > 18 {
+            return Err(SfenError(format!("hand: {letter:?} count {entry} out of range")));
+        }
     }
     Ok(())
 }

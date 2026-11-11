@@ -68,7 +68,8 @@ impl Solver {
     pub fn count_first_moves(&mut self, board: &mut Board, plies: u32) -> usize {
         let mut count = 0;
         for mv in checking_moves(board) {
-            board.apply_move(mv);
+            let applied = board.apply_move(mv);
+            debug_assert!(applied, "solver move rejected");
             let mated = self.defend(board, plies - 1).is_some();
             board.undo_move();
             if mated {
@@ -104,7 +105,8 @@ impl Solver {
                 return None;
             }
             self.nodes += 1;
-            board.apply_move(mv);
+            let applied = board.apply_move(mv);
+            debug_assert!(applied, "solver move rejected");
             let line = self.defend(board, n - 1);
             board.undo_move();
             if let Some(mut pv) = line {
@@ -132,7 +134,8 @@ impl Solver {
                 return None;
             }
             self.nodes += 1;
-            board.apply_move(reply);
+            let applied = board.apply_move(reply);
+            debug_assert!(applied, "solver move rejected");
             // Shortest mate against this reply, so the PV reflects best
             // play by both sides.
             let mut line = None;
@@ -161,7 +164,8 @@ fn checking_moves(board: &mut Board) -> Vec<Move> {
     all_legal_moves(board)
         .into_iter()
         .filter(|&mv| {
-            board.apply_move(mv);
+            let applied = board.apply_move(mv);
+            debug_assert!(applied, "solver move rejected");
             let check = is_check(board, defender);
             board.undo_move();
             check

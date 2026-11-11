@@ -156,7 +156,9 @@ impl ShogiCore {
             let Some(mv) = kifu::unpack_move(packed.get(i).unwrap_or(0)) else {
                 return false;
             };
-            if !self.board.apply_move(mv) {
+            // The log comes from a save file or a KIF the player picked,
+            // so check full legality, not just `apply_move`'s geometry.
+            if !all_legal_moves(&mut self.board).contains(&mv) || !self.board.apply_move(mv) {
                 return false;
             }
             let was_check = is_check(&self.board, self.board.side_to_move);
@@ -168,7 +170,8 @@ impl ShogiCore {
 
     #[func]
     fn piece_at(&self, file: i64, rank: i64) -> Variant {
-        let Some(piece) = self.board.piece_at(Square::new(file as i8, rank as i8)) else {
+        let Some(sq) = board_square(file, rank) else { return Variant::nil() };
+        let Some(piece) = self.board.piece_at(sq) else {
             return Variant::nil();
         };
         let mut d = VarDictionary::new();
@@ -200,18 +203,16 @@ impl ShogiCore {
 
     #[func]
     fn place(&mut self, file: i64, rank: i64, kind: i64, is_gote: bool) {
-        let Some(k) = Kind::from_u8(kind as u8) else { return };
-        let sq = Square::new(file as i8, rank as i8);
-        if !sq.in_bounds() {
-            return;
-        }
+        let Some(k) = kind_from_i64(kind) else { return };
+        let Some(sq) = board_square(file, rank) else { return };
         self.board.place(sq, crate::types::Piece::new(k, Color::from_gote(is_gote)));
     }
 
     #[func]
     fn set_hand_count(&mut self, is_gote: bool, kind: i64, count: i64) {
-        let Some(k) = Kind::from_u8(kind as u8) else { return };
-        self.board.set_hand_count(Color::from_gote(is_gote), k, count.max(0) as u32);
+        let Some(k) = kind_from_i64(kind) else { return };
+        // 18 is the most of one kind anyone can hold (all the pawns).
+        self.board.set_hand_count(Color::from_gote(is_gote), k, count.clamp(0, 18) as u32);
     }
 
     #[func]
@@ -279,13 +280,14 @@ impl ShogiCore {
 
     #[func]
     fn legal_moves_from(&mut self, file: i64, rank: i64) -> Array<VarDictionary> {
-        let moves = legal_moves_from(&mut self.board, Square::new(file as i8, rank as i8));
+        let Some(sq) = board_square(file, rank) else { return Array::new() };
+        let moves = legal_moves_from(&mut self.board, sq);
         moves.into_iter().map(move_to_dict).collect()
     }
 
     #[func]
     fn legal_drops(&mut self, kind: i64) -> Array<VarDictionary> {
-        let Some(k) = Kind::from_u8(kind as u8) else { return Array::new() };
+        let Some(k) = kind_from_i64(kind) else { return Array::new() };
         let moves = legal_drops(&mut self.board, k);
         moves.into_iter().map(move_to_dict).collect()
     }
@@ -511,10 +513,12 @@ impl ShogiCore {
     /// Try the opening book at the current position. Returns the move
     /// dict on hit, `nil` on miss. Caller falls through to think_best_move.
     #[func]
-    fn opening_book_pick(&self, temperature: f64) -> Variant {
+    fn opening_book_pick(&mut self, temperature: f64) -> Variant {
+        // The book itself only checks geometry; a wrong entry must not be
+        // played, so fall back to the search instead.
         match self.book.pick(&self.board, temperature.max(0.0) as f32) {
-            Some(mv) => move_to_dict(mv).to_variant(),
-            None => Variant::nil(),
+            Some(mv) if all_legal_moves(&mut self.board).contains(&mv) => move_to_dict(mv).to_variant(),
+            _ => Variant::nil(),
         }
     }
 
@@ -655,19 +659,27 @@ fn move_to_dict(mv: Move) -> VarDictionary {
 
 fn dict_to_move(d: &VarDictionary) -> Option<Move> {
     if let Some(v) = d.get("drop_kind") {
-        let kind = Kind::from_u8(v.try_to::<i64>().ok()? as u8)?;
+        let kind = kind_from_i64(v.try_to::<i64>().ok()?)?;
         let to: Vector2i = d.get("to")?.try_to().ok()?;
-        return Some(Move::Drop {
-            kind,
-            to: Square::new(to.x as i8, to.y as i8),
-        });
+        return Some(Move::Drop { kind, to: board_square(to.x as i64, to.y as i64)? });
     }
     let from: Vector2i = d.get("from")?.try_to().ok()?;
     let to: Vector2i = d.get("to")?.try_to().ok()?;
     let promote: bool = d.get("promote").and_then(|v| v.try_to().ok()).unwrap_or(false);
     Some(Move::Board {
-        from: Square::new(from.x as i8, from.y as i8),
-        to: Square::new(to.x as i8, to.y as i8),
+        from: board_square(from.x as i64, from.y as i64)?,
+        to: board_square(to.x as i64, to.y as i64)?,
         promote,
     })
+}
+
+/// A square on the board, or None. Rejects values that a plain `as i8`
+/// would wrap onto the board (e.g. 257 → 1).
+fn board_square(file: i64, rank: i64) -> Option<Square> {
+    let sq = Square::new(i8::try_from(file).ok()?, i8::try_from(rank).ok()?);
+    sq.in_bounds().then_some(sq)
+}
+
+fn kind_from_i64(kind: i64) -> Option<Kind> {
+    Kind::from_u8(u8::try_from(kind).ok()?)
 }

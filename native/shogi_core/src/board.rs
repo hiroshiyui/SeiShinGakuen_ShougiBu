@@ -213,9 +213,26 @@ impl Board {
             Move::Drop { kind, to } => self.apply_drop(kind, to),
         };
         if ok {
-            self.bump_position();
+            // Record the key on the log entry too, so repetition checks
+            // (detect_sennichite, also used inside the MCTS tree) can find
+            // where a cycle starts without hashing the position again.
+            let key = crate::sfen::position_key(self);
+            *self.position_counts.entry(key.clone()).or_insert(0) += 1;
+            self.tag_last_move(false, key);
         }
         ok
+    }
+
+    /// Marks whether the last applied move gave check (for the
+    /// perpetual-check rule). `apply_move` leaves it false.
+    pub fn set_last_move_check(&mut self, was_check: bool) {
+        if let Some(last) = self.log.last_mut() {
+            match last {
+                LogEntry::Board { was_check: wc, .. } | LogEntry::Drop { was_check: wc, .. } => {
+                    *wc = was_check;
+                }
+            }
+        }
     }
 
     fn apply_board_move(&mut self, from: Square, to: Square, promote: bool) -> bool {

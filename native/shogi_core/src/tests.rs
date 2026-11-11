@@ -355,3 +355,44 @@ fn all_legal_moves_rejects_peer_cheats() {
     // Promotion flag must match: no promotion outside the zone.
     assert!(!legal.contains(&parse_usi("7g7f+").unwrap()));
 }
+
+#[test]
+fn parse_usi_rejects_junk_fifth_byte() {
+    use crate::opening_book::parse_usi;
+    assert!(parse_usi("7g7f+").is_some());
+    assert!(parse_usi("7g7fX").is_none());
+    assert!(parse_usi("7g7f++").is_none());
+}
+
+#[test]
+fn sfen_rejects_overlong_rank_and_huge_hand() {
+    use crate::sfen::parse_sfen;
+    // Empty-square digits adding up past 9 files used to wrap the file
+    // counter in release builds.
+    let bad_rank = "lnsgkgsnl/1r5b1/ppppppppp/99999999999999999999999999999/9/9/PPPPPPPPP/1B5R1/LNSGKGSNL b - 1";
+    assert!(parse_sfen(bad_rank).is_err());
+    let bad_hand = "lnsgkgsnl/1r5b1/ppppppppp/9/9/9/PPPPPPPPP/1B5R1/LNSGKGSNL b 4294967295P1P 1";
+    assert!(parse_sfen(bad_hand).is_err());
+    let ok_hand = "lnsgkgsnl/1r5b1/ppppppppp/9/9/9/PPPPPPPPP/1B5R1/LNSGKGSNL b 2P 1";
+    assert!(parse_sfen(ok_hand).is_ok());
+}
+
+/// The search applies moves with `Board::apply_move` only (no FFI
+/// tagging), so the 千日手 check it uses must work on that path too.
+#[test]
+fn repetition_is_detected_after_plain_apply_move() {
+    use crate::opening_book::parse_usi;
+    use crate::rules::{SennichiteStatus, detect_sennichite};
+    let mut b = crate::board::Board::default();
+    let shuffle = ["5i4h", "5a4b", "4h5i", "4b5a"];
+    let mut seen_draw = false;
+    for _ in 0..3 {
+        for usi in shuffle {
+            assert!(b.apply_move(parse_usi(usi).unwrap()));
+            if matches!(detect_sennichite(&b), SennichiteStatus::Draw) {
+                seen_draw = true;
+            }
+        }
+    }
+    assert!(seen_draw, "fourth occurrence of the start position must be a draw");
+}

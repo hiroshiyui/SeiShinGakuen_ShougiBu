@@ -172,7 +172,11 @@ pub fn parse_usi(s: &str) -> Option<Move> {
     }
     let from = Square::new(file_from_digit(bytes[0])?, rank_from_letter(bytes[1])?);
     let to = Square::new(file_from_digit(bytes[2])?, rank_from_letter(bytes[3])?);
-    let promote = bytes.len() == 5 && bytes[4] == b'+';
+    let promote = match bytes.len() {
+        4 => false,
+        5 if bytes[4] == b'+' => true,
+        _ => return None,
+    };
     Some(Move::Board { from, to, promote })
 }
 
