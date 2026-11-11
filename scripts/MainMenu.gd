@@ -2,6 +2,7 @@ extends Control
 
 @onready var _title: Label = %Title
 @onready var _mode: OptionButton = %ModeSelect
+@onready var _network_btn: Button = %NetworkButton
 @onready var _opponent_btn: Button = %OpponentButton
 # The button's own text/icon stay empty: Godot can't centre an icon
 # next to centred text, so a centred icon + label row sits inside it.
@@ -36,6 +37,7 @@ func _ready() -> void:
 	_resume_btn.visible = Settings.has_saved_game()
 	_settings_btn.pressed.connect(_on_settings_pressed)
 	_kifu_library_btn.pressed.connect(_on_kifu_library_pressed)
+	_network_btn.pressed.connect(func(): SceneTransition.go_to("res://scenes/NetworkLobby.tscn"))
 	_tsume_btn.pressed.connect(func(): SceneTransition.go_to("res://scenes/TsumeShogi.tscn"))
 	_quit_dialog.confirmed.connect(_on_quit_confirmed)
 	ModalBlur.attach(_quit_dialog)
