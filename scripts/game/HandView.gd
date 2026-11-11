@@ -7,6 +7,8 @@ const PieceScript := preload("res://scripts/game/Piece.gd")
 const HandPieceScene := preload("res://scenes/game/HandPiece.tscn")
 
 @export var is_gote: bool = false
+# Board shown from 後手's side: draw the pieces the other way up.
+var flipped: bool = false
 
 @onready var _row: HBoxContainer = $Row
 
@@ -36,7 +38,7 @@ func render(core: Object) -> void:
 		
 		var hp := HandPieceScene.instantiate()
 		_row.add_child(hp)
-		hp.setup(kind, PieceScript.kanji_for(kind, is_gote), is_gote)
+		hp.setup(kind, PieceScript.kanji_for(kind, is_gote), is_gote != flipped)
 		hp.count = n
 		
 		if kind == _selected_kind:

@@ -163,8 +163,10 @@ func _ready() -> void:
 			push_warning("resume: load_sfen failed; starting fresh. SFEN was: %s" % Settings.resume_sfen)
 		Settings.resume_sfen = ""
 	_board_view.square_tapped.connect(_on_board_tapped)
-	_sente_hand.piece_tapped.connect(_on_hand_tapped.bind(false))
-	_gote_hand.piece_tapped.connect(_on_hand_tapped.bind(true))
+	# Each hand panel reports the side it currently shows, which swaps
+	# when the board is flipped (see _apply_board_orientation).
+	_sente_hand.piece_tapped.connect(func(kind: int): _on_hand_tapped(kind, _sente_hand.is_gote))
+	_gote_hand.piece_tapped.connect(func(kind: int): _on_hand_tapped(kind, _gote_hand.is_gote))
 	_promo_dialog.confirmed.connect(_on_promo_confirmed)
 	_promo_dialog.canceled.connect(_on_promo_canceled)
 	_promo_dialog.close_requested.connect(_on_promo_canceled)
@@ -227,8 +229,7 @@ func _ready() -> void:
 	_teacher_row.visible = _ai_enabled
 	if _lan:
 		_setup_lan()
-	_sente_hand.is_gote = false
-	_gote_hand.is_gote = true
+	_apply_board_orientation()
 	get_viewport().size_changed.connect(_refit_board)
 	get_viewport().size_changed.connect(_apply_safe_area)
 	_apply_safe_area()
@@ -751,7 +752,7 @@ func _on_hand_tapped(kind: int, is_gote: bool) -> void:
 		return
 	_sel_state = SelState.HAND
 	_sel_drop_kind = kind
-	var hv: HandViewScript = _gote_hand if is_gote else _sente_hand
+	var hv: HandViewScript = _hand_view(is_gote)
 	hv.set_selected_kind(kind)
 	hv.render(_core)
 	var targets: Array = []
@@ -1724,3 +1725,27 @@ func _on_lan_failed(reason: String) -> void:
 func _lan_protocol_error() -> void:
 	NetSession.close("abort")
 	_end_game("相手から不正な指し手を受信しました — 中断", "")
+
+# --- board orientation -----------------------------------------------------
+
+# The player sits at the bottom of the screen. When the local human plays
+# 後手 (vs. an AI 先手, or as 後手 in 通信対戦) the board is turned round:
+# 後手's pieces upright at the bottom, 後手's hand below the board.
+# Hot-seat 人対人 keeps 先手 at the bottom.
+func _human_plays_gote() -> bool:
+	if _lan:
+		return NetSession.local_is_gote
+	return Settings.mode == Settings.Mode.H_VS_AI_SENTE
+
+func _apply_board_orientation() -> void:
+	var flip := _human_plays_gote()
+	_board_view.set_flipped(flip)
+	# %SenteHand is the panel below the board, %GoteHand the one above.
+	_sente_hand.is_gote = flip
+	_gote_hand.is_gote = not flip
+	_sente_hand.flipped = flip
+	_gote_hand.flipped = flip
+
+# The hand panel currently showing `is_gote`'s pieces.
+func _hand_view(is_gote: bool) -> HandViewScript:
+	return _gote_hand if _gote_hand.is_gote == is_gote else _sente_hand

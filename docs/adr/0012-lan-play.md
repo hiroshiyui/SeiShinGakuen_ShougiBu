@@ -66,7 +66,7 @@ Choices to make:
   game port by default; desktop testing needs those ports opened.
 - LAN games don't use the 続きから save slot: a game can't be resumed
   alone. 待った, the teacher hints and the AI-only features are off.
+- The player with 後手 sees the board turned round, as in the
+  先手(AI) 対 後手(人) mode, which gained the same flip.
 - Not done yet: rematch from the 対局終了 dialog (it returns to the
-  title), a draw offer, and flipping the board for the player who has
-  後手 (they currently play from the top of the screen, as in the
-  existing 先手(AI) 対 後手(人) mode).
+  title) and a draw offer.

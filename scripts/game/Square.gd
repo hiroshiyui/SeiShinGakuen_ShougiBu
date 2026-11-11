@@ -40,9 +40,13 @@ func _gui_input(event: InputEvent) -> void:
 
 const _FILE_ZENKAKU: Array[String] = ["", "１", "２", "３", "４", "５", "６", "７", "８", "９"]
 
+# True when the board is shown from 後手's side: every piece is drawn
+# the other way up (see BoardView.set_flipped).
+var flipped: bool = false
+
 func set_piece(text: String, is_gote: bool) -> void:
 	_piece_view.text = text
-	_piece_view.is_gote = is_gote
+	_piece_view.is_gote = is_gote != flipped
 	_piece_view.visible = true
 	_update_accessibility_name(text, is_gote)
 

@@ -17,6 +17,10 @@ var _selected_key: Vector2i = Vector2i.ZERO
 var _hint_keys: Array = []
 var _last_move_keys: Array = []
 var _check_key: Vector2i = Vector2i.ZERO
+# Shown from 後手's side: 1一 at the bottom-left, 9九 at the top-right.
+# Squares keep their real (file, rank) keys, so only the grid order and
+# piece orientation change; callers re-render afterwards.
+var flipped: bool = false
 
 func _ready() -> void:
 	resized.connect(_on_resized)
@@ -57,6 +61,17 @@ func _build_grid() -> void:
 			sq.tapped.connect(_on_square_tapped)
 			_grid.add_child(sq)
 			_squares[Vector2i(file, rank)] = sq
+
+func set_flipped(f: bool) -> void:
+	if f == flipped:
+		return
+	flipped = f
+	for key: Vector2i in _squares.keys():
+		var sq: SquareScript = _squares[key]
+		sq.flipped = f
+		var row: int = (9 - key.y) if f else (key.y - 1)
+		var col: int = (key.x - 1) if f else (9 - key.x)
+		_grid.move_child(sq, row * 9 + col)
 
 func render(core: Object) -> void:
 	for key in _squares.keys():
@@ -147,7 +162,7 @@ func animate_move(from: Vector2i, to: Vector2i, text: String, is_gote: bool, dur
 	ghost.size = to_sq.size
 	ghost.global_position = from_sq.global_position
 	ghost.text = text
-	ghost.is_gote = is_gote
+	ghost.is_gote = is_gote != flipped
 	var tween := create_tween()
 	tween.set_trans(Tween.TRANS_SINE)
 	tween.set_ease(Tween.EASE_OUT)
