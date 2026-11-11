@@ -21,6 +21,11 @@ var _gameover_text: String = ""
 var _gameover_terminator: String = ""
 # Guards the per-character record against counting one game twice.
 var _result_recorded: bool = false
+@onready var _speech_bubble: PanelContainer = %OpponentSpeech
+@onready var _speech_label: Label = %OpponentSpeechText
+var _speech_tween: Tween = null
+const SPEECH_HOLD_SEC := 3.5
+const SPEECH_FADE_SEC := 0.25
 @onready var _undo_btn: Button = %UndoButton
 @onready var _exit_btn: Button = %ExitButton
 @onready var _jishogi_btn: Button = %JishogiButton
@@ -214,6 +219,8 @@ func _ready() -> void:
 	_apply_safe_area()
 	_refit_board()
 	_refresh_all()
+	if int(_core.move_log_size()) == 0:
+		_say("start")
 	_maybe_start_ai_turn()
 
 # Board is a square sized to fit within the Layout. The Layout itself is
@@ -482,6 +489,46 @@ func _expression_for_result(text: String) -> String:
 		return "neutral"
 	return "victory" if gote_won == Settings.ai_plays_gote() else "defeat"
 
+# Shows one of the opponent's lines beside their portrait, then fades it.
+func _say(moment: String) -> void:
+	if not _ai_enabled or _character == null:
+		return
+	var line := _character.random_line(moment)
+	if line == "":
+		return
+	_hide_speech()
+	_speech_label.text = line
+	_speech_bubble.modulate.a = 1.0
+	_speech_tween = create_tween()
+	_speech_tween.tween_interval(SPEECH_HOLD_SEC)
+	_speech_tween.tween_property(_speech_bubble, "modulate:a", 0.0, Settings.anim(SPEECH_FADE_SEC))
+
+func _hide_speech() -> void:
+	if _speech_tween != null and _speech_tween.is_valid():
+		_speech_tween.kill()
+	_speech_bubble.modulate.a = 0.0
+
+# Parks the balloon just below the portrait, over the 持ち駒 row, with
+# its tail on the portrait's centre. Runs every frame while it shows, so
+# it follows layout changes and resizes to the current line.
+func _place_speech_bubble() -> void:
+	const EDGE := 12.0
+	var frame: Rect2 = _opponent_portrait_frame.get_global_rect()
+	var sz: Vector2 = _speech_bubble.get_combined_minimum_size()
+	var center_x: float = frame.get_center().x
+	var x: float = clampf(center_x - sz.x * 0.5, EDGE,
+		maxf(EDGE, get_viewport_rect().size.x - sz.x - EDGE))
+	_speech_bubble.size = sz
+	_speech_bubble.global_position = Vector2(x, frame.end.y + _speech_bubble.TAIL_LENGTH)
+	_speech_bubble.set_tail_x(center_x - x)
+
+# The opponent's closing line for the 対局終了 dialog; "" on a draw.
+func _result_speech(result_expr: String) -> String:
+	if not _ai_enabled or _character == null or result_expr == "neutral":
+		return ""
+	var line := _character.random_line("win" if result_expr == "victory" else "lose")
+	return "" if line == "" else "%s「%s」" % [_character.display_name, line]
+
 # Adds a finished game to the opponent's win/loss record. Draws and
 # games with no moves don't count.
 func _record_character_result(text: String) -> void:
@@ -550,6 +597,8 @@ func _run_ai_think(playouts: int, temperature: float) -> Variant:
 	return _core.think_sampled(playouts, temperature)
 
 func _process(_delta: float) -> void:
+	if _speech_bubble.modulate.a > 0.0:
+		_place_speech_bubble()
 	if _comment_thread != null and not _comment_thread.is_alive():
 		_finish_gameover_comment()
 	if _teacher_thinking and _teacher_thread != null and not _teacher_thread.is_alive():
@@ -821,8 +870,12 @@ func _commit_move(m: Dictionary) -> void:
 		Input.vibrate_handheld(50)
 	_check_end_state()
 	if _ai_enabled and not mover_is_ai and not _game_over:
-		_react_to_player_move(bool(_core.is_check()),
-			int(target_piece["kind"]) if is_capture else -1)
+		var captured_kind: int = int(target_piece["kind"]) if is_capture else -1
+		_react_to_player_move(bool(_core.is_check()), captured_kind)
+		if captured_kind in EXPR_MAJOR_KINDS:
+			_say("lose_piece")
+	elif _ai_enabled and mover_is_ai and not _game_over and bool(_core.is_check()):
+		_say("check")
 	# If the player committed a move while suggestions were open, the
 	# board has been held small through this turn. Once it's the player's
 	# turn again (= AI has replied) — or the game ended — zoom back.
@@ -899,7 +952,12 @@ func _end_game(text: String, terminator: String) -> void:
 	print("[game] %s" % text.replace("\n", " "))
 	# Every finished game is archived to the 棋譜検討 library
 	# automatically; the dialog just reports where it went.
-	_gameover_label.text = ("%s\n\n%s" % [text, _auto_save_kif_message()]).strip_edges()
+	_hide_speech()
+	var parts := PackedStringArray([text])
+	for part in [_result_speech(result_expr), _auto_save_kif_message()]:
+		if part != "":
+			parts.append(part)
+	_gameover_label.text = "\n\n".join(parts)
 	_gameover_review_btn.visible = _gameover_kif_path != ""
 	_start_gameover_comment()
 	_gameover_dialog.reset_size()
@@ -1023,6 +1081,7 @@ func _on_restart() -> void:
 	_mood_win_rate = -1.0
 	_reaction_until_msec = 0
 	_set_opponent_expression("neutral")
+	_say("start")
 	_clear_selection()
 	_refresh_all()
 	_refresh_last_move_hint()
@@ -1045,6 +1104,7 @@ func _on_undo() -> void:
 	_last_move = {}
 	# The reaction belonged to the move that was just taken back.
 	_set_opponent_expression("neutral")
+	_hide_speech()
 	for ply in _ai_evals.keys():
 		if int(ply) > int(_core.move_log_size()):
 			_ai_evals.erase(ply)

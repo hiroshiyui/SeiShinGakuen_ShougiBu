@@ -73,3 +73,14 @@ func _mood_dials(m: Dictionary, base: Dictionary) -> Dictionary:
 # Longer-form character background, shown on a profile / detail view.
 # Free-form Japanese prose — line breaks with \n are honoured.
 @export_multiline var introduction: String = ""
+
+# In-game speech: moment -> Array of lines, one picked at random. Moments
+# are `start`, `check` (this character gives check), `lose_piece` (loses
+# a 飛 / 角), `win` and `lose`. Keep lines short enough for one line of
+# the speech balloon.
+@export var lines: Dictionary = {}
+
+# A random line for `moment`, or "" when the character has none.
+func random_line(moment: String) -> String:
+	var options: Array = lines.get(moment, [])
+	return "" if options.is_empty() else str(options.pick_random())

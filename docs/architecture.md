@@ -144,6 +144,13 @@ node (instant when アニメーションを減らす is on). The 対局終了 di
 repeats the victory / defeat portrait at 220 px, because the modal
 blur hides the avatar strip behind it.
 
+Each `CharacterProfile.lines` holds short spoken lines per moment:
+`start`, `check` (the character gives check), `lose_piece` (loses a
+飛 / 角), `win` and `lose`. The first three show in a comic balloon below the portrait for
+3.5 s; `win` and `lose` appear in the 対局終了 dialog instead. Resuming a
+game skips `start`, 待った clears the current line, and draws or 投了
+have no closing line.
+
 ## 詰将棋
 
 `scenes/TsumeShogi.tscn` (`scripts/TsumeShogi.gd`) is a self-contained

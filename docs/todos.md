@@ -9,7 +9,7 @@ portraits and bios, yet once a game starts they are just an avatar and a
 strength dial.
 
 **Selected for implementation (2026-11-09): 1, 2, 4, 7, 8, 9.** They
-are marked ★ below. Done so far: 1, 4, 7, 8, 9. Still to do: 2.
+are marked ★ below. All done.
 Items 3, 5, 6, 10 and 11 stay in the backlog.
 
 ## Make the characters come alive
@@ -22,10 +22,9 @@ Items 3, 5, 6, 10 and 11 stay in the backlog.
   62 % / 38 % thresholds by feel, and the variants sit a hair off the
   neutral portraits' framing (visible as a slight jump in the
   cross-fade).
-- [ ] **★ 2. Short speech bubbles.** A few lines per character for game
-  start, check, losing a major piece, winning and losing — アリス is
-  cold, すず is cheerful, テリー mixes in English. New characters must go
-  through `tools/build_font_subsets.py`.
+- [x] **★ 2. Short speech bubbles.** Done 2026-11-11 — two lines per
+  character for game start, check, losing a major piece, winning and
+  losing. See "Opponent expressions" in `docs/architecture.md`.
 - [ ] **3. Per-character playing style.** The opening book is one shared
   weighted table. Give each character a bias (e.g. 明 always plays
   振り飛車, 加藤師範 plays classical 矢倉) so they differ in style as

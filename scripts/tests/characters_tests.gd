@@ -30,6 +30,7 @@ func _initialize() -> void:
 	_run("moods well-formed and roll_dials stays in range", _test_moods)
 	_run("portrait_dir points at an existing directory", _test_portrait_dirs)
 	_run("every character ships all six expression portraits", _test_expression_portraits)
+	_run("every character has short lines for every speech moment", _test_speech_lines)
 	_run("load_character round-trips by id", _test_load_by_id)
 	_run("load_character returns null for unknown id", _test_load_unknown)
 	if _fails > 0:
@@ -46,6 +47,23 @@ func _run(name: String, fn: Callable) -> void:
 	else:
 		_fails += 1
 		push_error("  FAIL  %s — %s" % [name, err])
+
+func _test_speech_lines() -> String:
+	const MAX_WIDTH := 20.0  # in full-width characters; the balloon is one line
+	for c in _settings.list_characters():
+		for moment in ["start", "check", "lose_piece", "win", "lose"]:
+			var options: Array = c.lines.get(moment, [])
+			if options.is_empty():
+				return "%s has no lines for %s" % [c.id, moment]
+			for line in options:
+				var width := 0.0
+				for ch in str(line):
+					width += 0.55 if ch.unicode_at(0) < 128 else 1.0
+				if width == 0.0 or width > MAX_WIDTH:
+					return "%s %s: bad length: %s" % [c.id, moment, line]
+			if c.random_line(moment) == "":
+				return "%s random_line(%s) returned empty" % [c.id, moment]
+	return ""
 
 func _test_count() -> String:
 	var chars: Array[CharacterProfile] = _settings.list_characters()
