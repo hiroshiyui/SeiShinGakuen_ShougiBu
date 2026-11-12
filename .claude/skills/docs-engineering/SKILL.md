@@ -23,6 +23,7 @@ Read this before assuming files exist. The repo has solid technical documentatio
 | [docs/adr/](../../docs/adr/) | ✅ has entries | Architecture Decision Records, e.g. `0005-font-subset-pipeline.md` |
 | [docs/android-build.md](../../docs/android-build.md) | ✅ exists | APK export pipeline notes |
 | [docs/android-gotchas.md](../../docs/android-gotchas.md) | ✅ exists | Android-only behaviour notes (orientation int, touch double-fire, …) |
+| [docs/linux-build.md](../../docs/linux-build.md) | ✅ exists | Linux x86_64 AppImage pipeline (glibc-2.31 container, export, packing) and its gotchas |
 | Per-asset READMEs | ✅ partial | `assets/fonts/{fude-goshirae,noto-serif-jp}/README.md` |
 | [CHANGELOG.md](../../CHANGELOG.md) | ✅ exists | Keep a Changelog, Japanese bullets; one section per release |
 | [docs/release-notes/](../../docs/release-notes/) | ✅ one file per release | Japanese highlights + commit list; doubles as the GitHub Release body |
@@ -56,12 +57,13 @@ When writing or editing docs, double-check these from the source rather than cop
 - **Display name (Android launcher)**: 清正学園将棋部, set in `package/name`.
 - **Version**: read [`export_presets.cfg`](../../export_presets.cfg) `version/name` and `version/code` — single source of truth.
 - **Engine**: Godot 4.7.2 (Mobile renderer, Vulkan backend on Android), `~/.local/bin/Godot_v4.7.2-stable_linux.x86_64`.
-- **Native layer**: Rust GDExtension at [`native/shogi_core/`](../../native/shogi_core/), shipped as a cdylib loaded via [`addons/shogi_core.gdextension`](../../addons/shogi_core.gdextension). Same `.so` serves desktop (`x86_64-unknown-linux-gnu`) and Android (`aarch64-linux-android`).
+- **Native layer**: Rust GDExtension at [`native/shogi_core/`](../../native/shogi_core/), shipped as a cdylib loaded via [`addons/shogi_core.gdextension`](../../addons/shogi_core.gdextension). The same crate builds the host-linked desktop dev `.so` (`x86_64-unknown-linux-gnu`), Android (`aarch64-linux-android`), and the portable x86_64 `.so` for the Linux AppImage (built in a glibc-2.31 container, ADR-0013).
 - **Inference**: AlphaZero-style policy + value network, Bonanza-trained, ~12 MB ONNX (Bonanza v2, 10 blocks × 128 filters) at [`models/bonanza.onnx`](../../models/bonanza.onnx). Runs via the `tract` crate in Rust; on Android the model is extracted from the APK to `user://` on first launch.
 - **Encoder invariant**: 45-plane position + 139-plane move index, byte-parity-tested against ShogiDojo's Python implementation via `tools/gen_fixtures.py` → `native/shogi_core/src/parity_tests.rs`. Don't describe the encoder casually — the project's defense against silent AI breakage is "the bytes are identical."
-- **Search**: single-threaded PUCT MCTS (no virtual loss, no transposition table) with Dirichlet noise at the root. Temperature-sampled — `tools/build_all.sh` and the Lv 1–8 strength presets in `Settings.gd` drive the playouts/τ pair.
+- **Search**: single-threaded PUCT MCTS (no virtual loss, no transposition table) with Dirichlet noise at the root. Temperature-sampled — each character's `.tres` profile (`playouts`, `temperature`, optional weighted per-move `moods`, ADR-0011) drives the playouts/τ pair; `Settings.LEVEL_PARAMS` is only a fallback.
 - **通信対戦 (LAN play)**: human vs. human between two devices on the same LAN, no server (ROADMAP Phase 8, ADR-0012). Discovery by UDP broadcast + mDNS, one TCP connection; every received move is checked by `ShogiCore.is_legal_move`. Permissions: `INTERNET` and `CHANGE_WIFI_MULTICAST_STATE`, used for nothing else — keep the privacy policy and store descriptions saying so.
 - **Rules**: full board + hand handling, check, 二歩, 打ち歩詰め, 千日手 (incl. perpetual-check variant), 入玉 detection. SFEN parse + serialize.
+- **Linux AppImage**: from 1.1.1 an x86_64 AppImage (+ `.sha256`, unsigned) ships on GitHub Releases only (ROADMAP Phase 9, ADR-0013); itch.io and F-Droid stay Android-only. On Linux, user data lives in `~/.local/share/godot/app_userdata/清正学園将棋部/`, KIFs in the XDG Documents folder (`~/Documents`, `~/ドキュメント` on a Japanese desktop).
 - **Distribution**: three channels. **F-Droid** (accepted 2026-11; built from source and signed by F-Droid, updated automatically from release tags), **GitHub Releases** (signed APK + `.idsig` sidecar, the primary source of the sideload APK) and **itch.io** (the same APK, uploaded by hand). The F-Droid build carries a different signature, so it cannot update over, or be updated by, the sideload APK. Google Play is explicitly out of scope (see ROADMAP Open Questions).
 - **License**: GPL-3.0-or-later ([`LICENSE`](../../LICENSE), rationale in ADR-0010). The bundled fonts are SIL OFL 1.1; the model ships under GPL-3.0-or-later too.
 - **Author**: `Hui-Hong You` per `git log`.
@@ -106,7 +108,7 @@ The walkthrough of the GDScript ↔ Rust split. Key sections to keep faithful:
 
 - The FFI surface is in [`native/shogi_core/src/lib.rs`](../../native/shogi_core/src/lib.rs) — everything else (board, encoder, MCTS, NN, rules) is internal.
 - GDScript owns scenes, input, turn orchestration, the MCTS Thread; Rust owns rules, encoding, MCTS, ONNX inference.
-- The same compiled `.so` serves Linux desktop and Android (`aarch64-linux-android`) via `cargo-ndk`.
+- The same crate is built for Linux desktop (host-linked for dev, glibc-2.31 portable for the AppImage) and for Android (`aarch64-linux-android`) via `cargo-ndk`.
 
 ### docs/adr/
 

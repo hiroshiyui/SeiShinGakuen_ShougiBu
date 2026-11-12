@@ -35,7 +35,7 @@ MCTS against the Bonanza policy+value network).
 | NN inference | `ort` crate (ONNX Runtime) — fallback: `tract` (pure Rust) |
 | Model | `/home/yhh/MyProjects/ShogiDojo/bonanza.onnx` (input `(B,45,9,9)` → policy `(B,139,9,9)` + value `(B,1)`) |
 | Desktop dev target | `x86_64-unknown-linux-gnu` |
-| Ship target | `aarch64-linux-android` (API 24+) |
+| Ship target | `aarch64-linux-android` (API 24+); from 1.1.1 also an `x86_64` Linux AppImage (Phase 9) |
 | Build | `cargo` for Rust, Godot export templates for APK |
 
 ---

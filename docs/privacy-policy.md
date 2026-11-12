@@ -1,6 +1,6 @@
 # Privacy Policy — 清正学園将棋部 (SeiShinGakuen Shougi-bu)
 
-**Effective date:** 2026-11-11
+**Effective date:** 2026-11-13
 **Application:** 清正学園将棋部 (SeiShinGakuen Shougi-bu)
 **Contact:** hiroshiyui@gmail.com
 
@@ -46,6 +46,13 @@ storage**. This data is never transmitted anywhere:
 This data is removed when you uninstall the application or clear the
 app's storage from Android system settings.
 
+**Linux (AppImage).** The same data is stored in your home directory:
+game state, preferences and the extracted AI model under
+`~/.local/share/godot/app_userdata/清正学園将棋部/`, and saved KIF
+records in your Documents folder (usually `~/Documents`, or
+`~/ドキュメント` on a Japanese desktop). Deleting the AppImage file does
+not remove them; delete those files yourself if you want them gone.
+
 ### Local network play (通信対戦)
 
 Only when you choose 通信対戦, the application talks directly to another
@@ -54,8 +61,9 @@ copy of the game on your local network (for example, the same Wi-Fi):
 - While a device waits for an opponent, it announces itself on the
   local network, both as a UDP broadcast about once a second and as a
   multicast DNS (Bonjour) service: the app's identifier, protocol
-  version, the device's model name (for example "Pixel 8a") and a port
-  number. A device looking for a game sends multicast DNS queries for
+  version, the device's model name (for example "Pixel 8a"; on Linux,
+  the computer's host name if the `HOSTNAME` environment variable is
+  set, otherwise "PC") and a port number. A device looking for a game sends multicast DNS queries for
   that service.
 - Once two devices connect, they exchange the device model names, the
   moves, and game events (resign, 入玉宣言, leaving the game) directly
@@ -77,6 +85,11 @@ application does not access the camera, microphone, contacts,
 location, storage outside its own sandbox, or any other sensitive
 APIs.
 
+The Linux version has no permission system of its own; it uses the
+network only for 通信対戦 in the same way, and your firewall may need
+to allow it (UDP 47123, multicast DNS on UDP 5353, and TCP
+47124–47133).
+
 ### Children's privacy
 
 Because the application collects no data, it does not knowingly or
@@ -92,9 +105,11 @@ any server.
 
 ### Distribution
 
-The application is distributed via GitHub Releases sideload and may be
-distributed via Google Play. The privacy practices described here
-apply to all distribution channels.
+The Android application is distributed through F-Droid, GitHub
+Releases and itch.io, and the Linux version (an AppImage) through
+GitHub Releases. It is not distributed through Google Play. The
+privacy practices described here apply to every channel and both
+platforms.
 
 ### Changes to this policy
 
@@ -148,6 +163,13 @@ For privacy questions, contact: **hiroshiyui@gmail.com**
 これらのデータはアプリをアンインストールするか、Android のシステム
 設定からアプリのデータを消去すると削除されます。
 
+**Linux 版(AppImage)** では、同じデータをホームディレクトリに保存
+します。ゲーム状態・利用者設定・展開した AI モデルは
+`~/.local/share/godot/app_userdata/清正学園将棋部/` に、保存した KIF
+棋譜はドキュメントフォルダー(通常は `~/ドキュメント` または
+`~/Documents`)に置かれます。AppImage ファイルを
+削除してもこれらは残るため、不要な場合はご自身で削除してください。
+
 ### 通信対戦(ローカルネットワーク対局)
 
 通信対戦を選んだときに限り、本アプリケーションは同じローカル
@@ -157,7 +179,9 @@ For privacy questions, contact: **hiroshiyui@gmail.com**
 - 相手を待っている間、ローカルネットワーク内に自分を告知します。
   約 1 秒ごとの UDP ブロードキャストと、マルチキャスト DNS(Bonjour)
   のサービス登録の 2 通りで、内容はアプリの識別子、プロトコルの
-  バージョン、端末の機種名(例:「Pixel 8a」)、ポート番号です。
+  バージョン、端末の機種名(例:「Pixel 8a」。Linux 版では環境変数
+  `HOSTNAME` が設定されていればコンピューターのホスト名、なければ
+  「PC」)、ポート番号です。
   対局を探す側は、このサービスをマルチキャスト DNS で問い合わせます。
 - 2 台が接続すると、端末の機種名、指し手、対局のできごと(投了、
   入玉宣言、対局の中止)を互いに直接やり取りします。
@@ -177,6 +201,10 @@ For privacy questions, contact: **hiroshiyui@gmail.com**
 サンドボックス外のストレージ、その他の機微な API には一切アクセス
 しません。
 
+Linux 版には独自の権限の仕組みはありません。ネットワークは同じく
+通信対戦にのみ使用し、ファイアウォールで許可が必要な場合があります
+(UDP 47123、マルチキャスト DNS の UDP 5353、TCP 47124〜47133)。
+
 ### 子どものプライバシー
 
 本アプリケーションはいかなるデータも収集しないため、子どもからの
@@ -190,9 +218,10 @@ For privacy questions, contact: **hiroshiyui@gmail.com**
 
 ### 配布
 
-本アプリケーションは GitHub Releases によるサイドロード配布、および
-Google Play による配布の可能性があります。本ポリシーに記載した
-プライバシーの取り扱いはすべての配布経路に適用されます。
+Android 版は F-Droid、GitHub Releases、itch.io で、Linux 版
+(AppImage)は GitHub Releases で配布しています。Google Play では
+配布していません。本ポリシーに記載したプライバシーの取り扱いは、
+すべての配布経路と両方のプラットフォームに適用されます。
 
 ### ポリシーの変更
 
