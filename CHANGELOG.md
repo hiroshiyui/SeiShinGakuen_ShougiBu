@@ -8,6 +8,21 @@ All notable changes to this project. Format follows
 
 ## [Unreleased]
 
+## [1.1.1] — 2026-11-13
+
+### Added
+- Linux デスクトップ版（x86_64 の AppImage）を GitHub Releases で配布
+  開始。`chmod +x` して実行するだけで、インストール不要。glibc 2.31
+  以降（Ubuntu 20.04 / Debian 11 以降）で動作する。
+
+### Changed
+- タイトル画面の吉田先生の背景を描き直し。部員たちと同じように机の
+  一歩うしろに立ち、上半身がよく見えるように。真珠のネックレスや
+  ブラウスのボタンなど、服装の細部も整えた。
+
+[Full release notes](./docs/release-notes/1.1.1.md) ·
+[GitHub Release](https://github.com/hiroshiyui/SeiShinGakuen_ShougiBu/releases/tag/1.1.1)
+
 ## [1.1.0] — 2026-11-11
 
 ### Added
@@ -515,7 +530,8 @@ First public release.
 [Full release notes](./docs/release-notes/0.1.1.md) ·
 [GitHub Release](https://github.com/hiroshiyui/SeiShinGakuen_ShougiBu/releases/tag/0.1.1)
 
-[Unreleased]: https://github.com/hiroshiyui/SeiShinGakuen_ShougiBu/compare/1.1.0...HEAD
+[Unreleased]: https://github.com/hiroshiyui/SeiShinGakuen_ShougiBu/compare/1.1.1...HEAD
+[1.1.1]: https://github.com/hiroshiyui/SeiShinGakuen_ShougiBu/compare/1.1.0...1.1.1
 [1.1.0]: https://github.com/hiroshiyui/SeiShinGakuen_ShougiBu/compare/1.0.15...1.1.0
 [1.0.15]: https://github.com/hiroshiyui/SeiShinGakuen_ShougiBu/compare/1.0.14...1.0.15
 [1.0.14]: https://github.com/hiroshiyui/SeiShinGakuen_ShougiBu/compare/1.0.13...1.0.14

@@ -1,0 +1,2 @@
+• New title background for Yoshida-sensei: she now stands behind the desk like the club members, with her outfit details refined.
+• A reminder from 1.1.0: the INTERNET and Wi-Fi multicast permissions are only for LAN play (通信対戦). Traffic stays on the local network; the app never connects to the internet.
