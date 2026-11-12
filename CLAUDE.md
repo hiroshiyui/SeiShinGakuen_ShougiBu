@@ -28,8 +28,10 @@ Two-layer with a narrow FFI:
   with ShogiDojo's Python encoder), tract-driven ONNX inference, and
   single-threaded PUCT MCTS.
 
-The same compiled `.so` serves desktop (`x86_64-unknown-linux-gnu`)
-and Android (`aarch64-linux-android`).
+The same Rust crate is compiled for desktop dev
+(`x86_64-unknown-linux-gnu`, host-linked), Android
+(`aarch64-linux-android`), and the shipped Linux x86_64 AppImage
+(built in a glibc-2.31 container — see `docs/linux-build.md`).
 
 Full walkthrough: [`docs/architecture.md`](./docs/architecture.md).
 Decisions with rationale: [`docs/adr/`](./docs/adr/).
@@ -123,6 +125,14 @@ Font subsets (re-run after touching UI strings):
 ```
 
 APK export: [`docs/android-build.md`](./docs/android-build.md).
+
+Linux x86_64 AppImage (needs podman):
+
+```bash
+./tools/build_all.sh --linux --skip-apk --skip-android --skip-desktop
+```
+
+Details and gotchas: [`docs/linux-build.md`](./docs/linux-build.md).
 
 ## Conventions
 

@@ -12,7 +12,8 @@ You are performing release engineering tasks for **清正学園将棋部** (SeiS
 
 The release infrastructure is real and tested — confirm anything that looks ambiguous against the actual files rather than this skill. The previous release (`git describe --tags --abbrev=0`, and its `chore(release):` commit via `git show <tag> --stat`) is the best template for what a release touches.
 
-- **Build pipeline.** [`tools/build_all.sh`](../../tools/build_all.sh) drives everything (Rust desktop + Android cross-compile, font subsets, Godot export). Flags: `--release` for a signed APK, `--skip-{desktop,android,fonts,apk}`, `--test` for `cargo test`. (`--aab` produces a Play-Store-only artefact we don't ship — leave it alone.)
+- **Build pipeline.** [`tools/build_all.sh`](../../tools/build_all.sh) drives everything (Rust desktop + Android cross-compile, font subsets, Godot export). Flags: `--release` for a signed APK, `--skip-{desktop,android,fonts,apk}`, `--test` for `cargo test`, `--linux` for the Linux AppImages. (`--aab` produces a Play-Store-only artefact we don't ship — leave it alone.)
+- **Linux AppImage** (since 1.1.1, [ADR-0013](../../docs/adr/0013-linux-appimage-secondary-target.md)). `--linux` builds the portable x86_64 `.so` in a glibc-2.31 podman container, exports the `Linux x86_64` preset, smoke-runs it headless, and packs `build/seishingakuen-v<X.Y.Z>-x86_64.AppImage` + `.sha256`. arm64 is not shipped (the sub-scripts keep `--arch arm64`). Unsigned by design; the `.sha256` is the integrity story. Tooling pinned in `tools/appimage/appimage.lock`. Details: [`docs/linux-build.md`](../../docs/linux-build.md). **itch.io stays Android-only** — Linux files go to GitHub Releases only.
 - **Versioning.** Three fields, kept in sync by the release commit:
   - `version/code` and `version/name` in [`export_presets.cfg`](../../export_presets.cfg) (`[preset.0.options]`) — what Android sees; `version/name` also suffixes the output filename.
   - `config/version` in [`project.godot`](../../project.godot) — the runtime source for the on-screen `v<X.Y.Z>` badge on the main menu.
@@ -43,7 +44,7 @@ Confirm at each step that's user-visible.
    ```
    Then `git grep -n '<old>'` to catch stragglers (ignore third-party versions in `Cargo.lock`).
 5. **Write the release docs** — see "Release Docs".
-6. **Build:** `./tools/build_all.sh --release` (full pipeline; don't skip fonts) → `build/seishingakuen-release-v<X.Y.Z>.apk` + `.apk.idsig`. Needs `.android-release-pass`.
+6. **Build:** `./tools/build_all.sh --release --linux` (full pipeline; don't skip fonts) → `build/seishingakuen-release-v<X.Y.Z>.apk` + `.apk.idsig`, plus `build/seishingakuen-v<X.Y.Z>-x86_64.AppImage` and its `.sha256`. Needs `.android-release-pass` and podman. First `--linux` run builds the 1.7 GB builder image (~10 min); later runs take a few minutes.
 7. **Font-subset noise.** The build regenerates the subset `.otf` files and they often come out byte-different with identical glyphs. If `git status` shows them modified, compare cmaps against `HEAD` (fontTools `getBestCmap()`); if no codepoints were added or removed, `git checkout -- assets/fonts`. If glyphs *did* change, that's a real UI-string change that should have been committed earlier — surface it rather than folding it into the release commit.
 8. **Verify the artefact:**
    ```bash
@@ -53,6 +54,18 @@ Confirm at each step that's user-visible.
    ~/Android/Sdk/build-tools/36.0.0/aapt2 dump badging $A | head -1   # versionCode / versionName
    ```
    Cert must be `CN=Hiroshi Y.` with the SHA-256 above — `CN=Godot` means signing fell back to debug: **stop**. Both `lib/arm64-v8a/libshogi_core.so` and `assets/models/bonanza.onnx` must be present.
+
+   **Linux artefacts:**
+   ```bash
+   L=build/seishingakuen-v<X.Y.Z>-x86_64.AppImage
+   (cd build && sha256sum -c "$(basename $L).sha256")
+   off=$($L --appimage-offset)
+   T=$(mktemp -d); unsquashfs -q -o "$off" -d "$T" "$L" usr/bin/libshogi_core.so
+   file -b "$T/usr/bin/libshogi_core.so" | cut -d, -f2          # x86-64
+   objdump -T "$T/usr/bin/libshogi_core.so" | grep -o 'GLIBC_[0-9.]*' | sort -Vu | tail -1   # ≤ GLIBC_2.31
+   build/seishingakuen-v<X.Y.Z>-x86_64.AppImage --headless --quit-after 60 && echo ok
+   ```
+   Also launch it windowed once (menu badge shows `v<X.Y.Z>`, start a game, AI replies). Export templates ignore `-s`, so this can't be scripted — if you can't click (no input tool), ask the user to do it before tagging.
 9. **Smoke-install** if `adb devices` shows a device:
    - `adb install -r $A`. If it fails with a signature mismatch (the device has a debug build), uninstall and reinstall without asking (per user preference) — but **tell the user plainly that this wiped the on-device saved game and settings**. Check the actual `adb install` output; don't infer success from a fallback branch.
    - Wake the screen first if needed (`adb shell input keyevent KEYCODE_WAKEUP; adb shell wm dismiss-keyguard`) — a black screencap usually means the display is dozing, not a crash.
@@ -142,9 +155,13 @@ Upload both the APK and its `.idsig`, with the release-notes file as the body:
 gh release create <X.Y.Z> --title "<X.Y.Z>" \
   --notes-file docs/release-notes/<X.Y.Z>.md \
   build/seishingakuen-release-v<X.Y.Z>.apk \
-  build/seishingakuen-release-v<X.Y.Z>.apk.idsig
-gh release view <X.Y.Z> --json isDraft,isPrerelease,assets   # confirm public + both assets
+  build/seishingakuen-release-v<X.Y.Z>.apk.idsig \
+  build/seishingakuen-v<X.Y.Z>-x86_64.AppImage \
+  build/seishingakuen-v<X.Y.Z>-x86_64.AppImage.sha256
+gh release view <X.Y.Z> --json isDraft,isPrerelease,assets   # confirm public + four assets
 ```
+
+Release notes should carry a short Linux section: how to run (`chmod +x`, double-click or `./…AppImage`) and the glibc 2.31 floor.
 
 ## Signature & Keystore Reference
 
@@ -161,5 +178,6 @@ The keystore is irreplaceable: every release of this package id must carry the s
 - **Confirm before any push, tag push, GitHub Release, or anything public.**
 - **Never ship a debug-signed APK.** `CN=Godot` in `apksigner` output = stop.
 - **`version/code` only goes up**, and all three version fields move together.
-- **Same binary everywhere.** itch.io gets the exact APK attached to the GitHub Release (the itch skill checks the SHA-256).
+- **Same binary everywhere.** itch.io gets the exact APK attached to the GitHub Release (the itch skill checks the SHA-256). AppImages are GitHub-only.
+- **Never package a host-built `.so` into an AppImage.** The glibc gate in both Linux scripts exists for this; if it trips, rebuild with `tools/build_linux_native.sh` and re-export.
 - **Report device side effects honestly** — an uninstall during smoke-testing wipes the user's on-device save; say so.

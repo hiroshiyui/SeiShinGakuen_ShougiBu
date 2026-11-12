@@ -1,0 +1,50 @@
+# Builder image for the portable Linux GDExtension (.so) — x86_64 and
+# aarch64 — used by tools/build_linux_native.sh.
+#
+# Why a container at all: the .so links against the glibc of the host it
+# is built on. Linking on Debian trixie produced a library that needs
+# GLIBC_2.43, which refuses to load on any distro older than mid-2026.
+# Debian bullseye ships glibc 2.31 (same floor as Ubuntu 20.04), which
+# covers every mainstream distro from 2020 onward and is roughly the era
+# Godot's own Linux export templates target. Build here, ship anywhere.
+#
+# The Rust toolchain version is pinned to match native/shogi_core/
+# rust-toolchain.toml so the containerised .so and the host dev .so come
+# from the same compiler.
+
+FROM docker.io/library/debian:bullseye-slim
+
+ARG RUST_VERSION=1.99.1
+
+ENV DEBIAN_FRONTEND=noninteractive \
+    RUSTUP_HOME=/opt/rustup \
+    CARGO_HOME=/opt/cargo \
+    PATH=/opt/cargo/bin:/usr/local/bin:/usr/bin:/bin
+
+# bullseye is EOL: deb.debian.org no longer serves bullseye-security, so
+# point both suites at archive.debian.org (frozen, unchanging — which is
+# exactly what a reproducible builder wants). Release files there have
+# expired Valid-Until stamps, hence the apt option.
+RUN printf '%s\n' \
+        'deb http://archive.debian.org/debian bullseye main' \
+        'deb http://archive.debian.org/debian-security bullseye-security main' \
+        > /etc/apt/sources.list \
+    && rm -f /etc/apt/sources.list.d/*.sources /etc/apt/sources.list.d/*.list \
+    && echo 'Acquire::Check-Valid-Until "false";' > /etc/apt/apt.conf.d/99archive
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        ca-certificates curl build-essential pkg-config \
+        gcc-aarch64-linux-gnu libc6-dev-arm64-cross \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN curl -sSf https://sh.rustup.rs | sh -s -- -y --no-modify-path \
+        --profile minimal --default-toolchain "${RUST_VERSION}" \
+    && rustup target add --toolchain "${RUST_VERSION}" \
+        x86_64-unknown-linux-gnu aarch64-unknown-linux-gnu
+
+# Cross-linker for the aarch64 target. Also declared in
+# native/shogi_core/.cargo/config.toml so a host build works too; the
+# env var wins inside the container regardless of the mounted tree.
+ENV CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER=aarch64-linux-gnu-gcc
+
+WORKDIR /work

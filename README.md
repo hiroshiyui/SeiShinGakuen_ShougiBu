@@ -1,6 +1,6 @@
 # 清正学園将棋部
 
-シングルプレイヤー向けの Android 用本将棋ゲーム。タップ操作で 9×9
+シングルプレイヤー向けの本将棋ゲーム（Android、Linux デスクトップ）。タップ操作で 9×9
 将棋盤を動かし、合法手判定（王手・二歩・打ち歩詰め・千日手）を
 完全に行い、AlphaZero スタイルの AI 対局相手は端末内（オフライン）
 で動作する。
@@ -24,6 +24,12 @@ F-Droid 版は F-Droid 側がソースからビルドして独自の鍵で署名
 他の窓口の APK とは相互に上書き更新できない（アンインストールが必要）。動作環境は
 Android 7.0（API 24）以降 / arm64-v8a。Google Play ストアは方針として
 対象外。
+
+**Linux デスクトップ版**は GitHub Releases にのみ AppImage として同梱
+（`seishingakuen-v<X.Y.Z>-x86_64.AppImage`、1.1.1 から）。`chmod +x`
+して実行するだけで、インストール不要。glibc 2.31 以降（Ubuntu 20.04 /
+Debian 11 以降）の x86_64 環境で動作する。`.sha256` ファイルで整合性を
+確認できる。
 
 ## スクリーンショット
 
@@ -61,8 +67,8 @@ Android 7.0（API 24）以降 / arm64-v8a。Google Play ストアは方針とし
 
 ## ステータス
 
-1.0 リリース済み。Linux デスクトップでの開発実行と、Android
-arm64-v8a 向け APK のビルド・インストールに対応している。合法手判定
+1.0 リリース済み。Android arm64-v8a 向け APK に加え、Linux
+デスクトップ（x86_64）向け AppImage のビルドに対応している。合法手判定
 （王手・二歩・打ち歩詰め・千日手）と AI 対局は動作中。配布チャネル
 一覧と各窓口の商品説明原稿は
 [`docs/distribution.md`](./docs/distribution.md) に集約。ロードマップ
@@ -202,6 +208,10 @@ GODOT=~/bin/godot ./tools/build_all.sh
 4. **Godot エクスポート** — `Android arm64` プリセットで APK
    （または `--aab` で AAB）を `build/seishingakuen-{debug,release}-v<version>.apk`
    として出力。
+5. **Linux AppImage（`--linux` 指定時）** — glibc 2.31 の podman
+   コンテナで可搬な x86_64 向け `.so` をビルドし、`Linux x86_64`
+   プリセットでエクスポート、ヘッドレス起動確認のうえ
+   `build/seishingakuen-v<version>-x86_64.AppImage` に梱包。詳細は [`docs/linux-build.md`](./docs/linux-build.md)。
 
 主なフラグ:
 
@@ -210,6 +220,7 @@ GODOT=~/bin/godot ./tools/build_all.sh
 | `--release` | 署名付きリリース APK を出力（`.android-release-pass` とキーストアが必要） |
 | `--aab` | Play Store 用 AAB（実質未使用、配布は GitHub Releases サイドロードのみ） |
 | `--test` | Rust ビルド後に `cargo test`（単体 + パリティ + perft）を実行 |
+| `--linux` | Linux デスクトップ版パイプライン（可搬 `.so` → エクスポート → AppImage）。Android の各フラグとは独立 |
 | `--skip-desktop` / `--skip-android` / `--skip-fonts` / `--skip-apk` | 該当工程を飛ばす |
 
 リリース署名は `export_presets.cfg` に書かず、以下の経路で渡している:
@@ -228,6 +239,7 @@ Android 初期セットアップ（NDK の入手、キーストア生成、`expo
 - [`ROADMAP.md`](./ROADMAP.md) — フェーズ別の開発計画、完了内容、残課題。
 - [`docs/architecture.md`](./docs/architecture.md) — レイヤー構成と各部品の役割。
 - [`docs/android-build.md`](./docs/android-build.md) — Android ビルド手順。
+- [`docs/linux-build.md`](./docs/linux-build.md) — Linux AppImage のビルド手順と落とし穴。
 - [`docs/distribution.md`](./docs/distribution.md) — 配布チャネル一覧と itch.io 用商品説明原稿。
 - [`docs/android-gotchas.md`](./docs/android-gotchas.md) — Android 固有の落とし穴。症状 → 原因 → 対処。
 - [`docs/adr/`](./docs/adr/) — アーキテクチャ意思決定記録（ADR）。

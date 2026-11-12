@@ -18,6 +18,7 @@ alternative was rejected for non-obvious reasons.
 | [0010](./0010-gpl-3-or-later.md) | License the project under GPL-3.0-or-later | Accepted |
 | [0011](./0011-per-move-mood-roll.md) | Per-move "mood" roll for AI character strength | Accepted |
 | [0012](./0012-lan-play.md) | Human vs human over the local network (通信対戦) | Accepted |
+| [0013](./0013-linux-appimage-secondary-target.md) | Ship Linux desktop builds as AppImages (x86_64 from 1.1.1) | Accepted |
 
 ## Authoring a new ADR
 

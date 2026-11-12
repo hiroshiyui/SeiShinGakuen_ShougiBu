@@ -1,0 +1,15 @@
+# Pinned AppImage tooling. tools/build_appimage.sh downloads these from
+# the `continuous` tags of AppImage/appimagetool and AppImage/type2-runtime
+# into tools/.cache/appimage/ and refuses to proceed if a SHA-256 differs,
+# so a moving upstream tag can't silently change what we ship.
+#
+# To bump: delete tools/.cache/appimage/, run the script with
+# APPIMAGE_LOCK_UPDATE=1, review the new hashes, commit this file.
+#
+# appimagetool continuous build 313, git 854e19e, 2026-10-04
+# type2-runtime continuous, published 2026-10-19
+#
+# sha256                                                            file
+95cbe7cce9717fce90c484e34052ee7c7f1d7635b33c12525b4776826a7d29b6  appimagetool-x86_64.AppImage
+617aa77314d57c8b8e4fae9c3f0b35af7b30d5529cb69e98f64f92510ed98a46  runtime-x86_64
+9a72a744d221576c9347ec074243acc5c3c7568896b12714e0e82e9f0bf47900  runtime-aarch64

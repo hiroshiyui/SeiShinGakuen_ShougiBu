@@ -1,0 +1,14 @@
+[Desktop Entry]
+Type=Application
+Name=清正学園将棋部
+Name[en]=SeiShinGakuen Shougibu
+GenericName=将棋
+GenericName[en]=Shogi
+Comment=清正学園将棋部の部員たちと指す本将棋ゲーム。AI 対局と同じ LAN での通信対戦
+Comment[en]=Shogi against the SeiShinGakuen shogi club, plus LAN play with a friend
+Exec=seishingakuen
+Icon=seishingakuen
+Terminal=false
+Categories=Game;BoardGame;
+Keywords=shogi;将棋;
+StartupWMClass=seishingakuen

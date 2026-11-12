@@ -85,7 +85,7 @@ SeiShinGakuen_ShougiBu/
 Each phase ends in a runnable, demoable state. Tag a git commit at the end
 of each phase.
 
-Phases 1–8 are complete. Each one is condensed below into what shipped and where it shipped differently from the plan. The full checklists are in git history (Phases 1–7 before commit "docs(roadmap): digest the completed phases", Phase 8 before "docs(roadmap): digest Phase 8").
+Phases 1–9 are complete. Each one is condensed below into what shipped and where it shipped differently from the plan. The full checklists are in git history (Phases 1–7 before commit "docs(roadmap): digest the completed phases", Phase 8 before "docs(roadmap): digest Phase 8").
 
 ### Phase 1 — Board & input skeleton (GDScript) ✅
 A 9×9 portrait board built from `Square` nodes in a `GridContainer`. It shows the starting position, with 先手 upright at the bottom and 後手 rotated 180° at the top, and taps print coordinates. The on-device test moved to Phase 6.
@@ -128,6 +128,12 @@ Two players on the same Wi-Fi play each other, each on their own phone, over a d
 - **UI:** a 通信対戦 lobby (`scenes/NetworkLobby.tscn`) to host or join; in game the opponent is shown by device name and side, 待った and the AI-only features are off, and leaving asks to resign. The board turns round for whoever plays 後手 (`BoardView.set_flipped`), which also fixed 先手(AI) 対 後手(人). After a game, 再戦 starts a new game with the sides swapped once both players ask.
 - **Permissions and docs:** the app now requests `INTERNET` and `CHANGE_WIFI_MULTICAST_STATE`; the privacy policy and store descriptions say the traffic never leaves the LAN. Desktop firewall notes are in `docs/android-gotchas.md`.
 - **Tests:** `scripts/tests/net_tests.gd` (loopback host + guest, reconnect, rematch, version mismatch, broadcast and mDNS discovery); `tools/lan_peer_bot.gd` is a headless random-move opponent for testing against a phone.
+
+### Phase 9 — Linux desktop (AppImage) ✅
+An x86_64 AppImage is attached to every GitHub Release alongside the APK, from 1.1.1. Rationale in [ADR-0013](./docs/adr/0013-linux-appimage-secondary-target.md), build steps and gotchas in [`docs/linux-build.md`](./docs/linux-build.md).
+- **Portable native library:** `libshogi_core.so` is built in a Debian bullseye (glibc 2.31) podman container (`tools/build_linux_native.sh`, `tools/Containerfile.linux-builder`), and a build whose `objdump -T` needs a newer glibc fails.
+- **Export and packaging:** a `Linux x86_64` export preset with an embedded PCK and the same include filters as Android, and a `linuxbsd`-only 540×960 window override so the portrait layout fits a 1080p desktop. `tools/build_appimage.sh` packs the AppDir with `appimagetool`, whose tooling is pinned by SHA-256 in `tools/appimage/appimage.lock`; `tools/build_all.sh --linux` runs the whole chain, including a headless smoke run of the export.
+- *Shipped differently:* built on a branch in 2026-10 for x86_64 and aarch64 and merged for 1.1.1. Only x86_64 ships; the aarch64 path (verified only under qemu) is still in the scripts behind `--arch arm64`. No Flatpak, Snap or tarball, and itch.io stays Android-only.
 
 ---
 
@@ -193,6 +199,7 @@ bump. `.gdextension` manifest declares `compatibility_minimum = 4.6`
 | `v0.4-ai-desktop` | End of Phase 5 |
 | `v0.5-android` | End of Phase 6 — first shippable APK |
 | `v1.0` | End of Phase 7 |
+| `1.1.1` | Phase 9 — first release with a Linux x86_64 AppImage |
 
 ---
 
@@ -203,7 +210,7 @@ bump. `.gdextension` manifest declares `compatibility_minimum = 4.6`
 - [x] ~~In-game 入玉 claim button (currently detection-only).~~ — shipped 2026-04-28. `ShogiCore.can_declare_jishogi(is_gote)` returns `{ok, reason, points_have, points_need, pieces_have, pieces_need}`; `GameController._on_jishogi_pressed` ends the game on Ok and explains the deficit otherwise. AI auto-declares from `_check_end_state` when its side qualifies; 持将棋 fires the draw path when both sides qualify simultaneously. Asymmetric 28/27 thresholds, 10-piece minimum (excl. king), official-rule conformant.
 - [x] ~~App icon + main-menu art — source or commission?~~ — AI-generated in-house, both icon (`assets/branding/`) and backgrounds (`assets/backgrounds/`) plus the 8 character portraits (`assets/characters/**/neutral.webp`). 2026-04-27.
 - [x] ~~Cloud save / cross-device persistence?~~ — explicitly skipped to stay free of Google Play services dependencies. Players who uninstall lose `user://prefs.cfg` + `user://saved_game.cfg`; that's the trade-off. 2026-04-27.
-- [x] ~~Play Store distribution or sideload only?~~ — sideload only via signed APK on GitHub Releases. Play Store is explicitly out of scope; we don't want the Google Play ecosystem dependencies (developer account, policy compliance, mandatory privacy URL, upload-key custody) for a single-player offline game. AAB target left in `tools/build_all.sh --aab` for completeness but unused. 2026-04-27. *Since then:* the same signed APK also ships on itch.io, and the app was accepted on F-Droid (2026-11), which builds each release tag from source with its own signing key and updates automatically. Play Store remains out of scope.
+- [x] ~~Play Store distribution or sideload only?~~ — sideload only via signed APK on GitHub Releases. Play Store is explicitly out of scope; we don't want the Google Play ecosystem dependencies (developer account, policy compliance, mandatory privacy URL, upload-key custody) for a single-player offline game. AAB target left in `tools/build_all.sh --aab` for completeness but unused. 2026-04-27. *Since then:* the same signed APK also ships on itch.io, and the app was accepted on F-Droid (2026-11), which builds each release tag from source with its own signing key and updates automatically. Play Store remains out of scope. From 1.1.1 a Linux x86_64 AppImage ships on GitHub Releases too (Phase 9, ADR-0013); still no app store of any kind.
 - [x] ~~Any telemetry (crash reporting)?~~ — none. The app's only network traffic is LAN-only 通信対戦 (Phase 8); it never contacts a server. 2026-11-11.
 - [x] ~~UI string centralisation (e.g. `Strings.gd`)~~ — deferred; strings stay inline. Reopen if we internationalise or the font subsetter's grep becomes unwieldy. 2026-11-11.
 

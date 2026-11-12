@@ -17,6 +17,13 @@
 #                    of scope — so this flag is rarely used; left in for
 #                    completeness.
 #   --test           run `cargo test` (unit + parity + perft) after Rust build
+#   --linux          Linux desktop pipeline: portable x86_64 .so in the
+#                    glibc-2.31 container, Godot export of the
+#                    "Linux x86_64" preset, then the AppImage via
+#                    tools/build_appimage.sh. arm64 is not shipped (the
+#                    sub-scripts still take --arch arm64). Independent of
+#                    the Android flags; combine with --skip-apk for
+#                    Linux-only runs.
 
 set -euo pipefail
 
@@ -32,6 +39,7 @@ DO_ANDROID=1
 DO_FONTS=1
 DO_APK=1
 DO_TEST=0
+DO_LINUX=0
 RELEASE=0
 AAB=0
 
@@ -50,8 +58,9 @@ for arg in "$@"; do
         # rarely needed.
         --aab)          AAB=1; RELEASE=1 ;;
         --test)         DO_TEST=1 ;;
+        --linux)        DO_LINUX=1 ;;
         -h|--help)
-            sed -n '2,16p' "$0"; exit 0 ;;
+            sed -n '2,26p' "$0"; exit 0 ;;
         *) echo "unknown flag: $arg" >&2; exit 2 ;;
     esac
 done
@@ -97,6 +106,14 @@ if (( DO_ANDROID )); then
       cargo ndk --platform 24 -t arm64-v8a \
         --output-dir ../../native/bin/android \
         build --release )
+fi
+
+# --- Portable Linux Rust (x86_64 + arm64, containerised) ---
+# Replaces the host-linked x86_64 .so from the desktop step with the
+# glibc-2.31 build, so what gets packaged is what was tested.
+if (( DO_LINUX )); then
+    log "Building portable Linux libshogi_core.so (x86_64)"
+    ./tools/build_linux_native.sh --arch x86_64
 fi
 
 # --- Font subsets ---
@@ -190,6 +207,22 @@ if (( DO_APK )); then
     fi
 
     log "Done: $OUT ($(du -h "$OUT" | cut -f1))"
+fi
+
+# --- Linux export + AppImage ---
+# Runs after fonts so the subsets are current. Exports both presets
+# (release template; there's no signing on Linux) and packs them. The
+# x86_64 binary gets a headless smoke run — proves the embedded PCK,
+# the .so and the gdextension wiring load outside the editor.
+if (( DO_LINUX )); then
+    for arch in x86_64; do
+        mkdir -p "build/linux/$arch"
+        log "Exporting Linux $arch → build/linux/$arch/seishingakuen"
+        "$GODOT" --headless --path . --export-release "Linux $arch"             "build/linux/$arch/seishingakuen"
+    done
+    log "Headless smoke run of the x86_64 export"
+    timeout 120 build/linux/x86_64/seishingakuen --headless --quit-after 60         || { echo "x86_64 Linux export failed to run headless" >&2; exit 1; }
+    ./tools/build_appimage.sh --arch x86_64
 fi
 
 log "Pipeline finished."
