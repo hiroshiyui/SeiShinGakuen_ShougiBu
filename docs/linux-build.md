@@ -78,7 +78,7 @@ without `libfuse2`.
 ```bash
 A=build/seishingakuen-v<X.Y.Z>-x86_64.AppImage
 $A --headless --quit-after 60 ; echo $?           # 0, prints godot-rust init line
-$A                                                 # windowed run, 540×960
+$A                                                 # windowed run, 432×960
 
 # Contents and library check
 off=$($A --appimage-offset)
@@ -125,7 +125,7 @@ binary and `.so` load; it does not test rendering.
   command line. Use `pkill -x seishingakuen`.
 - **Window taller than the screen.** Only if the `linuxbsd` overrides in
   `project.godot` are removed. They are what keeps the 720×1280 project
-  at 540×960 on desktop.
+  at 432×960 (9:20, a phone's proportions) on desktop.
 - **Rust version drift.** `tools/Containerfile.linux-builder` reads the
   Rust version from `rust-toolchain.toml` at image-build time. After
   bumping the toolchain, run `tools/build_linux_native.sh --rebuild-image`.

@@ -64,7 +64,7 @@ Constraints discovered while doing it:
    to run either.
 5. **Desktop window override, not a desktop layout.** `project.godot`
    sets `window_width_override.linuxbsd=540` / `height 960` under the
-   `linuxbsd` feature tag. The portrait layout is unchanged; the window
+   `linuxbsd` feature tag (432 × 960 from 1.1.2 — see below). The portrait layout is unchanged; the window
    is resizable and the existing `size_changed` refit handles it.
    Android is untouched.
 6. **arm64 is verified under emulation only.** The host has a
@@ -122,3 +122,15 @@ emulated-only artefact. Points 1 and 6 above are narrowed accordingly.
 - Not every point of the release checklist can be scripted: export
   templates ignore `-s`, so "start a game and the AI replies" in the
   AppImage is checked by hand in a window.
+
+## Amendment: 9:20 window, from 1.1.2 (2026-11-13)
+
+At 540×960 (9:16) the viewport is 720×1280, and the ~900 px main-menu
+panel left only a strip of the title art above it; phones (about 9:20)
+get a 720×1600 viewport and show the character's face and shoulders.
+The `linuxbsd` override is now 432×960: same height, phone proportions,
+so every screen gets the layout already tested on devices. Everything
+renders at 60 % instead of 75 %, which is still comfortable at desktop
+viewing distance. A compact menu for short aspect ratios was rejected:
+it would also change 16:9 Android phones and tablets for a desktop-only
+issue.
