@@ -402,7 +402,8 @@ VARIANT_WORDING = {
                     " slightly down, the eyebrows are drawn together, and the lips are closed"
                     " and pushed slightly to one side.",
         "happy": "The student smiles warmly and openly: a wide, happy smile with the lips"
-                 " parted, the eyes curved into gentle happy arcs, and a soft pink blush.",
+                 " parted, the eyes curved into gentle happy arcs, and a faint pink blush on"
+                 " the cheeks only.",
         "worried": "The student looks clearly worried: the eyebrows are raised high and"
                    " slanted upward in the middle, the eyes are a little wide and glance to"
                    " the side, and the mouth is a small, tense, wavy line.",
@@ -437,7 +438,14 @@ AVATAR_IDENTITY = IDENTITY.replace("the same light skin color", "the same skin c
     "The new expression is clearly readable even in a small thumbnail: the eyebrows,"
     " the eyes and the mouth all visibly change. It stays natural and believable, never"
     " exaggerated or cartoonish.")
+# It also only forbids skin going darker, more yellow or more tanned, so
+# a happy, blushing face came out bleached (cheek G/B up ~35 levels).
+AVATAR_IDENTITY = AVATAR_IDENTITY.replace(
+    "never darker, more yellow or more tanned,",
+    "never darker, more yellow or more tanned, and never paler, whiter, brighter or more"
+    " washed out,")
 assert "subtle to moderate" not in AVATAR_IDENTITY and "light skin" not in AVATAR_IDENTITY
+assert "never paler" in AVATAR_IDENTITY
 
 # Per-avatar notes that keep the edit from fighting the design.
 VARIANT_NOTES = {
