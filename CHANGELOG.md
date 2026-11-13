@@ -8,6 +8,8 @@ All notable changes to this project. Format follows
 
 ## [Unreleased]
 
+## [1.1.2] — 2026-11-14
+
 ### Added
 - あなたのアバター。16 人の生徒（女子 8 人・男子 8 人）から自分の姿を
   選べる。初回起動時に一度だけ選択画面が開き（「あとで」で後回しに
@@ -24,6 +26,9 @@ All notable changes to this project. Format follows
 - 通信対戦のロビーの説明文を大きく（26 px）し、詰将棋の手数ボタンを
   押しやすい高さ（72 px）に。
 - Linux 版のウィンドウ幅を 540 から 432 に。
+
+[Full release notes](./docs/release-notes/1.1.2.md) ·
+[GitHub Release](https://github.com/hiroshiyui/SeiShinGakuen_ShougiBu/releases/tag/1.1.2)
 
 ## [1.1.1] — 2026-11-13
 
@@ -547,7 +552,8 @@ First public release.
 [Full release notes](./docs/release-notes/0.1.1.md) ·
 [GitHub Release](https://github.com/hiroshiyui/SeiShinGakuen_ShougiBu/releases/tag/0.1.1)
 
-[Unreleased]: https://github.com/hiroshiyui/SeiShinGakuen_ShougiBu/compare/1.1.1...HEAD
+[Unreleased]: https://github.com/hiroshiyui/SeiShinGakuen_ShougiBu/compare/1.1.2...HEAD
+[1.1.2]: https://github.com/hiroshiyui/SeiShinGakuen_ShougiBu/compare/1.1.1...1.1.2
 [1.1.1]: https://github.com/hiroshiyui/SeiShinGakuen_ShougiBu/compare/1.1.0...1.1.1
 [1.1.0]: https://github.com/hiroshiyui/SeiShinGakuen_ShougiBu/compare/1.0.15...1.1.0
 [1.0.15]: https://github.com/hiroshiyui/SeiShinGakuen_ShougiBu/compare/1.0.14...1.0.15

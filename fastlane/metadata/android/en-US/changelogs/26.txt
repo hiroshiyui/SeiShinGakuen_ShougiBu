@@ -1,0 +1,4 @@
+• Your avatar: pick one of 16 students to stand for you, on first launch or in Settings.
+• Your portrait and name sit under the board and change between six expressions as the game goes, with a speech balloon of your own.
+• In LAN play (通信対戦) your opponent sees your avatar too; your lines stay on your device.
+• The opponent's portrait moved above the board; clearer LAN lobby text and larger tsume shogi buttons.
