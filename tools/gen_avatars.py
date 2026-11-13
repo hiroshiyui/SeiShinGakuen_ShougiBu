@@ -378,6 +378,10 @@ def edit(args) -> int:
 # so a reserved student never beams. The in-game avatar is 96 px, so the
 # expressions lean a little pronounced.
 EXPRESSIONS = ["thinking", "happy", "worried", "victory", "defeat"]
+# The edit model barely moves the eyes of a face looking at the camera,
+# so "thinking" for gentle and reserved students leans on brows, squint
+# and mouth; the gaze is only a bonus. Asking for the gaze alone left
+# girl-01's thinking indistinguishable from her neutral portrait.
 TEMPERAMENT = {
     "girl-02": "expressive", "girl-03": "expressive", "girl-05": "expressive",
     "boy-01": "expressive", "boy-03": "expressive", "boy-06": "expressive",
@@ -399,9 +403,10 @@ VARIANT_WORDING = {
                   " downcast, lower lip pushed out in a frustrated pout.",
     },
     "gentle": {
-        "thinking": "The student is concentrating: the eyes look clearly away to one side and"
-                    " slightly down, the eyebrows are drawn together, and the lips are closed"
-                    " and pushed slightly to one side.",
+        "thinking": "The student is puzzling over a hard problem: one eyebrow is raised high"
+                    " and the other lowered, the eyes are narrowed, and the closed lips are"
+                    " pursed and pushed clearly to one side of the face; if possible the eyes"
+                    " glance up and to the side.",
         "happy": "The student smiles warmly and openly: a wide, happy smile with the lips"
                  " parted, the eyes curved into gentle happy arcs, and a faint pink blush on"
                  " the cheeks only.",
@@ -415,9 +420,11 @@ VARIANT_WORDING = {
                   " downturned frown.",
     },
     "reserved": {
-        "thinking": "The student is in calm, sharp concentration: the eyes are narrowed and"
-                    " look clearly down and to one side, the eyebrows are lowered, and the"
-                    " mouth is a straight closed line.",
+        "thinking": "The student is in sharp, calculating concentration: the eyebrows are"
+                    " lowered and drawn together into a slight frown, the eyes are narrowed"
+                    " to a focused squint, and the mouth is a firm, straight closed line"
+                    " pulled slightly to one side; if possible the eyes look down and to the"
+                    " side.",
         "happy": "The student's composure softens into a genuine, warm closed-mouth smile:"
                  " relaxed eyebrows and eyes softened into a smile.",
         "worried": "The student is visibly uneasy: the eyebrows are drawn together and"
