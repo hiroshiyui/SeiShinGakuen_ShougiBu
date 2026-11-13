@@ -432,8 +432,12 @@ VARIANT_WORDING = {
                    " the lips are pressed firmly together.",
         "victory": "The student is quietly triumphant: a faint, confident closed-mouth smile"
                    " and steady, self-assured eyes.",
-        "defeat": "The student accepts a loss with composure: eyes closed, eyebrows relaxed,"
-                  " a faint, bitter smile.",
+        # "Eyes closed ... a faint, bitter smile" came out as a serene,
+        # contented smile on girl-04, which reads as winning.
+        "defeat": "The student takes the loss hard but keeps quiet: the eyes are open and"
+                  " lowered, looking down, the eyebrows are drawn together and droop at the"
+                  " outer ends, and the lips are pressed into a small, tight downturned"
+                  " line. No smile at all.",
     },
 }
 # The opponents' IDENTITY clause says "the same light skin color", which
@@ -461,6 +465,12 @@ VARIANT_NOTES = {
               " stay on and exactly as they are, worn normally on his nose: never pushed"
               " up, lowered, tilted or taken off. His eyes stay hidden behind the lenses;"
               " the expression shows through his eyebrows, mouth and cheeks.",
+}
+
+
+# Rerolls picked during variant review; added to the derived seed.
+VARIANT_SEED_OFFSETS: dict[tuple[str, str], int] = {
+    ("girl-04", "thinking"): 1,  # seed 0 came out pale, with a faint mouth
 }
 
 
@@ -496,7 +506,8 @@ KEEP_ACCESSORY = {
     "girl-03": "the large white ribbon tied at her ponytail",
     "girl-04": "the small hair clip in her hair",
     "girl-05": "the black ribbons tying her two twin tails",
-    "girl-06": "the small beauty mark under her eye",
+    "girl-06": "the small beauty mark on her cheek just below her left eye (the eye on the"
+               " right side of the picture)",
     "girl-08": "the yellow star-shaped hairpin in her hair",
 }
 
@@ -541,7 +552,8 @@ def variants(args) -> int:
         if aid not in refs:
             src = args.accepted_dir / ACCEPTED[aid]
             refs[aid] = comfy.upload(src, "avatar-ref-" + src.name, "shougibu")
-        seed = zlib.crc32(f"avatar/{aid}/{expr}".encode()) + args.seed_offset
+        seed = (zlib.crc32(f"avatar/{aid}/{expr}".encode()) + args.seed_offset
+                + VARIANT_SEED_OFFSETS.get((aid, expr), 0))
         t0 = time.time()
         png = comfy.run(build_graph(variant_prompt(aid, expr), seed, [refs[aid]],
                                     f"shougibu/avatar_{aid}_{expr}", model))
