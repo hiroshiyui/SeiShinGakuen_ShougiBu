@@ -35,9 +35,12 @@ const SPEECH_FADE_SEC := 0.25
 @onready var _thinking_label: Label = %ThinkingLabel
 @onready var _layout: VBoxContainer = $Layout
 @onready var _opponent_label: Label = %OpponentLabel
-@onready var _opponent_strip: HBoxContainer = %OpponentStrip
+@onready var _opponent_strip: VBoxContainer = %OpponentStrip
 @onready var _opponent_portrait: TextureRect = %OpponentPortrait
 @onready var _opponent_portrait_frame: Control = %OpponentPortraitFrame
+@onready var _player_strip: VBoxContainer = %PlayerStrip
+@onready var _player_portrait: TextureRect = %PlayerPortrait
+@onready var _player_label: Label = %PlayerLabel
 @onready var _teacher_row: HBoxContainer = %TeacherRow
 @onready var _teacher_btn: Button = %TeacherButton
 @onready var _teacher_left_spacer: Control = %LeftSpacer
@@ -238,6 +241,7 @@ func _ready() -> void:
 	_teacher_row.visible = _ai_enabled
 	if _lan:
 		_setup_lan()
+	_setup_player_strip()
 	_apply_board_orientation()
 	get_viewport().size_changed.connect(_refit_board)
 	get_viewport().size_changed.connect(_apply_safe_area)
@@ -279,6 +283,7 @@ func _compute_board_side(panel_visible_override: Variant = null) -> float:
 	else:
 		panel_visible = bool(panel_visible_override)
 	var opponent_visible := _opponent_strip != null and _opponent_strip.visible
+	var player_visible := _player_strip != null and _player_strip.visible
 	var extras: float = 0.0
 	if teacher_visible:
 		extras += max(_teacher_row.size.y, _teacher_row.custom_minimum_size.y)
@@ -286,11 +291,14 @@ func _compute_board_side(panel_visible_override: Variant = null) -> float:
 		extras += _suggestions_panel.size.y
 	if opponent_visible:
 		extras += max(_opponent_strip.size.y, _opponent_strip.custom_minimum_size.y)
+	if player_visible:
+		extras += max(_player_strip.size.y, _player_strip.custom_minimum_size.y)
 	# VBox separation (8) between every pair of visible children.
 	var visible_items := 4  # GoteHand, Board, SenteHand, StatusBar
 	if teacher_visible: visible_items += 1
 	if panel_visible: visible_items += 1
 	if opponent_visible: visible_items += 1
+	if player_visible: visible_items += 1
 	var separators: float = 8.0 * max(0, visible_items - 1)
 	var vp: Vector2 = get_viewport_rect().size
 	var side: float = min(vp.x - 2.0 * (GUTTER + LAYOUT_H), vp.y - base - extras - separators)
@@ -317,6 +325,24 @@ func _apply_board_side(side: float, animate: bool) -> void:
 # it under the front-camera cutout on devices like the Pixel 8a.
 # ThinkingLabel follows the same scheme, right-aligned to the board's
 # top-right corner so it never collides with the StatusBar buttons.
+# The local player's avatar under the board, mirroring the opponent
+# strip above it. Against the AI it shows only when an avatar is picked;
+# in 通信対戦 it always shows the player's name and side, like the peer's
+# strip. 人対人 on one device has no single "own" side, so no strip.
+func _setup_player_strip() -> void:
+	var path := Settings.avatar_path(Settings.avatar_id)
+	var tex: Texture2D = load(path) if path != "" and ResourceLoader.exists(path) else null
+	_player_portrait.texture = tex
+	_player_portrait.visible = tex != null
+	if _lan:
+		_player_label.text = "%s (%s)" % [NetSession.local_name, _local_side()]
+		_player_strip.visible = true
+	elif _ai_enabled:
+		_player_label.text = "あなた"
+		_player_strip.visible = tex != null
+	else:
+		_player_strip.visible = false
+
 func _place_thinking_label() -> void:
 	if _board_view == null:
 		return
@@ -405,8 +431,8 @@ func _load_opening_book() -> void:
 	print("[ai] opening book loaded — %d positions" % int(_core.opening_book_size()))
 
 func _set_opponent_portrait(profile: CharacterProfile) -> void:
-	# Hide the avatar slot entirely when there's no portrait — keeps the
-	# label centered in the strip instead of showing an empty 96×96 box.
+	# Hide the avatar slot entirely when there's no portrait — leaves
+	# just the name instead of an empty 96×96 box above it.
 	_expression_textures.clear()
 	_expression = "neutral"
 	var tex: Texture2D = _expression_texture("neutral")
@@ -539,7 +565,7 @@ func _hide_speech() -> void:
 		_speech_tween.kill()
 	_speech_bubble.modulate.a = 0.0
 
-# Parks the balloon just below the portrait, over the 持ち駒 row, with
+# Parks the balloon just above the portrait, over the 持ち駒 row, with
 # its tail on the portrait's centre. Runs every frame while it shows, so
 # it follows layout changes and resizes to the current line.
 func _place_speech_bubble() -> void:
@@ -550,7 +576,8 @@ func _place_speech_bubble() -> void:
 	var x: float = clampf(center_x - sz.x * 0.5, EDGE,
 		maxf(EDGE, get_viewport_rect().size.x - sz.x - EDGE))
 	_speech_bubble.size = sz
-	_speech_bubble.global_position = Vector2(x, frame.end.y + _speech_bubble.TAIL_LENGTH)
+	_speech_bubble.global_position = Vector2(
+		x, maxf(EDGE, frame.position.y - _speech_bubble.TAIL_LENGTH - sz.y))
 	_speech_bubble.set_tail_x(center_x - x)
 
 # The opponent's closing line for the 対局終了 dialog; "" on a draw.
@@ -1690,10 +1717,21 @@ func _setup_lan() -> void:
 	NetSession.rematch_requested.connect(_on_lan_rematch_requested)
 	NetSession.game_started.connect(_on_lan_rematch_started)
 	_opponent_label.text = "%s (%s)" % [NetSession.remote_name, _remote_side()]
-	_opponent_portrait_frame.visible = false
+	_show_remote_avatar()
 	_opponent_strip.visible = true
 	_undo_btn.visible = false
 	_gameover_dialog.ok_button_text = "再戦"
+
+# The 通信対戦 peer's avatar (sent in its hello) in the opponent strip;
+# no portrait slot when it has none or runs an older version.
+func _show_remote_avatar() -> void:
+	var path := Settings.avatar_path(NetSession.remote_avatar)
+	var tex: Texture2D = load(path) if path != "" and ResourceLoader.exists(path) else null
+	_opponent_portrait.texture = tex
+	_opponent_portrait_frame.visible = tex != null
+	if tex != null and not _opponent_portrait.resized.is_connected(_sync_portrait_shader_size):
+		_opponent_portrait.resized.connect(_sync_portrait_shader_size)
+	_sync_portrait_shader_size.call_deferred()
 
 func _local_side() -> String:
 	return "後手" if NetSession.local_is_gote else "先手"
@@ -1745,6 +1783,7 @@ func _on_lan_rematch_started() -> void:
 		_exit_review()
 	_apply_board_orientation()
 	_opponent_label.text = "%s (%s)" % [NetSession.remote_name, _remote_side()]
+	_player_label.text = "%s (%s)" % [NetSession.local_name, _local_side()]
 	_reset_game()
 
 func _on_lan_resign() -> void:

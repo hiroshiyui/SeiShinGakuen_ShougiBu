@@ -1,4 +1,4 @@
-[gd_scene load_steps=13 format=3]
+[gd_scene load_steps=14 format=3]
 
 [ext_resource type="Script" path="res://scripts/game/GameController.gd" id="1_gc"]
 [ext_resource type="PackedScene" path="res://scenes/game/Board.tscn" id="2_board"]
@@ -11,6 +11,7 @@
 [ext_resource type="FontFile" path="res://assets/fonts/noto-serif-jp/NotoSerifCJKjp-Bold.otf" id="9_bold"]
 [ext_resource type="FontFile" path="res://assets/fonts/mochiy-pop-one/MochiyPopOne-Regular.ttf" id="12_mochiy"]
 [ext_resource type="Script" path="res://scripts/game/SpeechBubble.gd" id="13_bubble"]
+[ext_resource type="Script" path="res://scripts/RoundedPortrait.gd" id="14_rounded"]
 
 [sub_resource type="ShaderMaterial" id="1_round_mat"]
 shader = ExtResource("5_round")
@@ -40,16 +41,25 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 theme_override_constants/separation = 8
 
-[node name="OpponentStrip" type="HBoxContainer" parent="Layout"]
+[node name="GoteHand" parent="Layout" instance=ExtResource("3_hand")]
+unique_name_in_owner = true
+is_gote = true
+
+[node name="OpponentStrip" type="VBoxContainer" parent="Layout"]
 unique_name_in_owner = true
 visible = false
-custom_minimum_size = Vector2(0, 96)
+custom_minimum_size = Vector2(0, 140)
 alignment = 1
-theme_override_constants/separation = 12
+theme_override_constants/separation = 2
+
+[node name="OpponentTopGap" type="Control" parent="Layout/OpponentStrip"]
+custom_minimum_size = Vector2(0, 4)
+mouse_filter = 2
 
 [node name="OpponentPortraitFrame" type="Control" parent="Layout/OpponentStrip"]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(96, 96)
+size_flags_horizontal = 4
 clip_contents = true
 mouse_filter = 2
 
@@ -64,18 +74,15 @@ mouse_filter = 2
 
 [node name="OpponentLabel" type="Label" parent="Layout/OpponentStrip"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 96)
+custom_minimum_size = Vector2(0, 36)
 text = ""
 horizontal_alignment = 1
 vertical_alignment = 1
-theme_override_font_sizes/font_size = 28
+text_overrun_behavior = 3
+theme_override_font_sizes/font_size = 24
 theme_override_colors/font_color = Color(0.98, 0.98, 0.98, 1)
 theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
 theme_override_constants/outline_size = 6
-
-[node name="GoteHand" parent="Layout" instance=ExtResource("3_hand")]
-unique_name_in_owner = true
-is_gote = true
 
 [node name="BoardHolder" type="CenterContainer" parent="Layout"]
 size_flags_horizontal = 3
@@ -84,6 +91,31 @@ mouse_filter = 1
 
 [node name="BoardView" parent="Layout/BoardHolder" instance=ExtResource("2_board")]
 unique_name_in_owner = true
+
+[node name="PlayerStrip" type="VBoxContainer" parent="Layout"]
+unique_name_in_owner = true
+visible = false
+custom_minimum_size = Vector2(0, 134)
+alignment = 1
+theme_override_constants/separation = 2
+
+[node name="PlayerPortrait" type="TextureRect" parent="Layout/PlayerStrip"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(96, 96)
+size_flags_horizontal = 4
+script = ExtResource("14_rounded")
+
+[node name="PlayerLabel" type="Label" parent="Layout/PlayerStrip"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 36)
+text = ""
+horizontal_alignment = 1
+vertical_alignment = 1
+text_overrun_behavior = 3
+theme_override_font_sizes/font_size = 24
+theme_override_colors/font_color = Color(0.98, 0.98, 0.98, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 6
 
 [node name="SenteHand" parent="Layout" instance=ExtResource("3_hand")]
 unique_name_in_owner = true
