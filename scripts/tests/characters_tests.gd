@@ -31,7 +31,7 @@ func _initialize() -> void:
 	_run("portrait_dir points at an existing directory", _test_portrait_dirs)
 	_run("every character ships all six expression portraits", _test_expression_portraits)
 	_run("every character has short lines for every speech moment", _test_speech_lines)
-	_run("every player avatar ships its portrait", _test_avatar_portraits)
+	_run("every player avatar ships all six lossy portraits", _test_avatar_portraits)
 	_run("both avatar voices have short lines for every moment", _test_avatar_voices)
 	_run("load_character round-trips by id", _test_load_by_id)
 	_run("load_character returns null for unknown id", _test_load_unknown)
@@ -157,13 +157,23 @@ func _test_expression_portraits() -> String:
 				return "%s: missing %s" % [c.id, path]
 	return ""
 
+# Like the opponents' portraits, a missing avatar expression falls back
+# to neutral in play, so check all six here. Each must also be imported
+# lossy: Godot's default lossless import grew the APK by ~5 MB for the
+# 16 neutral portraits alone.
 func _test_avatar_portraits() -> String:
 	if _settings.AVATAR_IDS.size() != 16:
 		return "expected 16 avatars, got %d" % _settings.AVATAR_IDS.size()
 	for aid in _settings.AVATAR_IDS:
-		var path: String = _settings.avatar_path(aid)
-		if not FileAccess.file_exists(path):
-			return "%s: missing %s" % [aid, path]
+		for expr in ["neutral", "thinking", "happy", "worried", "victory", "defeat"]:
+			var path: String = _settings.avatar_path(aid, expr)
+			if not FileAccess.file_exists(path):
+				return "%s: missing %s" % [aid, path]
+			var import := ConfigFile.new()
+			if import.load(path + ".import") != OK:
+				return "%s: missing %s.import" % [aid, path]
+			if import.get_value("params", "compress/mode", 0) != 1:
+				return "%s: %s is not imported lossy (compress/mode=1)" % [aid, path]
 	return ""
 
 func _test_avatar_voices() -> String:
