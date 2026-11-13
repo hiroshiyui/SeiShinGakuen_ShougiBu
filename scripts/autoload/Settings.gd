@@ -157,6 +157,43 @@ func record_character_result(cid: String, player_won: bool) -> void:
 
 const CHARACTERS_DIR := "res://assets/characters"
 
+# Player avatars: student portraits the player picks to stand for
+# themselves (own side of the board, and shown to a 通信対戦 peer).
+# Listed here rather than scanned, because an exported PCK holds only
+# the `.webp.import` remaps, and because a peer-sent id is checked
+# against this list before it is turned into a path.
+const AVATAR_DIR := "res://assets/characters/player_avatars"
+const AVATAR_IDS: Array[String] = [
+	"girl-01", "girl-02", "girl-03", "girl-04", "girl-05", "girl-06", "girl-07", "girl-08",
+	"boy-01", "boy-02", "boy-03", "boy-04", "boy-05", "boy-06", "boy-07", "boy-08",
+]
+# "" = no avatar.
+var avatar_id: String = ""
+# True once the first-launch avatar picker has been shown, so it is
+# offered exactly once (picking or skipping both count).
+var avatar_prompted: bool = false
+
+static func is_avatar_id(v: Variant) -> bool:
+	return v is String and AVATAR_IDS.has(v)
+
+# Portrait path for `aid`, or "" when it isn't a known avatar.
+static func avatar_path(aid: String) -> String:
+	return "%s/%s.webp" % [AVATAR_DIR, aid] if is_avatar_id(aid) else ""
+
+func set_avatar_id(aid: String) -> void:
+	if aid != "" and not is_avatar_id(aid):
+		return
+	if aid == avatar_id:
+		return
+	avatar_id = aid
+	_save_prefs()
+
+func mark_avatar_prompted() -> void:
+	if avatar_prompted:
+		return
+	avatar_prompted = true
+	_save_prefs()
+
 func _ready() -> void:
 	_load_prefs()
 
@@ -279,6 +316,9 @@ func _load_prefs() -> void:
 	ai_level = clamp_level(_cfg_int(cfg, "ai", "level", ai_level))
 	sound_enabled = _cfg_bool(cfg, "audio", "sound_enabled", true)
 	reduce_motion = _cfg_bool(cfg, "ui", "reduce_motion", false)
+	var aid: Variant = cfg.get_value("player", "avatar", "")
+	avatar_id = aid if is_avatar_id(aid) else ""
+	avatar_prompted = _cfg_bool(cfg, "player", "avatar_prompted", false)
 	tsume_plies = _cfg_int(cfg, "tsume", "plies", tsume_plies)
 	var solved: Variant = cfg.get_value("tsume", "solved", [])
 	tsume_solved.clear()
@@ -317,6 +357,8 @@ func _save_prefs() -> void:
 	cfg.set_value("ai", "level", ai_level)
 	cfg.set_value("audio", "sound_enabled", sound_enabled)
 	cfg.set_value("ui", "reduce_motion", reduce_motion)
+	cfg.set_value("player", "avatar", avatar_id)
+	cfg.set_value("player", "avatar_prompted", avatar_prompted)
 	cfg.set_value("tsume", "plies", tsume_plies)
 	cfg.set_value("tsume", "solved", tsume_solved.keys())
 	cfg.set_value("records", "characters", character_records)

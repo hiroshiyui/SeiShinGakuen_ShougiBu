@@ -31,6 +31,7 @@ func _initialize() -> void:
 	_run("portrait_dir points at an existing directory", _test_portrait_dirs)
 	_run("every character ships all six expression portraits", _test_expression_portraits)
 	_run("every character has short lines for every speech moment", _test_speech_lines)
+	_run("every player avatar ships its portrait", _test_avatar_portraits)
 	_run("load_character round-trips by id", _test_load_by_id)
 	_run("load_character returns null for unknown id", _test_load_unknown)
 	if _fails > 0:
@@ -153,6 +154,15 @@ func _test_expression_portraits() -> String:
 			var path: String = c.portrait_dir.path_join("%s.webp" % expr)
 			if not FileAccess.file_exists(path):
 				return "%s: missing %s" % [c.id, path]
+	return ""
+
+func _test_avatar_portraits() -> String:
+	if _settings.AVATAR_IDS.size() != 16:
+		return "expected 16 avatars, got %d" % _settings.AVATAR_IDS.size()
+	for aid in _settings.AVATAR_IDS:
+		var path: String = _settings.avatar_path(aid)
+		if not FileAccess.file_exists(path):
+			return "%s: missing %s" % [aid, path]
 	return ""
 
 func _test_load_by_id() -> String:

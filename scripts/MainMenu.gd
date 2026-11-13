@@ -46,6 +46,12 @@ func _ready() -> void:
 	_refresh_opponent_label()
 	var version: String = ProjectSettings.get_setting("application/config/version", "")
 	_version_label.text = ("v%s" % version) if version != "" else ""
+	# Offer the avatar picker once, on the first launch that has it
+	# (picking or skipping both count). Deferred: a scene switch from
+	# inside _ready would race the transition that brought us here.
+	if not Settings.avatar_prompted:
+		Settings.mark_avatar_prompted()
+		(func() -> void: AvatarPicker.open("res://scenes/MainMenu.tscn", true)).call_deferred()
 
 func _on_title_gui_input(event: InputEvent) -> void:
 	# Android emits both InputEventScreenTouch and a synthesised

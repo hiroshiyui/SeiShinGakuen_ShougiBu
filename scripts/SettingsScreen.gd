@@ -4,6 +4,8 @@ extends Control
 @onready var _motion: CheckButton = %MotionToggle
 @onready var _teacher_side: OptionButton = %TeacherSideSelect
 @onready var _back: Button = %BackButton
+@onready var _avatar_pic: TextureRect = %AvatarPortrait
+@onready var _avatar_btn: Button = %AvatarButton
 
 const _TEACHER_RIGHT_ID := 0
 const _TEACHER_LEFT_ID := 1
@@ -20,6 +22,11 @@ func _ready() -> void:
 	_teacher_side.select(_teacher_side.get_item_index(
 		_TEACHER_LEFT_ID if Settings.teacher_side == "left" else _TEACHER_RIGHT_ID))
 	_teacher_side.item_selected.connect(_on_teacher_side_changed)
+
+	_avatar_pic.texture = RoundedPortrait.thumbnail(Settings.avatar_path(Settings.avatar_id), 192)
+	_avatar_btn.text = "変更" if Settings.avatar_id != "" else "選ぶ"
+	_avatar_btn.pressed.connect(func() -> void:
+		AvatarPicker.open("res://scenes/SettingsScreen.tscn"))
 
 	_back.pressed.connect(_on_back)
 

@@ -49,6 +49,8 @@ func _initialize() -> void:
 		_test_character_records_roundtrip)
 	_run("corrupt character records load as zero without aborting",
 		_test_character_records_corrupt)
+	_run("avatar id round-trips through prefs and rejects unknown ids",
+		_test_avatar_roundtrip)
 	_run("wrong-typed prefs fall back without losing later keys",
 		_test_prefs_wrong_types)
 	_run("wrong-typed save fields fall back to defaults",
@@ -317,6 +319,30 @@ func _test_character_records_corrupt() -> String:
 		return "non-dictionary record should be skipped"
 	if c["wins"] != 2 or c["losses"] != 0:
 		return "c expected 2-0, got %s" % c
+	return ""
+
+func _test_avatar_roundtrip() -> String:
+	if _settings.avatar_id != "" or _settings.avatar_prompted:
+		return "defaults were not empty / not prompted"
+	_settings.set_avatar_id("boy-04")
+	_settings.mark_avatar_prompted()
+	_settings.set_avatar_id("not-an-avatar")
+	if _settings.avatar_id != "boy-04":
+		return "unknown id replaced the avatar: %s" % _settings.avatar_id
+	var fresh := _SettingsScript.new()
+	fresh._set_storage_paths_for_test(_TEST_SAVE, _TEST_PREFS)
+	fresh._load_prefs()
+	if fresh.avatar_id != "boy-04" or not fresh.avatar_prompted:
+		return "avatar did not survive prefs round-trip: %s / %s" % [
+			fresh.avatar_id, fresh.avatar_prompted]
+	# A hand-edited prefs file can't smuggle in an arbitrary id.
+	var f := FileAccess.open(_TEST_PREFS, FileAccess.WRITE)
+	f.store_string('[player]\n\navatar="../../x"\navatar_prompted=true\n')
+	f.close()
+	fresh._load_prefs()
+	if fresh.avatar_id != "":
+		return "bad avatar id loaded from prefs: %s" % fresh.avatar_id
+	_settings.set_avatar_id("")
 	return ""
 
 func _test_prefs_wrong_types() -> String:
