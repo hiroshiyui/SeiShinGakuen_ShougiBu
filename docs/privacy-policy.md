@@ -1,6 +1,6 @@
 # Privacy Policy — 清正学園将棋部 (SeiShinGakuen Shougi-bu)
 
-**Effective date:** 2026-11-13
+**Effective date:** 2026-11-14
 **Application:** 清正学園将棋部 (SeiShinGakuen Shougi-bu)
 **Contact:** hiroshiyui@gmail.com
 
@@ -37,7 +37,7 @@ The application saves the following **only on your device's local
 storage**. This data is never transmitted anywhere:
 
 - Game state for save/resume of the current game, in Android `user://`.
-- User preferences (sound, display, etc.), in Android `user://`.
+- User preferences (sound, display, your chosen avatar, etc.), in Android `user://`.
 - KIF game records you explicitly save, in the app's Documents directory
   or `user://` fallback.
 - The bundled AI model file (`bonanza.onnx`), extracted from the app's
@@ -65,9 +65,11 @@ copy of the game on your local network (for example, the same Wi-Fi):
   the computer's host name if the `HOSTNAME` environment variable is
   set, otherwise "PC") and a port number. A device looking for a game sends multicast DNS queries for
   that service.
-- Once two devices connect, they exchange the device model names, the
-  moves, and game events (resign, 入玉宣言, leaving the game) directly
-  with each other.
+- Once two devices connect, they exchange the device model names,
+  which of the app's built-in avatar portraits each player picked (or
+  none), the moves, and game events (resign, 入玉宣言, leaving the
+  game) directly with each other. Your avatar's speech balloons are
+  shown only on your own device and are never sent.
 - Both devices save the finished game record (KIF), including both
   model names, on their own local storage as described above.
 
@@ -154,7 +156,7 @@ For privacy questions, contact: **hiroshiyui@gmail.com**
 外部に送信されることはありません。
 
 - 中断・再開のためのゲーム状態(Android の `user://`)
-- 利用者設定(サウンド、表示等。Android の `user://`)
+- 利用者設定(サウンド、表示、選んだアバター等。Android の `user://`)
 - 利用者が明示的に保存した KIF 棋譜(アプリの Documents ディレクトリ、
   または `user://` フォールバック)
 - 同梱の AI モデルファイル(`bonanza.onnx`)。初回起動時に APK
@@ -183,8 +185,11 @@ For privacy questions, contact: **hiroshiyui@gmail.com**
   `HOSTNAME` が設定されていればコンピューターのホスト名、なければ
   「PC」)、ポート番号です。
   対局を探す側は、このサービスをマルチキャスト DNS で問い合わせます。
-- 2 台が接続すると、端末の機種名、指し手、対局のできごと(投了、
-  入玉宣言、対局の中止)を互いに直接やり取りします。
+- 2 台が接続すると、端末の機種名、各自が選んだアバター(アプリに
+  同梱された肖像のどれか、または「なし」)、指し手、対局のできごと
+  (投了、入玉宣言、対局の中止)を互いに直接やり取りします。
+  アバターの吹き出しのひと言は自分の端末にだけ表示され、相手には
+  送信されません。
 - 終局した棋譜(KIF、両者の機種名を含む)は、上記のとおり各端末の
   ローカルストレージに保存されます。
 
