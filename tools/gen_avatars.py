@@ -461,10 +461,16 @@ assert "never paler" in AVATAR_IDENTITY
 
 # Per-avatar notes that keep the edit from fighting the design.
 VARIANT_NOTES = {
+    # His glasses are an assistive device, and his eyes are never the
+    # subject: a batch render turned the lenses see-through with wide,
+    # startled eyes behind them. Respect for a disabled character comes
+    # first; his variants are --edits of his neutral portrait.
     "boy-03": " He wears his dark-tinted glasses for his eyes (he has amblyopia), so they"
               " stay on and exactly as they are, worn normally on his nose: never pushed"
-              " up, lowered, tilted or taken off. His eyes stay hidden behind the lenses;"
-              " the expression shows through his eyebrows, mouth and cheeks.",
+              " up, lowered, tilted or taken off. The lenses stay fully dark and opaque,"
+              " exactly as dark as in the reference image: his eyes are never visible"
+              " through them, never drawn, enlarged, highlighted or emphasised in any"
+              " way. The expression shows only through his eyebrows, mouth and cheeks.",
 }
 
 
