@@ -393,24 +393,29 @@ VARIANT_WORDING = {
                   " downcast, lower lip pushed out in a frustrated pout.",
     },
     "gentle": {
-        "thinking": "The student is quietly concentrating: eyes lowered and looking to the"
-                    " side, eyebrows slightly drawn together, lips closed.",
-        "happy": "The student smiles warmly: a soft, happy smile, eyes curved gently, a light"
-                 " blush.",
-        "worried": "The student looks uneasy: the inner ends of the eyebrows raised, eyes"
-                   " glancing to the side, lips pressed together.",
-        "victory": "The student is quietly delighted: bright eyes, a pleased, slightly open"
-                   " smile, cheeks lightly flushed.",
-        "defeat": "The student is disappointed: eyes half closed and downcast, eyebrows"
-                  " drooping, a small, sad, resigned smile.",
+        "thinking": "The student is concentrating: the eyes look clearly away to one side and"
+                    " slightly down, the eyebrows are drawn together, and the lips are closed"
+                    " and pushed slightly to one side.",
+        "happy": "The student smiles warmly and openly: a wide, happy smile with the lips"
+                 " parted, the eyes curved into gentle happy arcs, and a soft pink blush.",
+        "worried": "The student looks clearly worried: the eyebrows are raised high and"
+                   " slanted upward in the middle, the eyes are a little wide and glance to"
+                   " the side, and the mouth is a small, tense, wavy line.",
+        "victory": "The student is delighted: bright, shining eyes, eyebrows raised, and a"
+                   " big, pleased open smile showing the upper teeth.",
+        "defeat": "The student is sad and disappointed: the eyes are half closed and"
+                  " downcast, the eyebrows droop at the outer ends, and the mouth is a small"
+                  " downturned frown.",
     },
     "reserved": {
-        "thinking": "The student is in calm, sharp concentration: eyes narrowed slightly and"
-                    " looking down to the side, mouth a straight closed line.",
-        "happy": "The student's composure softens: relaxed eyebrows, warm eyes and a slight,"
-                 " genuine closed-mouth smile.",
-        "worried": "The student shows only a flicker of unease: eyebrows tense, eyes slightly"
-                   " widened, lips pressed firmly together.",
+        "thinking": "The student is in calm, sharp concentration: the eyes are narrowed and"
+                    " look clearly down and to one side, the eyebrows are lowered, and the"
+                    " mouth is a straight closed line.",
+        "happy": "The student's composure softens into a genuine, warm closed-mouth smile:"
+                 " relaxed eyebrows and eyes softened into a smile.",
+        "worried": "The student is visibly uneasy: the eyebrows are drawn together and"
+                   " raised in the middle, the eyes are widened and glance to the side, and"
+                   " the lips are pressed firmly together.",
         "victory": "The student is quietly triumphant: a faint, confident closed-mouth smile"
                    " and steady, self-assured eyes.",
         "defeat": "The student accepts a loss with composure: eyes closed, eyebrows relaxed,"
@@ -419,8 +424,15 @@ VARIANT_WORDING = {
 }
 # The opponents' IDENTITY clause says "the same light skin color", which
 # would lighten boy-06's brown and girl-02's tanned skin.
-AVATAR_IDENTITY = IDENTITY.replace("the same light skin color", "the same skin color")
-assert AVATAR_IDENTITY != IDENTITY
+# Its "subtle to moderate" also left the first avatar variants almost
+# unreadable at the 96 px the strip shows them at.
+AVATAR_IDENTITY = IDENTITY.replace("the same light skin color", "the same skin color").replace(
+    "The change of expression is subtle to moderate, natural and believable, never"
+    " exaggerated or cartoonish.",
+    "The new expression is clearly readable even in a small thumbnail: the eyebrows,"
+    " the eyes and the mouth all visibly change. It stays natural and believable, never"
+    " exaggerated or cartoonish.")
+assert "subtle to moderate" not in AVATAR_IDENTITY and "light skin" not in AVATAR_IDENTITY
 
 # Per-avatar notes that keep the edit from fighting the design.
 VARIANT_NOTES = {
