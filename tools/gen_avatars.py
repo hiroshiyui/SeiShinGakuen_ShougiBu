@@ -564,6 +564,17 @@ ACCEPTED_VARIANTS: dict[str, dict[str, str]] = {
         "victory": "avatar_boy-04_victory_00001_.png",
         "defeat": "avatar_boy-04_defeat_00001_.png",
     },
+    # His bowl-cut bangs hide his brows, and thinking, worried and defeat
+    # all came out with the same pout; each is an --edit of his neutral
+    # portrait with its own eyes and mouth. worried's mouth was then
+    # softened (an edit of an edit) after the first came out too bold.
+    "boy-05": {
+        "happy": "avatar_boy-05_happy_00001_.png",
+        "thinking": "avatar_boy-05_thinking_edit_00001_.png",
+        "worried": "avatar_boy-05_worried_edit_00004_.png",
+        "victory": "avatar_boy-05_victory_00001_.png",
+        "defeat": "avatar_boy-05_defeat_edit_00001_.png",
+    },
     # thinking is a calm --edit of his neutral portrait: the render's
     # furrowed brow and frown read as annoyed.
     "boy-06": {
