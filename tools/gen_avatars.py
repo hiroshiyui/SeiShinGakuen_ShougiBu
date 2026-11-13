@@ -564,6 +564,15 @@ ACCEPTED_VARIANTS: dict[str, dict[str, str]] = {
         "victory": "avatar_boy-04_victory_00001_.png",
         "defeat": "avatar_boy-04_defeat_00001_.png",
     },
+    # thinking is a calm --edit of his neutral portrait: the render's
+    # furrowed brow and frown read as annoyed.
+    "boy-06": {
+        "happy": "avatar_boy-06_happy_00001_.png",
+        "thinking": "avatar_boy-06_thinking_edit_00001_.png",
+        "worried": "avatar_boy-06_worried_00001_.png",
+        "victory": "avatar_boy-06_victory_00001_.png",
+        "defeat": "avatar_boy-06_defeat_00001_.png",
+    },
 }
 
 # Skin drift check: mean color of a cheek-height patch in the middle of
