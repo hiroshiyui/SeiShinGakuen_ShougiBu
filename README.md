@@ -35,19 +35,23 @@ Debian 11 以降）の x86_64 環境で動作する。`.sha256` ファイルで�
 
 | タイトル画面 | 対戦相手選択 | 対局画面 |
 |:---:|:---:|:---:|
-| <img src="docs/screenshots/01_main_menu.png" width="220" alt="タイトル画面 — 対局モードと対戦相手（丸い肖像付き）を選び、新規対局 / 棋譜検討 / 詰将棋 / 設定へ進む。「通信対戦」からは LAN での人対人の対局へ（中断した対局があれば「続きから」も表示）。背景は部員・先生の絵から毎回ランダムに選ばれる。"> | <img src="docs/screenshots/02_character_picker.png" width="220" alt="対戦相手選択画面 — 8 人の部員・先生から指す相手を選ぶ。上半分に選択中キャラの肖像と紹介、その相手とのあなたの戦績、下半分に Lv 1〜8 のグリッド。"> | <img src="docs/screenshots/03_in_game_start.png" width="220" alt="Lv 4（伊藤明）との対局開始。上部バーに対戦相手の肖像と名前、その下に吹き出しでひと言、下部に「加藤先生！教えてください！」ボタンを配置。肖像は対局の流れで表情が変わる。"> |
+| <img src="docs/screenshots/01_main_menu.png" width="220" alt="タイトル画面 — 対局モードと対戦相手（丸い肖像付き）を選び、新規対局 / 棋譜検討 / 詰将棋 / 設定へ進む。「通信対戦」からは LAN での人対人の対局へ（中断した対局があれば「続きから」も表示）。背景は部員・先生の絵から毎回ランダムに選ばれる。"> | <img src="docs/screenshots/02_character_picker.png" width="220" alt="対戦相手選択画面 — 8 人の部員・先生から指す相手を選ぶ。上半分に選択中キャラの肖像と紹介、その相手とのあなたの戦績、下半分に Lv 1〜8 のグリッド。"> | <img src="docs/screenshots/03_in_game_start.png" width="220" alt="Lv 4（伊藤明）との対局開始。盤の上に対戦相手、盤の下にあなたのアバターが肖像と名前付きで並び、あなたの吹き出しに対局前のあいさつ。下部に「加藤先生！教えてください！」ボタン。肖像はどちらも対局の流れで表情が変わる。"> |
 
 | 先生モード | 棋譜検討（一覧） | 棋譜検討（解析） |
 |:---:|:---:|:---:|
-| <img src="docs/screenshots/04_teacher_mode.png" width="220" alt="先生モード — MCTS による上位 3 手の候補を勝率 % 付きで表示。"> | <img src="docs/screenshots/05_kifu_library.png" width="220" alt="棋譜検討の一覧画面 — 保存した .kif が新しい順に並び、各行に日時・対局者・結果と手数、削除ボタン。"> | <img src="docs/screenshots/06_kifu_reviewer.png" width="220" alt="棋譜検討の盤面再生 — 各手の先手勝率と分類バッジ（◎好手 / △疑問手 / ×悪手）、悪手 / 疑問手なら推奨手を表示。その下の形勢グラフは各手の先手勝率を棒で示し、タップでその手へ移動できる。"> |
+| <img src="docs/screenshots/04_teacher_mode.png" width="220" alt="先生モード — MCTS による上位 3 手の候補を勝率 % 付きで表示。候補表示中は盤が少し縮み、盤の下にあなたのアバターが残る。"> | <img src="docs/screenshots/05_kifu_library.png" width="220" alt="棋譜検討の一覧画面 — 保存した .kif が新しい順に並び、各行に日時・対局者・結果と手数、削除ボタン。"> | <img src="docs/screenshots/06_kifu_reviewer.png" width="220" alt="棋譜検討の盤面再生 — 各手の先手勝率と分類バッジ（◎好手 / △疑問手 / ×悪手）、悪手 / 疑問手なら推奨手を表示。その下の形勢グラフは各手の先手勝率を棒で示し、タップでその手へ移動できる。"> |
 
 | 詰将棋（出題） | 詰将棋（正解） | 表情の変化（思考中） |
 |:---:|:---:|:---:|
-| <img src="docs/screenshots/07_tsume_problem.png" width="220" alt="詰将棋の出題画面 — 1手詰・3手詰・5手詰のタブに解いた数、今日の一問、盤面の下にヒント / やり直し / 前後の問題ボタン。"> | <img src="docs/screenshots/08_tsume_solved.png" width="220" alt="詰将棋を解いたところ — 「正解！ 詰みです」と表示され、問題名に【済】、タブの解いた数が 1/40 に増える。"> | <img src="docs/screenshots/09_thinking_face.png" width="220" alt="AI の思考中 — 盤の右上に「思考中…」、上部バーの対戦相手が考える表情に変わっている。"> |
+| <img src="docs/screenshots/07_tsume_problem.png" width="220" alt="詰将棋の出題画面 — 1手詰・3手詰・5手詰のタブに解いた数、今日の一問、盤面の下にヒント / やり直し / 前後の問題ボタン。"> | <img src="docs/screenshots/08_tsume_solved.png" width="220" alt="詰将棋を解いたところ — 「正解！ 詰みです」と表示され、問題名に【済】、タブの解いた数が 1/40 に増える。"> | <img src="docs/screenshots/09_thinking_face.png" width="220" alt="AI の思考中 — 盤の右上に「思考中…」、盤の上の対戦相手が考える表情に変わっている。"> |
 
 | 通信対戦（対局を探す） | 通信対戦（後手の盤面） | 通信対戦（再戦） |
 |:---:|:---:|:---:|
-| <img src="docs/screenshots/10_lan_lobby.png" width="220" alt="通信対戦のロビー — 同じ Wi-Fi で見つかった対局が端末名と IP アドレス付きで並び、タップで参加する。"> | <img src="docs/screenshots/11_lan_gote_board.png" width="220" alt="通信対戦で後手を持った側の画面 — 盤が 180° 回り、自分の駒が手前に来る。上部に相手の端末名と手番（先手）。"> | <img src="docs/screenshots/12_lan_rematch.png" width="220" alt="通信対戦の終局ダイアログ — 相手が再戦を希望していることが表示され、「再戦」で先後を入れ替えて次の対局を始める。"> |
+| <img src="docs/screenshots/10_lan_lobby.png" width="220" alt="通信対戦のロビー — 同じ Wi-Fi で見つかった対局が端末名と IP アドレス付きで並び、タップで参加する。"> | <img src="docs/screenshots/11_lan_gote_board.png" width="220" alt="通信対戦で後手を持った側の画面 — 盤が 180° 回り、自分の駒が手前に来る。盤の上に相手のアバターと端末名・手番（先手）、盤の下に自分のアバターと端末名（後手）。"> | <img src="docs/screenshots/12_lan_rematch.png" width="220" alt="通信対戦の終局ダイアログ — 投了の結果とあなたのひと言、棋譜の保存先、相手が再戦を希望していることを表示。「再戦」で先後を入れ替えて次の対局を始める。"> |
+
+| アバター選択 |
+|:---:|
+| <img src="docs/screenshots/13_avatar_picker.png" width="220" alt="アバター選択画面 — 女子 8 人・男子 8 人の生徒から自分の姿を選ぶ。選択中のアバターは金の枠で囲まれ、「なし」「戻る」「決定」ボタンが並ぶ。初回起動時と設定から開く。"> |
 
 ## 主な機能
 
