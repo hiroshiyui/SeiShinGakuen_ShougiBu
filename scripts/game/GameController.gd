@@ -32,6 +32,17 @@ var _speech_tween: Tween = null
 @onready var _player_speech_label: Label = %PlayerSpeechText
 var _player_speech_tween: Tween = null
 var _player_voice: SpeechBank = null
+# The player's face, and in 通信対戦 the peer's (see _set_player_expression
+# and _set_remote_expression). Against the AI the player mirrors the
+# opponent's mood; in 通信対戦 both react to checks and big captures.
+const PLAYER_MIRROR := {
+	"happy": "worried", "worried": "happy", "victory": "defeat", "defeat": "victory",
+}
+var _player_expression: String = "neutral"
+var _player_fade: TextureRect = null
+var _player_fade_tween: Tween = null
+var _remote_expression: String = "neutral"
+var _lan_reaction_until_msec: int = 0
 # After the player's greeting, the opponent answers this much later.
 const REPLY_DELAY_SEC := 1.5
 const SPEECH_HOLD_SEC := 3.5
@@ -343,6 +354,7 @@ func _setup_player_strip() -> void:
 	var tex: Texture2D = load(path) if path != "" and ResourceLoader.exists(path) else null
 	_player_portrait.texture = tex
 	_player_portrait.visible = tex != null
+	_player_expression = "neutral"
 	_player_voice = Settings.avatar_voice(Settings.avatar_id) if (_lan or _ai_enabled) else null
 	if _lan:
 		_player_label.text = "%s (%s)" % [NetSession.local_name, _local_side()]
@@ -477,13 +489,78 @@ func _expression_texture(expr: String) -> Texture2D:
 	return tex
 
 func _set_opponent_expression(expr: String) -> void:
-	if expr == _expression or not _ai_enabled:
+	if not _ai_enabled:
+		return
+	if not _teacher_thinking:
+		_set_player_expression(PLAYER_MIRROR.get(expr, "neutral"))
+	if expr == _expression:
 		return
 	var tex := _expression_texture(expr)
 	if tex == null:
 		return
 	_expression = expr
 	_crossfade_portrait(tex)
+
+# An avatar's portrait for `expr`, falling back to its neutral one; null
+# for no avatar.
+func _avatar_texture(aid: String, expr: String) -> Texture2D:
+	var path := Settings.avatar_path(aid, expr)
+	if path != "" and ResourceLoader.exists(path):
+		return load(path)
+	return _avatar_texture(aid, "neutral") if expr != "neutral" else null
+
+# The player's face in their strip, cross-faded like the opponent's.
+func _set_player_expression(expr: String) -> void:
+	if expr == _player_expression or _player_portrait.texture == null:
+		return
+	var tex := _avatar_texture(Settings.avatar_id, expr)
+	if tex == null:
+		return
+	_player_expression = expr
+	var old_tex := _player_portrait.texture
+	_player_portrait.texture = tex
+	var duration: float = Settings.anim(EXPR_FADE_SEC)
+	if old_tex == tex or duration <= 0.0:
+		return
+	if _player_fade == null:
+		# Its own RoundedPortrait, laid over the real one, so the corners
+		# match while the old face fades out.
+		_player_fade = RoundedPortrait.new()
+		_player_fade.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+		_player_portrait.add_child(_player_fade)
+	if _player_fade_tween != null and _player_fade_tween.is_valid():
+		_player_fade_tween.kill()
+	_player_fade.texture = old_tex
+	_player_fade.modulate.a = 1.0
+	_player_fade.visible = true
+	_player_fade_tween = create_tween()
+	_player_fade_tween.tween_property(_player_fade, "modulate:a", 0.0, duration)
+	_player_fade_tween.tween_callback(_player_fade.hide)
+
+# The 通信対戦 peer's face in the opponent strip.
+func _set_remote_expression(expr: String) -> void:
+	if not _lan or _opponent_portrait.texture == null or expr == _remote_expression:
+		return
+	var tex := _avatar_texture(NetSession.remote_avatar, expr)
+	if tex == null:
+		return
+	_remote_expression = expr
+	_crossfade_portrait(tex)
+
+# 通信対戦 has no evaluation to read a mood from, so both faces react to
+# events: whoever gives check or takes a 飛 / 角 looks happy and the other
+# worried for a moment; then the peer thinks on its turn.
+func _lan_react(local_moved: bool, striking: bool) -> void:
+	if striking:
+		_set_player_expression("happy" if local_moved else "worried")
+		_set_remote_expression("worried" if local_moved else "happy")
+		var until := Time.get_ticks_msec() + int(EXPR_REACTION_SEC * 2000.0)
+		_lan_reaction_until_msec = until
+		await get_tree().create_timer(EXPR_REACTION_SEC * 2.0).timeout
+		if _game_over or _lan_reaction_until_msec != until:
+			return
+	_set_player_expression("neutral")
+	_set_remote_expression("thinking" if _is_remote_turn() else "neutral")
 
 # Swap the avatar to `tex` with a short cross-fade: the old face stays
 # on an overlay copy and fades out over the new one. Instant when
@@ -1040,6 +1117,9 @@ func _commit_move(m: Dictionary) -> void:
 			_player_say("check")
 		elif not player_moved and is_capture and int(target_piece["kind"]) in EXPR_MAJOR_KINDS:
 			_player_say("lose_piece")
+		if _lan:
+			_lan_react(player_moved, bool(_core.is_check())
+				or (is_capture and int(target_piece["kind"]) in EXPR_MAJOR_KINDS))
 	# If the player committed a move while suggestions were open, the
 	# board has been held small through this turn. Once it's the player's
 	# turn again (= AI has replied) — or the game ended — zoom back.
@@ -1114,6 +1194,11 @@ func _end_game(text: String, terminator: String, winner: String = "") -> void:
 	_gameover_text = text
 	var result_expr := _expression_for_winner(winner)
 	_set_opponent_expression(result_expr)
+	if _lan:
+		var local_won: bool = winner != "" and (winner == "後手") == _human_plays_gote()
+		var mine := "neutral" if winner == "" else ("victory" if local_won else "defeat")
+		_set_player_expression(mine)
+		_set_remote_expression(PLAYER_MIRROR.get(mine, "neutral"))
 	var result_tex := _expression_texture(result_expr) if _ai_enabled else null
 	_gameover_portrait.texture = result_tex
 	_gameover_portrait.visible = result_tex != null
@@ -1280,6 +1365,9 @@ func _reset_game() -> void:
 	_mood_win_rate = -1.0
 	_reaction_until_msec = 0
 	_set_opponent_expression("neutral")
+	_lan_reaction_until_msec = 0
+	_set_player_expression("neutral")
+	_set_remote_expression("thinking" if _is_remote_turn() else "neutral")
 	_greet()
 	_clear_selection()
 	_refresh_all()
@@ -1517,6 +1605,7 @@ func _on_teacher_pressed() -> void:
 	# playouts) so the main thread must not touch it concurrently.
 	_thinking = true
 	_teacher_thinking = true
+	_set_player_expression("thinking")
 	_thinking_label.text = "先生が考え中..."
 	_thinking_label.visible = true
 	_place_thinking_label.call_deferred()
@@ -1535,6 +1624,7 @@ func _finish_teacher_think() -> void:
 	var result: Variant = _teacher_thread.wait_to_finish()
 	_teacher_thread = null
 	_teacher_thinking = false
+	_set_player_expression(PLAYER_MIRROR.get(_expression, "neutral"))
 	_thinking = false
 	_thinking_label.visible = false
 	_thinking_label.text = "思考中…"
@@ -1806,9 +1896,11 @@ func _show_remote_avatar() -> void:
 	var tex: Texture2D = load(path) if path != "" and ResourceLoader.exists(path) else null
 	_opponent_portrait.texture = tex
 	_opponent_portrait_frame.visible = tex != null
+	_remote_expression = "neutral"
 	if tex != null and not _opponent_portrait.resized.is_connected(_sync_portrait_shader_size):
 		_opponent_portrait.resized.connect(_sync_portrait_shader_size)
 	_sync_portrait_shader_size.call_deferred()
+	_set_remote_expression("thinking" if _is_remote_turn() else "neutral")
 
 func _local_side() -> String:
 	return "後手" if NetSession.local_is_gote else "先手"

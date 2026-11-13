@@ -176,9 +176,15 @@ var avatar_prompted: bool = false
 static func is_avatar_id(v: Variant) -> bool:
 	return v is String and AVATAR_IDS.has(v)
 
-# Portrait path for `aid`, or "" when it isn't a known avatar.
-static func avatar_path(aid: String) -> String:
-	return "%s/%s.webp" % [AVATAR_DIR, aid] if is_avatar_id(aid) else ""
+# Portrait path for `aid` (neutral, or one of the five expressions as
+# `<id>_<expr>.webp` beside it), or "" when it isn't a known avatar. The
+# file may be missing for an expression; callers fall back to neutral.
+static func avatar_path(aid: String, expr: String = "neutral") -> String:
+	if not is_avatar_id(aid):
+		return ""
+	if expr == "neutral":
+		return "%s/%s.webp" % [AVATAR_DIR, aid]
+	return "%s/%s_%s.webp" % [AVATAR_DIR, aid, expr]
 
 # The player's speech bank, by the avatar's style ("girl-03" -> female);
 # null for no avatar.
