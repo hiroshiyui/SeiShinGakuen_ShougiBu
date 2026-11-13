@@ -636,10 +636,17 @@ KEEP_ACCESSORY = {
 
 # girl-03's first thinking variant drew her mouth as one stroke that
 # faded out halfway, reading as a smudge rather than a pursed mouth.
+# Asking for the mouth to match the eye outline's weight then overshot
+# the other way: thick, near-black mouths that looked pasted on (boy-05,
+# boy-07, boy-01 and girl-03's worried). The mouth gets its own wording,
+# the one that fixed boy-05's: thin, soft, warm dark brown, yet whole.
 LINE_QUALITY = (
-    " Every line is drawn as a clean, complete, confident stroke with the same weight and"
-    " darkness as the line work in the reference image, especially the mouth, the"
-    " eyebrows and the eyelids: no faint, broken, smudged, fading or half-finished lines."
+    " Every line is drawn as a clean, complete stroke with the same weight and darkness"
+    " as the line work in the reference image, especially the eyebrows and the eyelids:"
+    " no faint, broken, smudged, fading or half-finished lines. The mouth is a thin,"
+    " soft, natural line in a warm dark brown, never black, thick or bold, like the mouth"
+    " of a gently drawn anime face, yet one continuous, even stroke with no gaps or"
+    " fading."
 )
 
 
