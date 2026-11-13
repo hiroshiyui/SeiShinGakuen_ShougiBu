@@ -552,6 +552,9 @@ ACCEPTED_VARIANTS: dict[str, dict[str, str]] = {
         "defeat": "avatar_boy-01_defeat_edit_00001_.png",
     },
     "boy-02": {e: f"avatar_boy-02_{e}_00001_.png" for e in EXPRESSIONS},
+    # All five are --edits of his neutral portrait, whose dark lenses are
+    # already right: batch renders turned them see-through (VARIANT_NOTES).
+    "boy-03": {e: f"avatar_boy-03_{e}_edit_00001_.png" for e in EXPRESSIONS},
 }
 
 # Skin drift check: mean color of a cheek-height patch in the middle of
