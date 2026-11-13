@@ -535,6 +535,7 @@ ACCEPTED_VARIANTS: dict[str, dict[str, str]] = {
         "victory": "avatar_girl-08_victory_00001_.png",
         "defeat": "avatar_girl-08_defeat_edit_00001_.png",
     },
+    "boy-02": {e: f"avatar_boy-02_{e}_00001_.png" for e in EXPRESSIONS},
 }
 
 # Skin drift check: mean color of a cheek-height patch in the middle of
