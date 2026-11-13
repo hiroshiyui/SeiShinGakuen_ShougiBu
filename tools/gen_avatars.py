@@ -535,6 +535,16 @@ ACCEPTED_VARIANTS: dict[str, dict[str, str]] = {
         "victory": "avatar_girl-08_victory_00001_.png",
         "defeat": "avatar_girl-08_defeat_edit_00001_.png",
     },
+    # The expressive wording's furrowed brows read as anger on him, so
+    # worried and defeat are --edits with upward / drooping brows;
+    # thinking is a calm --edit of his neutral portrait (seed offset 1).
+    "boy-01": {
+        "happy": "avatar_boy-01_happy_00001_.png",
+        "thinking": "avatar_boy-01_thinking_edit_00003_.png",
+        "worried": "avatar_boy-01_worried_edit_00001_.png",
+        "victory": "avatar_boy-01_victory_00001_.png",
+        "defeat": "avatar_boy-01_defeat_edit_00001_.png",
+    },
     "boy-02": {e: f"avatar_boy-02_{e}_00001_.png" for e in EXPRESSIONS},
 }
 
