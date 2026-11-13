@@ -489,6 +489,15 @@ ACCEPTED_VARIANTS: dict[str, dict[str, str]] = {
         "victory": "avatar_girl-03_victory_00001_.png",
         "defeat": "avatar_girl-03_defeat_edit_00001_.png",
     },
+    # thinking is the VARIANT_SEED_OFFSETS reroll; defeat is the reworded
+    # reserved defeat (both _00002_ after the first batch's renders).
+    "girl-04": {
+        "happy": "avatar_girl-04_happy_00001_.png",
+        "thinking": "avatar_girl-04_thinking_00002_.png",
+        "worried": "avatar_girl-04_worried_00001_.png",
+        "victory": "avatar_girl-04_victory_00001_.png",
+        "defeat": "avatar_girl-04_defeat_00002_.png",
+    },
 }
 
 # Skin drift check: mean color of a cheek-height patch in the middle of
