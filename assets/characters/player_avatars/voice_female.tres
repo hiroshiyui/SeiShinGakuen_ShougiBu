@@ -1,0 +1,7 @@
+[gd_resource type="Resource" script_class="SpeechBank" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/SpeechBank.gd" id="1_bank"]
+
+[resource]
+script = ExtResource("1_bank")
+lines = {"start": ["よろしくお願いします！", "さあ、始めましょう！", "負けないんだからね！", "お手柔らかにね。"], "check": ["王手よ！", "王手、決まったわ！", "逃がさないんだから！", "ふふっ、王手！"], "lose_piece": ["あっ、しまった……！", "ちょっと、ひどい！", "やだ、大事な駒が……！", "まだ大丈夫……のはず！"], "win": ["やったぁ！", "勝てたわ！", "楽しかった、ありがとうございました！"], "lose": ["うう、悔しい……！", "参りました……次は負けないわよ！", "勉強になったわ、ありがとう！"]}

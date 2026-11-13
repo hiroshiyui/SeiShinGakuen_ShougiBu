@@ -228,6 +228,22 @@ theme_override_colors/font_color = Color(0.08, 0.08, 0.1, 1)
 theme_override_font_sizes/font_size = 24
 theme_override_fonts/font = ExtResource("8_mplus2")
 
+[node name="PlayerSpeech" type="PanelContainer" parent="."]
+unique_name_in_owner = true
+modulate = Color(1, 1, 1, 0)
+mouse_filter = 2
+script = ExtResource("13_bubble")
+tail_up = true
+
+[node name="PlayerSpeechText" type="Label" parent="PlayerSpeech"]
+unique_name_in_owner = true
+text = ""
+horizontal_alignment = 1
+vertical_alignment = 1
+theme_override_colors/font_color = Color(0.08, 0.08, 0.1, 1)
+theme_override_font_sizes/font_size = 24
+theme_override_fonts/font = ExtResource("8_mplus2")
+
 [node name="ReviewBanner" type="Button" parent="."]
 unique_name_in_owner = true
 visible = false

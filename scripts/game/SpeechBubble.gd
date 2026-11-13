@@ -1,9 +1,9 @@
 extends PanelContainer
 
 # Comic-style speech balloon: white paper and an ink outline, drawn as
-# one continuous shape so the tail flows out of the bottom edge. The
-# balloon sits above the opponent's portrait and the tail points down
-# at it.
+# one continuous shape so the tail flows out of one edge. The
+# opponent's balloon sits above their portrait with the tail pointing
+# down at it; the player's (`tail_up`) sits below theirs, pointing up.
 
 const PAPER := Color(1, 1, 1, 1)
 const INK := Color(0.08, 0.08, 0.1, 1)
@@ -15,6 +15,7 @@ const TAIL_HALF_WIDTH := 14.0
 const TAIL_STEPS := 12
 
 var _tail_x: float = 0.0
+@export var tail_up: bool = false
 
 func _ready() -> void:
 	var box := StyleBoxEmpty.new()
@@ -25,7 +26,7 @@ func _ready() -> void:
 	add_theme_stylebox_override("panel", box)
 	resized.connect(queue_redraw)
 
-# Where the tail meets the bottom edge, in local x. Kept clear of the
+# Where the tail meets its edge, in local x. Kept clear of the
 # rounded corners.
 func set_tail_x(x: float) -> void:
 	var margin := CORNER_RADIUS + TAIL_HALF_WIDTH + 2.0
@@ -53,9 +54,12 @@ func _outline() -> PackedVector2Array:
 	var r := minf(CORNER_RADIUS, minf(rect.size.x, rect.size.y) * 0.5)
 	var pts := PackedVector2Array()
 	_add_arc(pts, rect.position + Vector2(r, r), r, PI)
+	if tail_up:
+		_add_tail(pts, rect.position.y, -1.0)
 	_add_arc(pts, Vector2(rect.end.x - r, rect.position.y + r), r, PI * 1.5)
 	_add_arc(pts, rect.end - Vector2(r, r), r, 0.0)
-	_add_tail(pts, rect.end.y)
+	if not tail_up:
+		_add_tail(pts, rect.end.y, 1.0)
 	_add_arc(pts, Vector2(rect.position.x + r, rect.end.y - r), r, PI * 0.5)
 	return pts
 
@@ -64,18 +68,22 @@ func _add_arc(pts: PackedVector2Array, center: Vector2, r: float, start: float) 
 		var a := start + PI * 0.5 * i / CORNER_STEPS
 		pts.append(center + Vector2(cos(a), sin(a)) * r)
 
-# Two concave curves, tangent to the bottom edge, meeting at the tip.
-# Traced right to left, the direction the outline runs along the bottom.
-func _add_tail(pts: PackedVector2Array, bottom: float) -> void:
-	var left := Vector2(_tail_x - TAIL_HALF_WIDTH, bottom)
-	var right := Vector2(_tail_x + TAIL_HALF_WIDTH, bottom)
-	var tip := Vector2(_tail_x, bottom + TAIL_LENGTH)
-	var control_left := Vector2(_tail_x - 2.0, bottom)
-	var control_right := Vector2(_tail_x + 2.0, bottom)
+# Two concave curves, tangent to the edge at `y`, meeting at the tip
+# (`dir` -1 points up, +1 down). Traced in the direction the clockwise
+# outline runs along that edge: left to right on top, right to left on
+# the bottom.
+func _add_tail(pts: PackedVector2Array, y: float, dir: float) -> void:
+	var left := Vector2(_tail_x - TAIL_HALF_WIDTH, y)
+	var right := Vector2(_tail_x + TAIL_HALF_WIDTH, y)
+	var tip := Vector2(_tail_x, y + dir * TAIL_LENGTH)
+	var control_left := Vector2(_tail_x - 2.0, y)
+	var control_right := Vector2(_tail_x + 2.0, y)
+	var first := [left, control_left] if dir < 0.0 else [right, control_right]
+	var second := [control_right, right] if dir < 0.0 else [control_left, left]
 	for i in TAIL_STEPS + 1:
-		pts.append(_quadratic(right, control_right, tip, float(i) / TAIL_STEPS))
+		pts.append(_quadratic(first[0], first[1], tip, float(i) / TAIL_STEPS))
 	for i in range(1, TAIL_STEPS + 1):
-		pts.append(_quadratic(tip, control_left, left, float(i) / TAIL_STEPS))
+		pts.append(_quadratic(tip, second[0], second[1], float(i) / TAIL_STEPS))
 
 func _quadratic(a: Vector2, b: Vector2, c: Vector2, t: float) -> Vector2:
 	return a.lerp(b, t).lerp(b.lerp(c, t), t)

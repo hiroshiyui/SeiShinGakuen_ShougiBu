@@ -180,6 +180,18 @@ static func is_avatar_id(v: Variant) -> bool:
 static func avatar_path(aid: String) -> String:
 	return "%s/%s.webp" % [AVATAR_DIR, aid] if is_avatar_id(aid) else ""
 
+# The player's speech bank, by the avatar's style ("girl-03" -> female);
+# null for no avatar.
+const AVATAR_VOICES := {
+	"girl": "res://assets/characters/player_avatars/voice_female.tres",
+	"boy": "res://assets/characters/player_avatars/voice_male.tres",
+}
+
+static func avatar_voice(aid: String) -> SpeechBank:
+	if not is_avatar_id(aid):
+		return null
+	return load(AVATAR_VOICES[aid.get_slice("-", 0)]) as SpeechBank
+
 func set_avatar_id(aid: String) -> void:
 	if aid != "" and not is_avatar_id(aid):
 		return

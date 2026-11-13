@@ -25,6 +25,15 @@ var _resumed: bool = false
 @onready var _speech_bubble: PanelContainer = %OpponentSpeech
 @onready var _speech_label: Label = %OpponentSpeechText
 var _speech_tween: Tween = null
+# The player's own balloon, under their portrait. Lines come from the
+# avatar's SpeechBank and are shown on this device only, never sent to
+# a 通信対戦 peer.
+@onready var _player_speech: PanelContainer = %PlayerSpeech
+@onready var _player_speech_label: Label = %PlayerSpeechText
+var _player_speech_tween: Tween = null
+var _player_voice: SpeechBank = null
+# After the player's greeting, the opponent answers this much later.
+const REPLY_DELAY_SEC := 1.5
 const SPEECH_HOLD_SEC := 3.5
 const SPEECH_FADE_SEC := 0.25
 @onready var _undo_btn: Button = %UndoButton
@@ -249,7 +258,7 @@ func _ready() -> void:
 	_refit_board()
 	_refresh_all()
 	if not _resumed:
-		_say("start")
+		_greet()
 	if Settings.mode != Settings.Mode.H_VS_H and not _ai_enabled and not _lan:
 		_show_ai_load_error.call_deferred()
 	_maybe_start_ai_turn()
@@ -334,6 +343,7 @@ func _setup_player_strip() -> void:
 	var tex: Texture2D = load(path) if path != "" and ResourceLoader.exists(path) else null
 	_player_portrait.texture = tex
 	_player_portrait.visible = tex != null
+	_player_voice = Settings.avatar_voice(Settings.avatar_id) if (_lan or _ai_enabled) else null
 	if _lan:
 		_player_label.text = "%s (%s)" % [NetSession.local_name, _local_side()]
 		_player_strip.visible = true
@@ -564,6 +574,53 @@ func _hide_speech() -> void:
 	if _speech_tween != null and _speech_tween.is_valid():
 		_speech_tween.kill()
 	_speech_bubble.modulate.a = 0.0
+	_hide_player_speech()
+
+# The player greets first; the opponent answers a beat later, so the two
+# balloons read as an exchange instead of talking over each other.
+func _greet() -> void:
+	if _player_say("start"):
+		var tw := create_tween()
+		tw.tween_interval(REPLY_DELAY_SEC)
+		tw.tween_callback(_say.bind("start"))
+	else:
+		_say("start")
+
+# Shows one of the player's lines under their portrait, then fades it.
+# Returns whether a line was shown.
+func _player_say(moment: String) -> bool:
+	if _player_voice == null or not _player_strip.visible:
+		return false
+	var line := _player_voice.random_line(moment)
+	if line == "":
+		return false
+	_hide_player_speech()
+	_player_speech_label.text = line
+	_player_speech.modulate.a = 1.0
+	_player_speech_tween = create_tween()
+	_player_speech_tween.tween_interval(SPEECH_HOLD_SEC)
+	_player_speech_tween.tween_property(_player_speech, "modulate:a", 0.0,
+		Settings.anim(SPEECH_FADE_SEC))
+	return true
+
+func _hide_player_speech() -> void:
+	if _player_speech_tween != null and _player_speech_tween.is_valid():
+		_player_speech_tween.kill()
+	_player_speech.modulate.a = 0.0
+
+# Parks the player's balloon just below their strip (portrait and name),
+# over their 持ち駒 row, with the tail up at the portrait's centre.
+func _place_player_speech() -> void:
+	const EDGE := 12.0
+	var strip: Rect2 = _player_strip.get_global_rect()
+	var center_x: float = _player_portrait.get_global_rect().get_center().x
+	var sz: Vector2 = _player_speech.get_combined_minimum_size()
+	var vp: Vector2 = get_viewport_rect().size
+	var x: float = clampf(center_x - sz.x * 0.5, EDGE, maxf(EDGE, vp.x - sz.x - EDGE))
+	_player_speech.size = sz
+	_player_speech.global_position = Vector2(
+		x, minf(vp.y - sz.y - EDGE, strip.end.y + _player_speech.TAIL_LENGTH))
+	_player_speech.set_tail_x(center_x - x)
 
 # Parks the balloon just above the portrait, over the 持ち駒 row, with
 # its tail on the portrait's centre. Runs every frame while it shows, so
@@ -586,6 +643,16 @@ func _result_speech(result_expr: String) -> String:
 		return ""
 	var line := _character.random_line("win" if result_expr == "victory" else "lose")
 	return "" if line == "" else "%s「%s」" % [_character.display_name, line]
+
+# The player's closing line for the 対局終了 dialog; "" on a draw or
+# without an avatar.
+func _player_result_speech(winner: String) -> String:
+	if winner == "" or _player_voice == null or not _player_strip.visible:
+		return ""
+	var won: bool = (winner == "後手") == _human_plays_gote()
+	var line := _player_voice.random_line("win" if won else "lose")
+	var name := NetSession.local_name if _lan else "あなた"
+	return "" if line == "" else "%s「%s」" % [name, line]
 
 # Adds a finished game to the opponent's win/loss record. Draws and
 # games with no moves don't count.
@@ -662,6 +729,8 @@ func _run_ai_think(playouts: int, temperature: float) -> Variant:
 func _process(_delta: float) -> void:
 	if _speech_bubble.modulate.a > 0.0:
 		_place_speech_bubble()
+	if _player_speech.modulate.a > 0.0:
+		_place_player_speech()
 	if _comment_thread != null and not _comment_thread.is_alive():
 		_finish_gameover_comment()
 	if _teacher_thinking and _teacher_thread != null and not _teacher_thread.is_alive():
@@ -964,6 +1033,13 @@ func _commit_move(m: Dictionary) -> void:
 			_say("lose_piece")
 	elif _ai_enabled and mover_is_ai and not _game_over and bool(_core.is_check()):
 		_say("check")
+	if not _game_over:
+		# The side that just moved is the one not on move now.
+		var player_moved: bool = bool(_core.side_to_move_gote()) != _human_plays_gote()
+		if player_moved and bool(_core.is_check()):
+			_player_say("check")
+		elif not player_moved and is_capture and int(target_piece["kind"]) in EXPR_MAJOR_KINDS:
+			_player_say("lose_piece")
 	# If the player committed a move while suggestions were open, the
 	# board has been held small through this turn. Once it's the player's
 	# turn again (= AI has replied) — or the game ended — zoom back.
@@ -1051,7 +1127,8 @@ func _end_game(text: String, terminator: String, winner: String = "") -> void:
 	# automatically; the dialog just reports where it went.
 	_hide_speech()
 	var parts := PackedStringArray([text])
-	for part in [_result_speech(result_expr), _auto_save_kif_message()]:
+	for part in [_result_speech(result_expr), _player_result_speech(winner),
+			_auto_save_kif_message()]:
 		if part != "":
 			parts.append(part)
 	_gameover_label.text = "\n\n".join(parts)
@@ -1203,7 +1280,7 @@ func _reset_game() -> void:
 	_mood_win_rate = -1.0
 	_reaction_until_msec = 0
 	_set_opponent_expression("neutral")
-	_say("start")
+	_greet()
 	_clear_selection()
 	_refresh_all()
 	_refresh_last_move_hint()

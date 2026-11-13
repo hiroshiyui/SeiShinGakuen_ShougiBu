@@ -32,6 +32,7 @@ func _initialize() -> void:
 	_run("every character ships all six expression portraits", _test_expression_portraits)
 	_run("every character has short lines for every speech moment", _test_speech_lines)
 	_run("every player avatar ships its portrait", _test_avatar_portraits)
+	_run("both avatar voices have short lines for every moment", _test_avatar_voices)
 	_run("load_character round-trips by id", _test_load_by_id)
 	_run("load_character returns null for unknown id", _test_load_unknown)
 	if _fails > 0:
@@ -163,6 +164,26 @@ func _test_avatar_portraits() -> String:
 		var path: String = _settings.avatar_path(aid)
 		if not FileAccess.file_exists(path):
 			return "%s: missing %s" % [aid, path]
+	return ""
+
+func _test_avatar_voices() -> String:
+	const MAX_WIDTH := 20.0  # same one-line balloon as the opponents'
+	for aid in ["girl-01", "boy-01"]:
+		var bank: SpeechBank = _settings.avatar_voice(aid)
+		if bank == null:
+			return "no voice for %s" % aid
+		for moment in ["start", "check", "lose_piece", "win", "lose"]:
+			var options: Array = bank.lines.get(moment, [])
+			if options.is_empty():
+				return "%s voice has no lines for %s" % [aid, moment]
+			for line in options:
+				var width := 0.0
+				for ch in str(line):
+					width += 0.55 if ch.unicode_at(0) < 128 else 1.0
+				if width == 0.0 or width > MAX_WIDTH:
+					return "%s %s: bad length: %s" % [aid, moment, line]
+	if _settings.avatar_voice("") != null:
+		return "no avatar should have no voice"
 	return ""
 
 func _test_load_by_id() -> String:
