@@ -5,6 +5,7 @@ Seishin Gakuen Shogi Club (清正学園将棋部) is a Shogi (Japanese chess) ga
 * <b>Complete Shogi rules</b> — check, nifu (double pawn), uchifuzume (pawn-drop mate), sennichite (repetition, including the perpetual-check loss) and nyuugyoku (entering-king, 27-point rule).
 * <b>Offline AI</b> — an AlphaZero-style policy + value network (Bonanza-method trained) runs on-device through a single-threaded PUCT MCTS. Eight strength levels.
 * <b>Eight opponents</b> — club members and teachers from Lv 1 to Lv 8, each with a portrait and a short bio.
+* <b>Your avatar</b> — pick one of 16 students to stand for you. Your portrait sits under the board and changes expression with the game; in 通信対戦 your opponent sees it too.
 * <b>LAN play (通信対戦)</b> — two devices on the same Wi-Fi play each other over a direct connection, no server. The player with gote sees the board turned round, and a rematch swaps the sides.
 * <b>Teacher mode</b> — tap "Ask Kato-sensei!" during a game to see the top three candidate moves with win rates. You still choose the move yourself.
 * <b>Play experience</b> — multi-step undo, resign, last-move highlight, piece and UI sounds, haptics, save and resume.
