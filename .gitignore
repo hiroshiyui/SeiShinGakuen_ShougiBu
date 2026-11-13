@@ -21,3 +21,6 @@ tools/.cache/
 
 # Editor / script backups (e.g. an interrupted preset patch)
 *.bak
+
+# Python bytecode from tools/*.py
+__pycache__/

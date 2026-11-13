@@ -47,7 +47,7 @@ import time
 import zlib
 from pathlib import Path
 
-from gen_portrait_variants import Comfy, encode
+from gen_portrait_variants import IDENTITY, KEEP, NO_HANDS, NO_OBJECTS, Comfy, encode
 
 REPO = Path(__file__).resolve().parent.parent
 OUT_DIR = REPO / "assets" / "characters" / "player_avatars"
@@ -364,6 +364,112 @@ def edit(args) -> int:
     return 0
 
 
+# --- expression variants ----------------------------------------------
+# Same five expressions as the opponents (CharacterProfile.portrait_dir),
+# made by editing each avatar's ACCEPTED render with only the expression
+# re-prompted, and the opponents' guard wording (KEEP, IDENTITY, NO_HANDS,
+# NO_OBJECTS from gen_portrait_variants). Wording is scaled by temperament
+# so a reserved student never beams. The in-game avatar is 96 px, so the
+# expressions lean a little pronounced.
+EXPRESSIONS = ["thinking", "happy", "worried", "victory", "defeat"]
+TEMPERAMENT = {
+    "girl-02": "expressive", "girl-03": "expressive", "girl-05": "expressive",
+    "boy-01": "expressive", "boy-03": "expressive", "boy-06": "expressive",
+    "girl-01": "gentle", "girl-07": "gentle", "girl-08": "gentle",
+    "boy-04": "gentle", "boy-05": "gentle", "boy-08": "gentle",
+    "girl-04": "reserved", "girl-06": "reserved", "boy-02": "reserved", "boy-07": "reserved",
+}
+VARIANT_WORDING = {
+    "expressive": {
+        "thinking": "The student is thinking hard about a tricky problem: mouth closed and"
+                    " pursed to one side, eyebrows furrowed, eyes looking up and to the side.",
+        "happy": "The student beams with joy: a big, open-mouthed happy smile, eyes squeezed"
+                 " into happy curves, rosy cheeks.",
+        "worried": "The student looks anxious and in trouble: eyebrows raised and slanted"
+                   " upward, eyes a little wide, closed mouth a small wobbly frown.",
+        "victory": "The student cheers in triumph: eyes wide and sparkling, eyebrows raised"
+                   " high, a big, delighted open-mouthed smile.",
+        "defeat": "The student is bitterly disappointed: eyebrows drooping, eyes glossy and"
+                  " downcast, lower lip pushed out in a frustrated pout.",
+    },
+    "gentle": {
+        "thinking": "The student is quietly concentrating: eyes lowered and looking to the"
+                    " side, eyebrows slightly drawn together, lips closed.",
+        "happy": "The student smiles warmly: a soft, happy smile, eyes curved gently, a light"
+                 " blush.",
+        "worried": "The student looks uneasy: the inner ends of the eyebrows raised, eyes"
+                   " glancing to the side, lips pressed together.",
+        "victory": "The student is quietly delighted: bright eyes, a pleased, slightly open"
+                   " smile, cheeks lightly flushed.",
+        "defeat": "The student is disappointed: eyes half closed and downcast, eyebrows"
+                  " drooping, a small, sad, resigned smile.",
+    },
+    "reserved": {
+        "thinking": "The student is in calm, sharp concentration: eyes narrowed slightly and"
+                    " looking down to the side, mouth a straight closed line.",
+        "happy": "The student's composure softens: relaxed eyebrows, warm eyes and a slight,"
+                 " genuine closed-mouth smile.",
+        "worried": "The student shows only a flicker of unease: eyebrows tense, eyes slightly"
+                   " widened, lips pressed firmly together.",
+        "victory": "The student is quietly triumphant: a faint, confident closed-mouth smile"
+                   " and steady, self-assured eyes.",
+        "defeat": "The student accepts a loss with composure: eyes closed, eyebrows relaxed,"
+                  " a faint, bitter smile.",
+    },
+}
+# The opponents' IDENTITY clause says "the same light skin color", which
+# would lighten boy-06's brown and girl-02's tanned skin.
+AVATAR_IDENTITY = IDENTITY.replace("the same light skin color", "the same skin color")
+assert AVATAR_IDENTITY != IDENTITY
+
+# Per-avatar notes that keep the edit from fighting the design.
+VARIANT_NOTES = {
+    "boy-03": " His eyes stay hidden behind the dark sunglasses, which stay exactly as they"
+              " are; the expression shows through his eyebrows, mouth and cheeks.",
+}
+
+
+def variant_prompt(aid: str, expr: str) -> str:
+    a = AVATARS[aid]
+    he = "She" if aid.startswith("girl") else "He"
+    lead = f"This is {a['who']}. "
+    glasses = f" {he} keeps the same {a['glasses']}." if "glasses" in a else ""
+    return (lead + VARIANT_WORDING[TEMPERAMENT[aid]][expr] + VARIANT_NOTES.get(aid, "")
+            + glasses + KEEP + AVATAR_IDENTITY + NO_HANDS + NO_OBJECTS)
+
+
+def variants(args) -> int:
+    if not args.out_dir:
+        print("!! --variants needs --out-dir (review first)", file=sys.stderr)
+        return 1
+    model = dict(DISTILLED if args.distilled else BASE)
+    comfy = Comfy(args.server)
+    jobs = []
+    for aid in args.avatar or list(AVATARS):
+        for expr in args.expression or EXPRESSIONS:
+            dst = args.out_dir / f"{aid}_{expr}.webp"
+            if dst.exists() and not args.force:
+                continue
+            jobs.append((aid, expr, dst))
+    print(f"{len(jobs)} variant(s) to generate  model: {model}")
+    refs: dict[str, str] = {}
+    for n, (aid, expr, dst) in enumerate(jobs, 1):
+        if aid not in refs:
+            src = args.accepted_dir / ACCEPTED[aid]
+            refs[aid] = comfy.upload(src, "avatar-ref-" + src.name, "shougibu")
+        seed = zlib.crc32(f"avatar/{aid}/{expr}".encode()) + args.seed_offset
+        t0 = time.time()
+        png = comfy.run(build_graph(variant_prompt(aid, expr), seed, [refs[aid]],
+                                    f"shougibu/avatar_{aid}_{expr}", model))
+        dst.parent.mkdir(parents=True, exist_ok=True)
+        with tempfile.NamedTemporaryFile(suffix=".png") as tmp:
+            tmp.write(png)
+            tmp.flush()
+            encode(Path(tmp.name), dst, f"{WIDTH}x{HEIGHT}", Path(tmp.name), None)
+        print(f"[{n}/{len(jobs)}] {aid} {expr}  ({time.time() - t0:.0f}s)", flush=True)
+    return 0
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     ap.add_argument("-a", "--avatar", action="append", choices=sorted(AVATARS),
@@ -394,7 +500,13 @@ def main() -> int:
     ap.add_argument("--edit-style", type=Path, action="append",
                     help="with --edit: an approved render whose art style the edit should"
                          " match; repeatable, becomes <ref_image_1>, <ref_image_2>, ...")
+    ap.add_argument("--variants", action="store_true",
+                    help="render the expression variants of the ACCEPTED avatars")
+    ap.add_argument("-e", "--expression", action="append", choices=EXPRESSIONS,
+                    help="with --variants: expression (repeatable; default: all)")
     args = ap.parse_args()
+    if args.variants:
+        return variants(args)
     if args.edit:
         return edit(args)
     if args.candidates > 1 and not args.out_dir:
