@@ -69,7 +69,7 @@ custom_minimum_size = Vector2(432, 0)
 text = ""
 horizontal_alignment = 1
 autowrap_mode = 3
-theme_override_font_sizes/font_size = 20
+theme_override_font_sizes/font_size = 26
 theme_override_colors/font_color = Color(0.94, 0.94, 0.96, 1)
 theme_override_fonts/font = ExtResource("3_mplus2")
 

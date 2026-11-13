@@ -51,7 +51,10 @@ func _ready() -> void:
 		btn.custom_minimum_size = _TILE + Vector2(_BORDER, _BORDER) * 2
 		btn.toggle_mode = true
 		btn.focus_mode = Control.FOCUS_NONE
-		btn.accessibility_name = "アバター %d" % (i + 1)
+		# Nameless avatars, so TalkBack reads the group and number in grid
+		# order: 女子 1 … 女子 8, 男子 1 … 男子 8.
+		btn.accessibility_name = "%s %d" % [
+				"女子" if aid.begins_with("girl") else "男子", int(aid.get_slice("-", 1))]
 		btn.add_theme_stylebox_override("normal", normal)
 		btn.add_theme_stylebox_override("hover", normal)
 		btn.add_theme_stylebox_override("pressed", picked)
@@ -78,7 +81,7 @@ func _ready() -> void:
 # so give it the whole grid's height, or whatever the screen leaves
 # after the title, hint, buttons and margins (it scrolls then).
 func _fit_scroll() -> void:
-	const CHROME := 440.0
+	const CHROME := 444.0  # the hint is up to two 24 px lines
 	var grid := _grid.get_combined_minimum_size()
 	var avail := get_viewport_rect().size.y - CHROME
 	_scroll.custom_minimum_size = Vector2(grid.x, clampf(avail, _TILE.y, grid.y))

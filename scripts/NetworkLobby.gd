@@ -7,7 +7,7 @@ extends Control
 
 enum State { IDLE, HOSTING, BROWSING, CONNECTING }
 
-const IDLE_TEXT := "同じ Wi-Fi につないだ相手と対局します。\n片方が「対局を作る」、もう片方が\n「対局に参加する」を選んでください。"
+const IDLE_TEXT := "同じ Wi-Fi につないだ\n相手と対局します。\n片方が「対局を作る」、もう片方が\n「対局に参加する」を選んでください。"
 
 @onready var _status: Label = %Status
 @onready var _game_list: ItemList = %GameList

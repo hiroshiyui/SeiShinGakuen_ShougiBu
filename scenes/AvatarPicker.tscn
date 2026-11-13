@@ -67,7 +67,7 @@ unique_name_in_owner = true
 text = "将棋部でのあなたの姿です。"
 horizontal_alignment = 1
 theme_override_colors/font_color = Color(0.92, 0.92, 0.92, 1)
-theme_override_font_sizes/font_size = 22
+theme_override_font_sizes/font_size = 24
 theme_override_fonts/font = ExtResource("3_mplus2")
 
 [node name="Scroll" type="ScrollContainer" parent="Layout/Center/Panel/Box"]

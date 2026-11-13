@@ -54,12 +54,12 @@ theme_override_font_sizes/font_size = 22
 
 [node name="LevelRow" type="HBoxContainer" parent="Layout"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 64)
+custom_minimum_size = Vector2(0, 72)
 theme_override_constants/separation = 8
 
 [node name="DailyButton" type="Button" parent="Layout/LevelRow"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 64)
+custom_minimum_size = Vector2(0, 72)
 size_flags_horizontal = 3
 text = "今日の一問"
 theme_override_font_sizes/font_size = 22

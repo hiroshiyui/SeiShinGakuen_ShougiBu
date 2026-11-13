@@ -73,7 +73,7 @@ func _ready() -> void:
 	_daily_btn.pressed.connect(_open_daily)
 	for plies in LEVELS:
 		var b := Button.new()
-		b.custom_minimum_size = Vector2(0, 64)
+		b.custom_minimum_size = Vector2(0, 72)
 		b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		b.toggle_mode = true
 		b.add_theme_font_size_override("font_size", 22)
@@ -452,6 +452,6 @@ func _refit_board() -> void:
 	var vw := get_viewport().get_visible_rect().size.x
 	var vh := get_viewport().get_visible_rect().size.y
 	# header, level row, hands ×2, status, nav, separations + padding
-	var reserved: float = 72.0 + 64.0 + 72.0 + 72.0 + 56.0 + 72.0 + 72.0
+	var reserved: float = 72.0 + 72.0 + 72.0 + 72.0 + 56.0 + 72.0 + 72.0
 	var side: float = clamp(min(vw - 40.0, vh - reserved), 240.0, 1600.0)
 	_board_view.custom_minimum_size = Vector2(side, side)
