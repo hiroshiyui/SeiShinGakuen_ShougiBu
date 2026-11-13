@@ -469,6 +469,7 @@ VARIANT_NOTES = {
 # to the neutral <id>.webp. Missing ones fall back to neutral in game.
 ACCEPTED_VARIANTS: dict[str, dict[str, str]] = {
     "girl-01": {e: f"avatar_girl-01_{e}_00001_.png" for e in EXPRESSIONS},
+    "girl-02": {e: f"avatar_girl-02_{e}_00001_.png" for e in EXPRESSIONS},
 }
 
 # Skin drift check: mean color of a cheek-height patch in the middle of
