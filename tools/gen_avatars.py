@@ -526,6 +526,15 @@ ACCEPTED_VARIANTS: dict[str, dict[str, str]] = {
         "victory": "avatar_girl-07_victory_00001_.png",
         "defeat": "avatar_girl-07_defeat_edit_00001_.png",
     },
+    # thinking is her original with only the faint mouth redrawn (two
+    # fuller edits failed); defeat is an --edit; worried is the original.
+    "girl-08": {
+        "happy": "avatar_girl-08_happy_00001_.png",
+        "thinking": "avatar_girl-08_thinking_edit_00003_.png",
+        "worried": "avatar_girl-08_worried_00001_.png",
+        "victory": "avatar_girl-08_victory_00001_.png",
+        "defeat": "avatar_girl-08_defeat_edit_00001_.png",
+    },
 }
 
 # Skin drift check: mean color of a cheek-height patch in the middle of
