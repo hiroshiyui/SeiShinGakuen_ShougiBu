@@ -501,6 +501,15 @@ KEEP_ACCESSORY = {
 }
 
 
+# girl-03's first thinking variant drew her mouth as one stroke that
+# faded out halfway, reading as a smudge rather than a pursed mouth.
+LINE_QUALITY = (
+    " Every line is drawn as a clean, complete, confident stroke with the same weight and"
+    " darkness as the line work in the reference image, especially the mouth, the"
+    " eyebrows and the eyelids: no faint, broken, smudged, fading or half-finished lines."
+)
+
+
 def variant_prompt(aid: str, expr: str) -> str:
     a = AVATARS[aid]
     he = "She" if aid.startswith("girl") else "He"
@@ -510,7 +519,7 @@ def variant_prompt(aid: str, expr: str) -> str:
         glasses += (f" {he} still has {KEEP_ACCESSORY[aid]}, exactly as in the reference"
                     " image: same size, color and position, clearly visible.")
     return (lead + VARIANT_WORDING[TEMPERAMENT[aid]][expr] + VARIANT_NOTES.get(aid, "")
-            + glasses + KEEP + AVATAR_IDENTITY + NO_HANDS + NO_OBJECTS)
+            + glasses + LINE_QUALITY + KEEP + AVATAR_IDENTITY + NO_HANDS + NO_OBJECTS)
 
 
 def variants(args) -> int:
