@@ -480,6 +480,15 @@ VARIANT_SEED_OFFSETS: dict[tuple[str, str], int] = {
 ACCEPTED_VARIANTS: dict[str, dict[str, str]] = {
     "girl-01": {e: f"avatar_girl-01_{e}_00001_.png" for e in EXPRESSIONS},
     "girl-02": {e: f"avatar_girl-02_{e}_00001_.png" for e in EXPRESSIONS},
+    # Three are --edit fixes of faint or uneven mouth strokes; the edit
+    # output was renamed from avatar_girl-03_edit_0000N_ after each run.
+    "girl-03": {
+        "happy": "avatar_girl-03_happy_00001_.png",
+        "thinking": "avatar_girl-03_thinking_edit_00001_.png",
+        "worried": "avatar_girl-03_worried_edit_00002_.png",
+        "victory": "avatar_girl-03_victory_00001_.png",
+        "defeat": "avatar_girl-03_defeat_edit_00001_.png",
+    },
 }
 
 # Skin drift check: mean color of a cheek-height patch in the middle of
