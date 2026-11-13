@@ -70,6 +70,12 @@ enum Role { NONE, HOST, GUEST }
 var role: int = Role.NONE
 var local_name: String = ""
 var remote_name: String = ""
+# Avatar ids (Settings.AVATAR_IDS), "" for none. The peer's is "" too
+# when it runs a version that doesn't send one. Settings is reached
+# through its script, not the autoload, so tests can run this headless.
+const _SettingsScript := preload("res://scripts/autoload/Settings.gd")
+var local_avatar: String = ""
+var remote_avatar: String = ""
 var local_is_gote: bool = false
 var game_id: String = ""
 var _resume_token: String = ""
@@ -114,8 +120,9 @@ func is_active() -> bool:
 
 # Opens the game port (trying a few in a row if one is taken). Returns
 # false if none could be opened.
-func host(name: String) -> bool:
+func host(name: String, avatar: String = "") -> bool:
 	close()
+	local_avatar = avatar
 	_server = TCPServer.new()
 	for i in PORT_TRIES:
 		if _server.listen(GAME_PORT + i) == OK:
@@ -126,10 +133,11 @@ func host(name: String) -> bool:
 	_server = null
 	return false
 
-func join(address: String, port: int, name: String) -> bool:
+func join(address: String, port: int, name: String, avatar: String = "") -> bool:
 	close()
 	role = Role.GUEST
 	local_name = name
+	local_avatar = avatar
 	_host_address = address
 	_host_port = port
 	return _connect_to_host()
@@ -160,6 +168,7 @@ func close(notify: String = "") -> void:
 	_resume_token = ""
 	moves = PackedStringArray()
 	remote_name = ""
+	remote_avatar = ""
 	listen_port = 0
 
 # --- game actions ----------------------------------------------------------
@@ -322,6 +331,7 @@ func _adopt_peer(p: StreamPeerTCP) -> void:
 func _send_hello() -> void:
 	_send({
 		"t": "hello", "proto": PROTO, "app": APP_ID, "name": local_name,
+		"avatar": local_avatar,
 		"game_id": game_id if in_game else "",
 		"token": _resume_token if in_game else "",
 		"moves": Array(moves) if in_game else [],
@@ -499,8 +509,13 @@ func _on_hello(msg: Dictionary) -> void:
 			_fail("相手のアプリのバージョンが違います")
 		return
 	var their_name := _clean_text(msg.get("name"), NAME_MAX, "相手")
+	# Optional field (older peers omit it); only a known id is kept, so
+	# it can't become an arbitrary resource path.
+	var avatar: Variant = msg.get("avatar")
+	var their_avatar: String = avatar if _SettingsScript.is_avatar_id(avatar) else ""
 	if role == Role.GUEST:
 		remote_name = their_name
+		remote_avatar = their_avatar
 		_handshaken = true
 		# The host's hello answers ours; `start` or `sync` follows.
 		handshake_done.emit()
@@ -517,6 +532,7 @@ func _on_hello(msg: Dictionary) -> void:
 			_drop_stranger()
 			return
 		remote_name = their_name
+		remote_avatar = their_avatar
 		_handshaken = true
 		_send_hello()
 		moves = agreed
@@ -531,6 +547,7 @@ func _on_hello(msg: Dictionary) -> void:
 		_drop_stranger()
 		return
 	remote_name = their_name
+	remote_avatar = their_avatar
 	_handshaken = true
 	_send_hello()
 	handshake_done.emit()

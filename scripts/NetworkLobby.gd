@@ -50,7 +50,7 @@ func _on_host_pressed() -> void:
 		_cancel()
 		return
 	var name := NetSession.default_name()
-	if not NetSession.host(name):
+	if not NetSession.host(name, Settings.avatar_id):
 		_set_state(State.IDLE, "対局を作れませんでした。\n通信ポートを開けません。")
 		return
 	_discovery.start_beacon(NetSession.listen_port, name)
@@ -80,7 +80,8 @@ func _on_game_chosen(index: int) -> void:
 		return
 	var h: Dictionary = _game_list.get_item_metadata(index)
 	_discovery.stop()
-	if not NetSession.join(str(h["address"]), int(h["port"]), NetSession.default_name()):
+	if not NetSession.join(str(h["address"]), int(h["port"]), NetSession.default_name(),
+			Settings.avatar_id):
 		_set_state(State.IDLE, "接続できませんでした。")
 		return
 	_set_state(State.CONNECTING, "%s に接続しています…" % h["name"])

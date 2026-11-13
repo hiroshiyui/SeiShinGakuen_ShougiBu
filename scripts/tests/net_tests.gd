@@ -32,6 +32,7 @@ func _main() -> void:
 	await _test_bad_types_end_session()
 	await _test_oversized_line_ends_session()
 	await _test_start_mid_game_ignored()
+	await _test_avatars_exchanged()
 	await _test_discovery_finds_beacon()
 	await _test_discovery_finds_mdns()
 	for n: Node in [_host, _guest]:
@@ -85,6 +86,26 @@ func _test_handshake_and_move() -> void:
 	var got := await _wait_for(func(): return (gote_tag + ":move:7g7f") in _events, 2.0)
 	_check(got, "move arrives at the other side")
 	_check(Array(gote.moves) == ["7g7f"] and Array(sente.moves) == ["7g7f"], "both logs agree")
+
+func _test_avatars_exchanged() -> void:
+	print("avatars")
+	var h: Node = _make("aH")
+	var g: Node = _make("aG")
+	h.host("H", "girl-03")
+	g.join("127.0.0.1", h.listen_port, "G", "boy-05")
+	var ok := await _wait_for(func(): return h.in_game and g.in_game, 3.0)
+	_check(ok, "pair with avatars connects")
+	_check(h.remote_avatar == "boy-05" and g.remote_avatar == "girl-03", "avatar ids exchanged")
+	await _close_pair([h, g])
+	# A made-up id (or a path) must not get through as an avatar.
+	h = _make("bH")
+	g = _make("bG")
+	h.host("H", "../../etc/passwd")
+	g.join("127.0.0.1", h.listen_port, "G")
+	ok = await _wait_for(func(): return h.in_game and g.in_game, 3.0)
+	_check(ok, "pair without valid avatars connects")
+	_check(g.remote_avatar == "" and h.remote_avatar == "", "unknown or missing avatar ids are dropped")
+	await _close_pair([h, g])
 
 func _test_reconnect_resyncs_longer_list() -> void:
 	print("reconnect")

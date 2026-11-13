@@ -13,7 +13,8 @@ extends SceneTree
 # `addr=<phone ip>` to join without discovery. Add `drop` to drop the
 # connection once after the third move, to watch the phone wait for the
 # reconnect. Add `name=<text>` to show the phone a name other than "Bot"
-# (e.g. for screenshots).
+# (e.g. for screenshots), and `avatar=<id>` (e.g. `avatar=girl-03`, see
+# Settings.AVATAR_IDS) to show it a portrait.
 
 const Net := preload("res://scripts/autoload/NetSession.gd")
 const Discovery := preload("res://scripts/net/LanDiscovery.gd")
@@ -26,6 +27,7 @@ var _rematch: bool = false
 var _mdns_ad: Object = null
 var _move_at_msec: int = -1
 var _name: String = "Bot"
+var _avatar: String = ""
 
 func _initialize() -> void:
 	var args := OS.get_cmdline_user_args()
@@ -53,11 +55,13 @@ func _initialize() -> void:
 			direct = a.substr(5)
 		elif a.begins_with("name="):
 			_name = a.substr(5)
+		elif a.begins_with("avatar="):
+			_avatar = a.substr(7)
 	if direct != "":
 		# Skips discovery, e.g. when this computer's firewall drops the
 		# phone's beacon: `-- join addr=192.168.1.23`.
 		print("[bot] joining %s directly" % direct)
-		_net.join(direct, Net.GAME_PORT, _name)
+		_net.join(direct, Net.GAME_PORT, _name, _avatar)
 	elif "join" in args:
 		_disc.hosts_changed.connect(_on_hosts)
 		if not _disc.start_browse():
@@ -65,7 +69,7 @@ func _initialize() -> void:
 			return
 		print("[bot] browsing for a host…")
 	else:
-		if not _net.host(_name):
+		if not _net.host(_name, _avatar):
 			_finish("cannot open game port")
 			return
 		if "mdns-only" in args:
@@ -85,7 +89,7 @@ func _on_hosts() -> void:
 	var h: Dictionary = hosts[0]
 	print("[bot] joining %s at %s:%d" % [h["name"], h["address"], h["port"]])
 	_disc.stop()
-	_net.join(str(h["address"]), int(h["port"]), _name)
+	_net.join(str(h["address"]), int(h["port"]), _name, _avatar)
 
 func _on_started() -> void:
 	_disc.stop()
