@@ -1,0 +1,466 @@
+#!/usr/bin/env python3
+"""Generate the player-avatar portraits with FLUX.3 Image Klein.
+
+Drives a running ComfyUI server (default http://127.0.0.1:8188) with the
+graph of the `image_flux3_klein_image_edit` workflow template (base int8
+checkpoint, euler / simple, 50 steps; --distilled switches to the distilled
+checkpoint at 16 steps, cfg 1, for quick drafts). The original
+lossless renders of two shipped portraits go in as style references,
+`<ref_image_0>` and `<ref_image_1>`, so the avatars share the opponents'
+art style, framing and pastel background while each prompt describes a
+new student. Two references average the style out; with one, the new
+face drifts toward that character's face. With 伊藤明 as a reference,
+a boy with short dark hair came out as 伊藤明 himself, glasses included;
+with two girls, the boys came out girlish. Boys therefore pair 中村アリス
+with テリー・クラーク, whose curly hair, features and raised hand are
+far enough from every avatar that the prompt overrides them.
+
+Output: `assets/characters/player_avatars/<id>.webp`, 880x1168 like the opponent
+portraits. Existing files are skipped unless --force. Seeds are derived
+from the avatar id, so a run is reproducible; SEED_OFFSETS records the
+rerolls that were picked. Avatars listed in ACCEPTED are installed from
+their approved ComfyUI render instead of being rendered again.
+
+    ./tools/gen_avatars.py                          # everything missing
+    ./tools/gen_avatars.py -a girl-03 --force
+    ./tools/gen_avatars.py --candidates 3 --out-dir /tmp/try   # trials
+
+With --out-dir, each candidate is written as `<id>_s<offset>.webp` to
+that directory for review instead of into the asset folder. Needs
+ImageMagick (`magick`). After a run, let Godot write the `.import`
+sidecars:
+
+    ~/.local/bin/Godot_v4.7.2-stable_linux.x86_64 --headless --import --path .
+
+then set `compress/mode=1` and `compress/lossy_quality=0.85` in each new
+`.webp.import`, as the opponent portraits have, and import again: Godot's
+default is lossless, which made the 16 avatars 5.7 MB in the APK instead
+of 0.75 MB.
+"""
+
+from __future__ import annotations
+
+import argparse
+import sys
+import tempfile
+import time
+import zlib
+from pathlib import Path
+
+from gen_portrait_variants import Comfy, encode
+
+REPO = Path(__file__).resolve().parent.parent
+OUT_DIR = REPO / "assets" / "characters" / "player_avatars"
+WIDTH, HEIGHT = 880, 1168
+BASE = {"unet": "flux3-image-klein-base-int8-convrot.safetensors", "steps": 50, "cfg": 3.5}
+DISTILLED = {"unet": "flux3-image-klein-int8-convrot.safetensors", "steps": 16, "cfg": 1.0}
+
+# Style references: the original FLUX.2 renders of the shipped neutral
+# portraits (looked up in --originals-dir), falling back to the WebP.
+_STUDENTS = REPO / "assets/characters/students"
+REFERENCES = {
+    "girl": [("Flux2_00031_.png", _STUDENTS / "nakamura-alice/neutral.webp"),
+             ("Flux2_00040_.png", _STUDENTS / "itou-akira/neutral.webp")],
+    "boy": [("Flux2_00031_.png", _STUDENTS / "nakamura-alice/neutral.webp"),
+            ("Flux2_00039_.png", _STUDENTS / "terry-clark/neutral.webp")],
+}
+
+UNIFORM = ("wearing the navy blue school blazer uniform, a white shirt and a red necktie")
+STYLE = (
+    "Take only the drawing style from <ref_image_0> and <ref_image_1>: the same anime"
+    " rendering, line work, skin shading, soft rim lighting, pastel pink-to-cream gradient"
+    " background, camera distance and straight-on head-and-shoulders framing. Do not copy the"
+    " people in the reference images: this is a different person, with a different face,"
+    " hairstyle and hair color. The student looks straight at the viewer. No hands, no arms"
+    " raised, no props, no objects, no text."
+)
+# Every avatar is pinned down feature by feature (face, eyes, hair, one
+# accessory, glasses or not, expression) rather than by a loose
+# sentence: with too little to go on, the model fills the gaps from the
+# style references and the face comes out as one of the opponents.
+# Each one is also kept clear of the eight opponents (中村アリス pink
+# blunt bob, 鈴木すず long brown hair + glasses, 高橋百合子 black side
+# ponytail, 伊藤明 short black hair + glasses, テリー curly black hair,
+# 佐藤竜太郎 cap, the two teachers) and of each other: no two share a
+# hair color and style, and only three wear glasses, each a different
+# kind.
+AVATARS: dict[str, dict[str, str]] = {
+    # --- girls ---------------------------------------------------------
+    "girl-01": {  # shy first-year bookworm
+        "who": "a 15 years old Japanese first-year high school girl, quiet and bookish",
+        "face": "a small oval face with soft cheeks",
+        "eyes": "large, gentle, slightly droopy dark brown eyes",
+        "hair": "glossy black hair in two neat low braids resting over her shoulders,"
+                " with straight-cut bangs above her eyebrows",
+        "extra": "small red hair ties at the ends of her braids",
+        "mood": "a shy, gentle closed-mouth smile and a faint blush",
+    },
+    "girl-02": {  # second-year track athlete
+        "who": "a 16 years old Japanese second-year high school girl, a sprinter on the"
+               " track team",
+        "face": "a heart-shaped face with lightly sun-tanned skin",
+        "eyes": "bright, lively amber eyes",
+        "hair": "a short dark brown pixie cut with side-swept bangs, ears showing",
+        "extra": "a small white adhesive bandage on her left cheek",
+        "mood": "a confident, sporty grin showing her teeth",
+    },
+    "girl-03": {  # cheerful first-year
+        "who": "a 15 years old Japanese first-year high school girl, cheerful and energetic",
+        "face": "a round face with rosy cheeks",
+        "eyes": "bright emerald green eyes",
+        "hair": "long chestnut brown hair in a high ponytail, with a single cowlick on top",
+        "extra": "a large white ribbon tied around the base of her ponytail at the back of"
+                 " her head, its loops and long tails hanging beside the ponytail, not a"
+                 " bow on top of her head",
+        "mood": "a bright, open-mouthed happy smile",
+    },
+    "girl-04": {  # third-year class representative
+        "who": "a 17 years old Japanese third-year high school girl, the class representative",
+        "face": "a slim oval face with a pointed chin",
+        "eyes": "calm, intelligent violet-gray eyes",
+        "hair": "straight black shoulder-length hair parted on the side",
+        "extra": "a small silver hair clip above her right temple",
+        "glasses": "thin red-framed rectangular glasses",
+        "mood": "a composed expression with a faint, confident smile",
+    },
+    "girl-05": {  # mischievous first-year
+        "who": "a 15 years old Japanese first-year high school girl, playful and mischievous",
+        "face": "a small, petite, sweet face with soft cheeks",
+        "eyes": "large, bright, wide-open golden-hazel eyes, only slightly upturned at the"
+                " outer corners",
+        "hair": "light honey-brown wavy hair in two twin tails",
+        "extra": "black ribbons tying her twin tails",
+        "mood": "a cheerful, cheeky closed-mouth smile, friendly and playful, never sly"
+                " or menacing",
+    },
+    "girl-06": {  # elegant third-year
+        "who": "a 17 years old Japanese third-year high school girl, elegant and mature",
+        "face": "a long, graceful oval face",
+        "eyes": "long-lashed, half-lidded deep blue eyes",
+        "hair": "very long, straight blue-black hair in a hime cut, with blunt side locks"
+                " at her cheeks",
+        "extra": "a small beauty mark under her left eye",
+        "mood": "a serene, elegant expression with closed lips",
+    },
+    "girl-07": {  # exchange student from Finland
+        "who": "a 16 years old Finnish exchange student girl",
+        "face": "a fair-skinned face with light freckles across her nose",
+        "eyes": "pale ice-blue eyes",
+        "hair": "pale platinum blonde hair, long and loose, with the top half gathered"
+                " in a small knot at the back",
+        "extra": "small light-blue stud earrings",
+        "mood": "a calm, friendly closed-mouth smile",
+    },
+    "girl-08": {  # sleepy second-year
+        "who": "a 16 years old Japanese second-year high school girl, sleepy and laid-back",
+        "face": "a soft, slightly round face",
+        "eyes": "sleepy, half-lidded gray-green eyes",
+        "hair": "a messy teal chin-length bob with a cowlick sticking up",
+        "extra": "a yellow star-shaped hairpin",
+        "mood": "a relaxed, drowsy little smile",
+    },
+    # --- boys ----------------------------------------------------------
+    "boy-01": {  # energetic first-year
+        "who": "a 15 years old Japanese first-year high school boy, energetic and hot-blooded",
+        "face": "a youthful face with a strong jaw",
+        "eyes": "bright orange-brown eyes",
+        "hair": "chestnut brown short spiky hair",
+        "extra": "a small adhesive bandage across the bridge of his nose",
+        "mood": "an energetic, confident grin",
+    },
+    "boy-02": {  # strict student-council third-year
+        "who": "a 17 years old Japanese third-year high school boy, the strict student-council"
+               " vice president",
+        "face": "a long face with a sharp jaw and thin eyebrows",
+        "eyes": "sharp, narrow, upturned slate-gray eyes",
+        "hair": "neat dark navy-blue hair slicked back off his forehead",
+        "extra": "a plain blazer lapel with no badge or pin",
+        "mood": "a serious, composed expression with closed lips",
+    },
+    "boy-03": {  # talkative first-year (a buzz cut would read as a sports-club kid)
+        "who": "a 15 years old Japanese first-year high school boy, cheerful and talkative",
+        "face": "a round, friendly face with thick dark eyebrows",
+        "eyes": "medium-sized, slightly narrow dark brown eyes that crinkle when he smiles,"
+                " not large",
+        "hair": "short black hair in a neat two-block cut: the sides and back clipped very"
+                " short, the top a little longer and brushed forward into a short, textured"
+                " fringe",
+        "extra": "a natural, healthy complexion",
+        "glasses": "black wayfarer-style sunglasses with dark gray lenses",
+        "mood": "a wide, cheerful open-mouthed smile",
+    },
+    "boy-04": {  # laid-back third-year
+        "who": "a 17 years old Japanese third-year high school boy, easygoing and laid-back",
+        "face": "a slim face",
+        "eyes": "relaxed, droopy hazel eyes",
+        "hair": "slightly long, wavy light ash-brown hair reaching his chin",
+        "extra": "a tiny silver stud earring in his left ear and a loosened necktie",
+        "mood": "an easygoing half smile",
+    },
+    "boy-05": {  # shy first-year
+        "who": "a 15 years old Japanese first-year high school boy, small and shy",
+        "face": "a small, boyish face",
+        "eyes": "large, round, timid dark eyes",
+        "hair": "a fluffy jet-black mushroom cut with heavy bangs reaching his eyebrows",
+        "extra": "a light blush on his cheeks",
+        "mood": "a shy, slightly nervous smile",
+    },
+    "boy-06": {  # Indian-Japanese second-year
+        "who": "a 16 years old Indian-Japanese second-year high school boy",
+        "face": "a friendly face with warm brown skin and thick dark eyebrows",
+        "eyes": "large, dark brown eyes with long lashes",
+        "hair": "short, wavy black hair with a neat side part",
+        "extra": "small dimples in his cheeks",
+        "mood": "a warm, friendly smile showing a little of his teeth",
+    },
+    "boy-07": {  # cool second-year
+        "who": "a 16 years old Japanese second-year high school boy, cool and aloof",
+        "face": "a slender face with fine features",
+        "eyes": "sharp, deep wine-red eyes",
+        "hair": "dark red-brown hair with long bangs swept over his right eye",
+        "extra": "his collar slightly open under the necktie",
+        "mood": "a cool, quietly confident smirk",
+    },
+    "boy-08": {  # gentle big second-year
+        "who": "a 16 years old Japanese second-year high school boy, big, broad-shouldered"
+               " and gentle",
+        "face": "a round, gentle face with soft cheeks",
+        "eyes": "kind, narrow, smiling brown eyes",
+        "hair": "soft, short brown hair with a center part, the fringe parted down the"
+                " middle and falling to both sides of his forehead in two gentle curtains",
+        "extra": "a broad build that fills the frame",
+        "glasses": "round tortoiseshell glasses",
+        "mood": "a kind, warm smile",
+    },
+}
+
+# Rerolls picked during review; added to the derived seed.
+SEED_OFFSETS: dict[str, int] = {"boy-03": 2, "girl-03": 1, "girl-05": 1}
+
+# The approved render of each avatar: a lossless PNG in --accepted-dir
+# (ComfyUI's output folder). Installing an accepted avatar encodes that
+# PNG instead of rendering again, so the shipped image survives prompt
+# edits; the exact prompt, seed and references that made it are in the
+# PNG's ComfyUI metadata. These also serve as the lossless references
+# for the expression variants. girl-04, girl-07 and boy-01 come from
+# an earlier, shorter wording of the prompt (no face / eyes / extra
+# fields) and were kept as they were. boy-02 is an --edit of a render
+# made with 中村アリス + 高橋百合子 as references, with the student-council
+# pin taken off his lapel (the source render is the edit's
+# <ref_image_0> in its metadata). boy-08 is an --edit too: his bowl cut
+# (too close to boy-05's mushroom cut) became a center-parted fringe.
+# girl-03 is an --edit of her second render (seed offset 1; the first
+# came out in a thick-lined cel style unlike the rest), moving a bow
+# from the top of her head back to her ponytail. girl-08 is an --edit
+# recoloring her dark brown hair teal, apart from girl-02's brown bob.
+# boy-03 went through two edits of his third render: teeth drawn into
+# his open smile (edit_00001), then sunglasses added (edit_00002).
+ACCEPTED: dict[str, str] = {
+    "boy-01": "avatar_boy-01_00004_.png",
+    "boy-02": "avatar_boy-02_edit_00001_.png",
+    "boy-03": "avatar_boy-03_edit_00002_.png",
+    "boy-04": "avatar_boy-04_00001_.png",
+    "boy-05": "avatar_boy-05_00001_.png",
+    "boy-06": "avatar_boy-06_00001_.png",
+    "boy-07": "avatar_boy-07_00001_.png",
+    "boy-08": "avatar_boy-08_edit_00001_.png",
+    "girl-01": "avatar_girl-01_00001_.png",
+    "girl-02": "avatar_girl-02_00001_.png",
+    "girl-03": "avatar_girl-03_edit_00001_.png",
+    "girl-04": "avatar_girl-04_00001_.png",
+    "girl-05": "avatar_girl-05_00001_.png",
+    "girl-06": "avatar_girl-06_00001_.png",
+    "girl-07": "avatar_girl-07_00001_.png",
+    "girl-08": "avatar_girl-08_edit_00001_.png",
+}
+
+
+def prompt_for(aid: str) -> str:
+    a = AVATARS[aid]
+    he, his = ("She", "her") if aid.startswith("girl") else ("He", "his")
+    glasses = (f" {he} wears {a['glasses']}." if "glasses" in a
+               else f" {he} does not wear glasses.")
+    extra = f" {he} has {a['extra']}." if a.get("extra") else ""
+    return (
+        f"Create a new anime-style illustration of {a['who']}. {he} has {a['face']},"
+        f" {a['eyes']}, and {a['hair']}.{extra}{glasses} {he} is {UNIFORM}."
+        f" {his.capitalize()} expression: {a['mood']}. {STYLE}"
+    )
+
+
+def build_graph(prompt: str, seed: int, refs: list[str], prefix: str, model: dict) -> dict:
+    """API-format graph of the FLUX.3 Klein image-edit template, with the
+    output latent fixed to the portrait size. The base model gets a real
+    (empty) negative prompt for CFG; the distilled one runs at cfg 1, where
+    the template zeroes the negative out."""
+    neg = ({"class_type": "CLIPTextEncode", "inputs": {"clip": ["2", 0], "text": ""}}
+           if model["cfg"] > 1.0 else
+           {"class_type": "ConditioningZeroOut", "inputs": {"conditioning": ["4", 0]}})
+    rin: dict = {"positive": ["4", 0], "negative": ["32", 0], "vae": ["3", 0],
+                 "resolution": "resize", "resolution.megapixels": 1.0}
+    g: dict = {
+        "1": {"class_type": "UNETLoader", "inputs": {
+            "unet_name": model["unet"], "weight_dtype": "default"}},
+        "2": {"class_type": "CLIPLoader", "inputs": {
+            "clip_name": "qwen3vl_4b_int8_convrot.safetensors", "type": "flux3", "device": "default"}},
+        "3": {"class_type": "VAELoader", "inputs": {"vae_name": "flux2-vae.safetensors"}},
+        "4": {"class_type": "CLIPTextEncode", "inputs": {"clip": ["2", 0], "text": prompt}},
+        "32": neg,
+        "6": {"class_type": "EmptyFlux2LatentImage", "inputs": {
+            "width": WIDTH, "height": HEIGHT, "batch_size": 1}},
+        "17": {"class_type": "ReferenceMultiLatent", "inputs": rin},
+        "7": {"class_type": "KSampler", "inputs": {
+            "model": ["1", 0], "seed": seed, "steps": model["steps"], "cfg": model["cfg"],
+            "sampler_name": "euler", "scheduler": "simple", "denoise": 1.0,
+            "positive": ["17", 0], "negative": ["17", 1], "latent_image": ["6", 0]}},
+        "8": {"class_type": "VAEDecode", "inputs": {"samples": ["7", 0], "vae": ["3", 0]}},
+        "9": {"class_type": "SaveImage", "inputs": {"images": ["8", 0], "filename_prefix": prefix}},
+    }
+    for i, name in enumerate(refs):
+        g[f"r{i}"] = {"class_type": "LoadImage", "inputs": {"image": name}}
+        rin[f"images.image{i}"] = [f"r{i}", 0]
+    return g
+
+
+# For a restyle (--edit-style): the content comes from <ref_image_0>,
+# only the drawing style from the others.
+EDIT_KEEP_RESTYLE = (
+    " Keep the same person and everything about her or him from <ref_image_0>: face"
+    " shape, hairstyle, hair color, accessories, eye color, expression, uniform, pose and"
+    " framing. Only the drawing style changes. No hands, no props, no text."
+)
+EDIT_KEEP = (
+    " Keep everything else in <ref_image_0> exactly the same: the same person, face,"
+    " expression, eyes, hair, uniform, necktie, lighting, colors, line work, pastel"
+    " background and framing."
+)
+
+
+def edit(args) -> int:
+    """One targeted change to an already-rendered avatar, so a face that
+    was liked survives a fix (e.g. removing a stray badge)."""
+    if not args.avatar or len(args.avatar) != 1 or not args.edit_source:
+        print("!! --edit needs exactly one -a and --edit-source", file=sys.stderr)
+        return 1
+    aid = args.avatar[0]
+    model = dict(DISTILLED if args.distilled else BASE)
+    comfy = Comfy(args.server)
+    refs = [comfy.upload(args.edit_source, "avatar-edit-" + args.edit_source.name, "shougibu")]
+    for style in args.edit_style or []:
+        refs.append(comfy.upload(style, "avatar-style-" + style.name, "shougibu"))
+    keep = EDIT_KEEP_RESTYLE if len(refs) > 1 else EDIT_KEEP
+    seed = zlib.crc32(f"avatar-edit/{aid}".encode()) + args.seed_offset
+    t0 = time.time()
+    png = comfy.run(build_graph(args.edit.strip() + keep, seed, refs,
+                                f"shougibu/avatar_{aid}_edit", model))
+    out = args.out_dir or OUT_DIR
+    dst = out / (f"{aid}_edit_s{args.seed_offset}.webp" if args.out_dir else f"{aid}.webp")
+    dst.parent.mkdir(parents=True, exist_ok=True)
+    with tempfile.NamedTemporaryFile(suffix=".png") as tmp:
+        tmp.write(png)
+        tmp.flush()
+        encode(Path(tmp.name), dst, f"{WIDTH}x{HEIGHT}", Path(tmp.name), None)
+    print(f"edited {aid} -> {dst}  ({time.time() - t0:.0f}s)")
+    return 0
+
+
+def main() -> int:
+    ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
+    ap.add_argument("-a", "--avatar", action="append", choices=sorted(AVATARS),
+                    help="avatar id (repeatable; default: all)")
+    ap.add_argument("--force", action="store_true", help="overwrite existing avatars")
+    ap.add_argument("--seed-offset", type=int, default=0, help="reroll with a different seed")
+    ap.add_argument("--candidates", type=int, default=1,
+                    help="seeds per avatar, from --seed-offset up (needs --out-dir when > 1)")
+    ap.add_argument("--distilled", action="store_true",
+                    help="distilled checkpoint (16 steps, cfg 1): fast drafts")
+    ap.add_argument("--steps", type=int, help="override the sampling steps")
+    ap.add_argument("--cfg", type=float, help="override the CFG scale")
+    ap.add_argument("--server", default="http://127.0.0.1:8188")
+    ap.add_argument("--originals-dir", type=Path, default=Path.home() / "Pictures" / "samples",
+                    help="where the lossless original renders live (optional)")
+    ap.add_argument("--out-dir", type=Path,
+                    help="write <id>_s<offset>.webp here instead of the asset folder (for review)")
+    ap.add_argument("--accepted-dir", type=Path,
+                    default=Path.home() / "ComfyUI" / "output" / "shougibu",
+                    help="where the ACCEPTED renders live")
+    ap.add_argument("--rerender", action="store_true",
+                    help="render even avatars that have an ACCEPTED render")
+    ap.add_argument("--edit", metavar="INSTRUCTION",
+                    help="instead of a new render, edit --edit-source (a lossless render of the"
+                         " one -a avatar) by this instruction; the source is the only reference."
+                         " The result lands in ComfyUI's output as avatar_<id>_edit_*.png")
+    ap.add_argument("--edit-source", type=Path, help="PNG to edit (see --edit)")
+    ap.add_argument("--edit-style", type=Path, action="append",
+                    help="with --edit: an approved render whose art style the edit should"
+                         " match; repeatable, becomes <ref_image_1>, <ref_image_2>, ...")
+    args = ap.parse_args()
+    if args.edit:
+        return edit(args)
+    if args.candidates > 1 and not args.out_dir:
+        print("!! --candidates > 1 needs --out-dir", file=sys.stderr)
+        return 1
+
+    jobs = []
+    for aid in args.avatar or sorted(AVATARS):
+        for k in range(args.candidates):
+            off = SEED_OFFSETS.get(aid, 0) + args.seed_offset + k
+            dst = (args.out_dir / f"{aid}_s{off}.webp") if args.out_dir else OUT_DIR / f"{aid}.webp"
+            if dst.exists() and not args.force:
+                continue
+            jobs.append((aid, off, dst))
+    size = f"{WIDTH}x{HEIGHT}"
+    if not args.rerender:
+        todo = []
+        for aid, off, dst in jobs:
+            src = args.accepted_dir / ACCEPTED.get(aid, "")
+            if aid not in ACCEPTED:
+                todo.append((aid, off, dst))
+            elif not src.is_file():
+                print(f"!! {aid}: accepted render {src} not found (or pass --rerender)",
+                      file=sys.stderr)
+                return 1
+            else:
+                dst.parent.mkdir(parents=True, exist_ok=True)
+                encode(src, dst, size, src, None)
+                shown = dst.relative_to(REPO) if dst.is_relative_to(REPO) else dst
+                print(f"    {shown}  (accepted: {src.name})")
+        jobs = todo
+    print(f"{len(jobs)} avatar render(s) to generate")
+    if not jobs:
+        return 0
+
+    model = dict(DISTILLED if args.distilled else BASE)
+    if args.steps:
+        model["steps"] = args.steps
+    if args.cfg is not None:
+        model["cfg"] = args.cfg
+    print(f"    model: {model}")
+    comfy = Comfy(args.server)
+    refs: dict[str, list[str]] = {}
+    for gender, pair in REFERENCES.items():
+        refs[gender] = []
+        for orig, fallback in pair:
+            src = args.originals_dir / orig
+            if not src.is_file():
+                src = fallback
+            print(f"    {gender} style reference: {src}")
+            refs[gender].append(comfy.upload(src, "avatar-ref-" + src.name, "shougibu"))
+
+    for n, (aid, off, dst) in enumerate(jobs, 1):
+        seed = zlib.crc32(f"avatar/{aid}".encode()) + off
+        t0 = time.time()
+        png = comfy.run(build_graph(prompt_for(aid), seed, refs[aid.split("-")[0]],
+                                    f"shougibu/avatar_{aid}", model))
+        dst.parent.mkdir(parents=True, exist_ok=True)
+        with tempfile.NamedTemporaryFile(suffix=".png") as tmp:
+            tmp.write(png)
+            tmp.flush()
+            encode(Path(tmp.name), dst, size, Path(tmp.name), None)
+        print(f"[{n}/{len(jobs)}] {dst.relative_to(REPO) if dst.is_relative_to(REPO) else dst}"
+              f"  ({time.time() - t0:.0f}s)", flush=True)
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
