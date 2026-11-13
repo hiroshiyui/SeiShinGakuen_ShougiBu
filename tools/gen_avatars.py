@@ -177,6 +177,10 @@ AVATARS: dict[str, dict[str, str]] = {
         "extra": "a plain blazer lapel with no badge or pin",
         "mood": "a serious, composed expression with closed lips",
     },
+    # boy-03 has amblyopia: his dark-tinted glasses are an assistive device
+    # that protects his eyes, not a fashion accessory. They stay on, worn
+    # normally, in every render and expression; nothing should play them
+    # as a "cool" prop (pushed up, lowered, peered over or taken off).
     "boy-03": {  # talkative first-year (a buzz cut would read as a sports-club kid)
         "who": "a 15 years old Japanese first-year high school boy, cheerful and talkative",
         "face": "a round, friendly face with thick dark eyebrows",
@@ -186,7 +190,8 @@ AVATARS: dict[str, dict[str, str]] = {
                 " short, the top a little longer and brushed forward into a short, textured"
                 " fringe",
         "extra": "a natural, healthy complexion",
-        "glasses": "black wayfarer-style sunglasses with dark gray lenses",
+        "glasses": "black wayfarer-style tinted glasses with dark gray lenses, worn"
+                   " normally as protective glasses for his eyes",
         "mood": "a wide, cheerful open-mouthed smile",
     },
     "boy-04": {  # laid-back third-year
@@ -436,8 +441,10 @@ assert "subtle to moderate" not in AVATAR_IDENTITY and "light skin" not in AVATA
 
 # Per-avatar notes that keep the edit from fighting the design.
 VARIANT_NOTES = {
-    "boy-03": " His eyes stay hidden behind the dark sunglasses, which stay exactly as they"
-              " are; the expression shows through his eyebrows, mouth and cheeks.",
+    "boy-03": " He wears his dark-tinted glasses for his eyes (he has amblyopia), so they"
+              " stay on and exactly as they are, worn normally on his nose: never pushed"
+              " up, lowered, tilted or taken off. His eyes stay hidden behind the lenses;"
+              " the expression shows through his eyebrows, mouth and cheeks.",
 }
 
 
