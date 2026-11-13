@@ -555,6 +555,15 @@ ACCEPTED_VARIANTS: dict[str, dict[str, str]] = {
     # All five are --edits of his neutral portrait, whose dark lenses are
     # already right: batch renders turned them see-through (VARIANT_NOTES).
     "boy-03": {e: f"avatar_boy-03_{e}_edit_00001_.png" for e in EXPRESSIONS},
+    # thinking is a calm --edit of his neutral portrait: the render kept
+    # his neutral smile and looked just like happy.
+    "boy-04": {
+        "happy": "avatar_boy-04_happy_00001_.png",
+        "thinking": "avatar_boy-04_thinking_edit_00001_.png",
+        "worried": "avatar_boy-04_worried_00001_.png",
+        "victory": "avatar_boy-04_victory_00001_.png",
+        "defeat": "avatar_boy-04_defeat_00001_.png",
+    },
 }
 
 # Skin drift check: mean color of a cheek-height patch in the middle of
