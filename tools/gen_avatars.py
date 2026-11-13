@@ -464,6 +464,13 @@ VARIANT_NOTES = {
 }
 
 
+# Approved expression variants (lossless renders in --accepted-dir),
+# installed by --install-variants as player_avatars/<id>_<expr>.webp next
+# to the neutral <id>.webp. Missing ones fall back to neutral in game.
+ACCEPTED_VARIANTS: dict[str, dict[str, str]] = {
+    "girl-01": {e: f"avatar_girl-01_{e}_00001_.png" for e in EXPRESSIONS},
+}
+
 # Skin drift check: mean color of a cheek-height patch in the middle of
 # the face (all avatars share the framing), against the neutral render.
 SKIN_PATCH = "160x120+360+380"
@@ -477,11 +484,30 @@ def skin_color(png: Path) -> list[float]:
     return [float(v) for v in out.stdout.split()]
 
 
+# Small accessories the approved portrait shows. A big smile or frown
+# repaints the cheeks and hair, and girl-02's bandage vanished from three
+# of her five variants, so each is named as something to keep. Only what
+# the accepted render really shows is listed: naming one it lacks would
+# add it.
+KEEP_ACCESSORY = {
+    "girl-01": "the small red hair ties at the ends of her two braids",
+    "girl-02": "the small white adhesive bandage on her cheek",
+    "girl-03": "the large white ribbon tied at her ponytail",
+    "girl-04": "the small hair clip in her hair",
+    "girl-05": "the black ribbons tying her two twin tails",
+    "girl-06": "the small beauty mark under her eye",
+    "girl-08": "the yellow star-shaped hairpin in her hair",
+}
+
+
 def variant_prompt(aid: str, expr: str) -> str:
     a = AVATARS[aid]
     he = "She" if aid.startswith("girl") else "He"
     lead = f"This is {a['who']}. "
     glasses = f" {he} keeps the same {a['glasses']}." if "glasses" in a else ""
+    if aid in KEEP_ACCESSORY:
+        glasses += (f" {he} still has {KEEP_ACCESSORY[aid]}, exactly as in the reference"
+                    " image: same size, color and position, clearly visible.")
     return (lead + VARIANT_WORDING[TEMPERAMENT[aid]][expr] + VARIANT_NOTES.get(aid, "")
             + glasses + KEEP + AVATAR_IDENTITY + NO_HANDS + NO_OBJECTS)
 
@@ -551,11 +577,25 @@ def main() -> int:
     ap.add_argument("--edit-style", type=Path, action="append",
                     help="with --edit: an approved render whose art style the edit should"
                          " match; repeatable, becomes <ref_image_1>, <ref_image_2>, ...")
+    ap.add_argument("--install-variants", action="store_true",
+                    help="encode the ACCEPTED_VARIANTS into the asset folder")
     ap.add_argument("--variants", action="store_true",
                     help="render the expression variants of the ACCEPTED avatars")
     ap.add_argument("-e", "--expression", action="append", choices=EXPRESSIONS,
                     help="with --variants: expression (repeatable; default: all)")
     args = ap.parse_args()
+    if args.install_variants:
+        for aid, sets in ACCEPTED_VARIANTS.items():
+            if args.avatar and aid not in args.avatar:
+                continue
+            for expr, name in sets.items():
+                dst = OUT_DIR / f"{aid}_{expr}.webp"
+                if dst.exists() and not args.force:
+                    continue
+                encode(args.accepted_dir / name, dst, f"{WIDTH}x{HEIGHT}",
+                       args.accepted_dir / name, None)
+                print(f"    {dst.relative_to(REPO)}  (accepted: {name})")
+        return 0
     if args.variants:
         return variants(args)
     if args.edit:
