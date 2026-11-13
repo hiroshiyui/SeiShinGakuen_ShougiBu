@@ -342,6 +342,13 @@ func _test_avatar_roundtrip() -> String:
 	fresh._load_prefs()
 	if fresh.avatar_id != "":
 		return "bad avatar id loaded from prefs: %s" % fresh.avatar_id
+	# Paths come only from a known id and a known expression.
+	if _SettingsScript.avatar_path("boy-04", "happy") \
+			!= "res://assets/characters/player_avatars/boy-04_happy.webp":
+		return "known avatar expression gave the wrong path"
+	for bad in [["boy-04", "../../x"], ["boy-04", "angry"], ["../../x", "neutral"]]:
+		if _SettingsScript.avatar_path(bad[0], bad[1]) != "":
+			return "avatar_path accepted %s / %s" % bad
 	_settings.set_avatar_id("")
 	return ""
 

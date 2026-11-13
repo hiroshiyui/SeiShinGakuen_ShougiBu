@@ -549,7 +549,9 @@ func _set_remote_expression(expr: String) -> void:
 
 # 通信対戦 has no evaluation to read a mood from, so both faces react to
 # events: whoever gives check or takes a 飛 / 角 looks happy and the other
-# worried for a moment; then the peer thinks on its turn.
+# worried for a moment; then the peer thinks on its turn. A quiet reply
+# inside that moment leaves the faces alone; the pending timer settles
+# them when it runs out.
 func _lan_react(local_moved: bool, striking: bool) -> void:
 	if striking:
 		_set_player_expression("happy" if local_moved else "worried")
@@ -557,8 +559,11 @@ func _lan_react(local_moved: bool, striking: bool) -> void:
 		var until := Time.get_ticks_msec() + int(EXPR_REACTION_SEC * 2000.0)
 		_lan_reaction_until_msec = until
 		await get_tree().create_timer(EXPR_REACTION_SEC * 2.0).timeout
-		if _game_over or _lan_reaction_until_msec != until:
+		if not is_inside_tree() or _leaving or _game_over \
+				or _lan_reaction_until_msec != until:
 			return
+	elif Time.get_ticks_msec() < _lan_reaction_until_msec:
+		return
 	_set_player_expression("neutral")
 	_set_remote_expression("thinking" if _is_remote_turn() else "neutral")
 

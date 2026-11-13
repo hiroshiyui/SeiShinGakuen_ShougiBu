@@ -176,11 +176,17 @@ var avatar_prompted: bool = false
 static func is_avatar_id(v: Variant) -> bool:
 	return v is String and AVATAR_IDS.has(v)
 
+# Every portrait an avatar ships, neutral first.
+const AVATAR_EXPRESSIONS: Array[String] = [
+	"neutral", "thinking", "happy", "worried", "victory", "defeat",
+]
+
 # Portrait path for `aid` (neutral, or one of the five expressions as
-# `<id>_<expr>.webp` beside it), or "" when it isn't a known avatar. The
-# file may be missing for an expression; callers fall back to neutral.
+# `<id>_<expr>.webp` beside it), or "" when either isn't known, so
+# neither can turn into an arbitrary resource path. The file may be
+# missing for an expression; callers fall back to neutral.
 static func avatar_path(aid: String, expr: String = "neutral") -> String:
-	if not is_avatar_id(aid):
+	if not is_avatar_id(aid) or not AVATAR_EXPRESSIONS.has(expr):
 		return ""
 	if expr == "neutral":
 		return "%s/%s.webp" % [AVATAR_DIR, aid]

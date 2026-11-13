@@ -165,7 +165,7 @@ func _test_avatar_portraits() -> String:
 	if _settings.AVATAR_IDS.size() != 16:
 		return "expected 16 avatars, got %d" % _settings.AVATAR_IDS.size()
 	for aid in _settings.AVATAR_IDS:
-		for expr in ["neutral", "thinking", "happy", "worried", "victory", "defeat"]:
+		for expr in _settings.AVATAR_EXPRESSIONS:
 			var path: String = _settings.avatar_path(aid, expr)
 			if not FileAccess.file_exists(path):
 				return "%s: missing %s" % [aid, path]
