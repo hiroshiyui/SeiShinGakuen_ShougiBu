@@ -41,6 +41,7 @@ of 0.75 MB.
 from __future__ import annotations
 
 import argparse
+import subprocess
 import sys
 import tempfile
 import time
@@ -456,6 +457,19 @@ VARIANT_NOTES = {
 }
 
 
+# Skin drift check: mean color of a cheek-height patch in the middle of
+# the face (all avatars share the framing), against the neutral render.
+SKIN_PATCH = "160x120+360+380"
+SKIN_DRIFT_MAX = 18.0  # per channel, 0-255
+
+
+def skin_color(png: Path) -> list[float]:
+    out = subprocess.run(["magick", str(png), "-crop", SKIN_PATCH, "-format",
+                          "%[fx:mean.r*255] %[fx:mean.g*255] %[fx:mean.b*255]", "info:"],
+                         check=True, capture_output=True, text=True)
+    return [float(v) for v in out.stdout.split()]
+
+
 def variant_prompt(aid: str, expr: str) -> str:
     a = AVATARS[aid]
     he = "She" if aid.startswith("girl") else "He"
@@ -493,7 +507,10 @@ def variants(args) -> int:
             tmp.write(png)
             tmp.flush()
             encode(Path(tmp.name), dst, f"{WIDTH}x{HEIGHT}", Path(tmp.name), None)
-        print(f"[{n}/{len(jobs)}] {aid} {expr}  ({time.time() - t0:.0f}s)", flush=True)
+            drift = max(abs(a - b) for a, b in zip(
+                skin_color(Path(tmp.name)), skin_color(args.accepted_dir / ACCEPTED[aid])))
+        flag = f"  !! skin drift {drift:.0f}" if drift > SKIN_DRIFT_MAX else ""
+        print(f"[{n}/{len(jobs)}] {aid} {expr}  ({time.time() - t0:.0f}s){flag}", flush=True)
     return 0
 
 
