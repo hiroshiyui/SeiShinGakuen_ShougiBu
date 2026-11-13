@@ -506,6 +506,17 @@ ACCEPTED_VARIANTS: dict[str, dict[str, str]] = {
         "victory": "avatar_girl-05_victory_00001_.png",
         "defeat": "avatar_girl-05_defeat_00001_.png",
     },
+    # Her blunt bangs hide her brows, so worried and victory are --edits
+    # that move the eyes and mouth; happy is an edit that only restores
+    # her beauty mark. defeat's original face was preferred over its
+    # edit even without the mark.
+    "girl-06": {
+        "happy": "avatar_girl-06_happy_edit_00001_.png",
+        "thinking": "avatar_girl-06_thinking_00001_.png",
+        "worried": "avatar_girl-06_worried_edit_00001_.png",
+        "victory": "avatar_girl-06_victory_edit_00001_.png",
+        "defeat": "avatar_girl-06_defeat_00001_.png",
+    },
 }
 
 # Skin drift check: mean color of a cheek-height patch in the middle of
