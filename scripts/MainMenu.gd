@@ -24,6 +24,8 @@ const _TITLE_TAPS_NEEDED := 10
 const _TITLE_TAP_WINDOW := 3.0
 var _title_tap_count: int = 0
 var _title_tap_last: float = 0.0
+# Asks before 新規対局 throws away the 中断 game behind 続きから.
+var _new_game_dialog: ConfirmationDialog
 
 func _ready() -> void:
 	_mode.clear()
@@ -42,6 +44,15 @@ func _ready() -> void:
 	_quit_dialog.confirmed.connect(_on_quit_confirmed)
 	ModalBlur.attach(_quit_dialog)
 	DialogStyle.prefer_cancel(_quit_dialog)
+	_new_game_dialog = ConfirmationDialog.new()
+	_new_game_dialog.title = "新規対局"
+	_new_game_dialog.dialog_text = "中断中の対局は消えます。\n新しい対局を始めますか？"
+	_new_game_dialog.ok_button_text = "始める"
+	_new_game_dialog.cancel_button_text = "やめる"
+	_new_game_dialog.confirmed.connect(_start_new_game)
+	add_child(_new_game_dialog)
+	ModalBlur.attach(_new_game_dialog)
+	DialogStyle.prefer_cancel(_new_game_dialog)
 	_title.gui_input.connect(_on_title_gui_input)
 	_ensure_default_character()
 	_refresh_opponent_label()
@@ -118,7 +129,9 @@ func _handle_back() -> void:
 	if _back_handled_frame == f:
 		return
 	_back_handled_frame = f
-	if _quit_dialog.visible:
+	if _new_game_dialog.visible:
+		_new_game_dialog.hide()
+	elif _quit_dialog.visible:
 		_quit_dialog.hide()
 	else:
 		_quit_dialog.popup_centered()
@@ -195,6 +208,13 @@ func _on_opponent_pressed() -> void:
 	SceneTransition.go_to("res://scenes/CharacterPicker.tscn")
 
 func _on_start() -> void:
+	# Starting over discards the suspended game silently otherwise.
+	if Settings.has_saved_game():
+		_new_game_dialog.popup_centered()
+		return
+	_start_new_game()
+
+func _start_new_game() -> void:
 	Settings.mode = _mode.get_selected_id()
 	# ai_level is set by the character picker (Settings.select_character)
 	# so we don't touch it here.
