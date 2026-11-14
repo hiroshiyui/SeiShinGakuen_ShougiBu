@@ -15,6 +15,11 @@ func _ready() -> void:
 	_sound.toggled.connect(_on_sound_toggled)
 	_motion.button_pressed = Settings.reduce_motion
 	_motion.toggled.connect(func(pressed: bool): Settings.set_reduce_motion(pressed))
+	# Spell the state out next to the switch: the switch art alone was
+	# too easy to misread.
+	for t: CheckButton in [_sound, _motion]:
+		_sync_switch_text(t, t.button_pressed)
+		t.toggled.connect(func(on: bool) -> void: _sync_switch_text(t, on))
 	BackGuard.watch(_teacher_side)
 
 	_teacher_side.clear()
@@ -51,6 +56,9 @@ func _handle_back() -> void:
 	if BackGuard.swallows_back([_teacher_side]):
 		return
 	_on_back()
+
+func _sync_switch_text(t: CheckButton, on: bool) -> void:
+	t.text = "オン" if on else "オフ"
 
 func _on_sound_toggled(pressed: bool) -> void:
 	Settings.set_sound_enabled(pressed)

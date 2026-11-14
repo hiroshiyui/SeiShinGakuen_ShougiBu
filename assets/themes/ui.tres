@@ -1,9 +1,11 @@
-[gd_resource type="Theme" load_steps=18 format=3]
+[gd_resource type="Theme" load_steps=20 format=3]
 
 [ext_resource type="FontFile" path="res://assets/fonts/noto-serif-jp/NotoSerifCJKjp-Medium.otf" id="1_medium"]
 [ext_resource type="FontFile" path="res://assets/fonts/noto-serif-jp/NotoSerifCJKjp-Bold.otf" id="2_bold"]
 [ext_resource type="Texture2D" path="res://assets/ui/dialog_close.svg" id="3_close"]
 [ext_resource type="Texture2D" path="res://assets/ui/dialog_close_pressed.svg" id="4_close_pressed"]
+[ext_resource type="Texture2D" path="res://assets/ui/switch_on.svg" id="5_switch_on"]
+[ext_resource type="Texture2D" path="res://assets/ui/switch_off.svg" id="6_switch_off"]
 [ext_resource type="Texture2D" path="res://assets/ui/radio_on.svg" id="7_radio_on"]
 [ext_resource type="Texture2D" path="res://assets/ui/radio_off.svg" id="8_radio_off"]
 
@@ -209,6 +211,14 @@ ConfirmationDialog/colors/title_color = Color(0.98, 0.85, 0.45, 1)
 ConfirmationDialog/colors/title_outline_modulate = Color(0, 0, 0, 1)
 ConfirmationDialog/fonts/title_font = SubResource("title_font_variation")
 ConfirmationDialog/font_sizes/title_font_size = 56
+CheckButton/icons/checked = ExtResource("5_switch_on")
+CheckButton/icons/unchecked = ExtResource("6_switch_off")
+CheckButton/icons/checked_mirrored = ExtResource("5_switch_on")
+CheckButton/icons/unchecked_mirrored = ExtResource("6_switch_off")
+CheckButton/icons/checked_disabled = ExtResource("5_switch_on")
+CheckButton/icons/unchecked_disabled = ExtResource("6_switch_off")
+CheckButton/constants/h_separation = 14
+CheckButton/font_sizes/font_size = 24
 PopupMenu/styles/panel = SubResource("popup_panel")
 PopupMenu/styles/hover = SubResource("popup_hover")
 PopupMenu/font_sizes/font_size = 28
