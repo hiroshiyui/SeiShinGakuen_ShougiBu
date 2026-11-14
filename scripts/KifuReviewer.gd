@@ -32,6 +32,7 @@ var _ply: int = 0
 # terminal positions returning no legal moves).
 var _analyses: Array = []
 var _analyzing: bool = false
+var _breath_tween: Tween = null
 # Whole-game analysis runs on this worker with its own ShogiCore, so the
 # screen stays responsive. Progress is a plain int the UI polls.
 var _analysis_thread: Thread = null
@@ -122,6 +123,7 @@ func _stop_analysis() -> void:
 		_analysis_thread.wait_to_finish()
 		_analysis_thread = null
 		_analyzing = false
+	_stop_breathing()
 
 func _set_ply(n: int) -> void:
 	var clamped: int = clamp(n, 0, _packed.size())
@@ -218,7 +220,8 @@ func _on_analyze() -> void:
 	# Keep the button visually enabled while running so the "解析中" text
 	# stays bright against the dark theme; the _analyzing guard above
 	# already swallows extra taps.
-	_analyze_btn.add_theme_color_override("font_color", Color(0.55, 1.0, 0.65, 1))
+	_set_analyze_text_alpha(1.0)
+	_start_breathing()
 	_first_btn.disabled = true
 	_prev_btn.disabled = true
 	_next_btn.disabled = true
@@ -228,6 +231,45 @@ func _on_analyze() -> void:
 	_analysis_progress = 0
 	_analysis_thread = Thread.new()
 	_analysis_thread.start(_run_analysis.bind(_packed, Settings.model_absolute_path()))
+
+const _ANALYZING_COLOR := Color(0.55, 1.0, 0.65, 1)
+const _BREATH_HALF_SEC := 0.8   # one inhale (or exhale); a full breath is 1.6 s
+const _BREATH_MIN_ALPHA := 0.35
+# After the tap the button sits in its hover / focus state on Android
+# (touch is emulated as a mouse), which draws the text with those
+# colours instead of font_color — so every state has to follow along.
+const _TEXT_COLOR_STATES: Array[StringName] = [
+	&"font_color", &"font_hover_color", &"font_pressed_color",
+	&"font_focus_color", &"font_hover_pressed_color",
+]
+
+# Slow "breathing" fade on the 解析中… text while the analysis runs, so
+# the screen reads as busy rather than frozen. Only the text colour
+# fades — the button frame stays put. Skipped under reduce-motion.
+func _start_breathing() -> void:
+	_stop_breathing()
+	if Settings.reduce_motion:
+		return
+	_breath_tween = create_tween().set_loops()
+	_breath_tween.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	_breath_tween.tween_method(_set_analyze_text_alpha, 1.0, _BREATH_MIN_ALPHA, _BREATH_HALF_SEC)
+	_breath_tween.tween_method(_set_analyze_text_alpha, _BREATH_MIN_ALPHA, 1.0, _BREATH_HALF_SEC)
+
+func _stop_breathing() -> void:
+	if _breath_tween != null and _breath_tween.is_valid():
+		_breath_tween.kill()
+	_breath_tween = null
+	# Hand the non-default states back to the theme; font_color itself
+	# is set (failure) or removed (done) by the caller.
+	for state in _TEXT_COLOR_STATES:
+		if state != &"font_color":
+			_analyze_btn.remove_theme_color_override(state)
+
+func _set_analyze_text_alpha(a: float) -> void:
+	var c := _ANALYZING_COLOR
+	c.a = a
+	for state in _TEXT_COLOR_STATES:
+		_analyze_btn.add_theme_color_override(state, c)
 
 # Worker thread. Returns one entry per move, or null when the model
 # could not be loaded or the analysis was cancelled.
@@ -256,6 +298,7 @@ func _finish_analysis() -> void:
 	var result: Variant = _analysis_thread.wait_to_finish()
 	_analysis_thread = null
 	_analyzing = false
+	_stop_breathing()
 	if result == null:
 		_analyze_btn.text = "解析失敗"
 		_analyze_btn.add_theme_color_override("font_color", Color(1, 0.55, 0.5, 1))
