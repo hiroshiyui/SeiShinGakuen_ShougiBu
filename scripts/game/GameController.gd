@@ -246,6 +246,7 @@ func _ready() -> void:
 	_gameover_dialog.add_child(gameover_box)
 	for d: Window in [_promo_dialog, _gameover_dialog, _quit_dialog, _jishogi_info_dialog]:
 		ModalBlur.attach(d)
+	DialogStyle.prefer_cancel(_quit_dialog)
 	_undo_btn.pressed.connect(_on_undo)
 	_exit_btn.pressed.connect(_on_exit_pressed)
 	_jishogi_btn.pressed.connect(_on_jishogi_pressed)
@@ -1007,7 +1008,7 @@ func _reject_tap(key: Vector2i) -> void:
 
 func _prompt_promotion() -> void:
 	var to: Vector2i = Vector2i(_pending_move["to"])
-	_promo_dialog.dialog_text = "%d%s で成りますか?" % [to.x, Settings.RANK_KANJI[to.y]]
+	_promo_dialog.dialog_text = "%d%s で成りますか？" % [to.x, Settings.RANK_KANJI[to.y]]
 	_promo_dialog.popup_centered()
 
 func _on_promo_confirmed() -> void:
@@ -1390,8 +1391,8 @@ func _on_undo() -> void:
 
 func _on_exit_pressed() -> void:
 	if _lan:
-		_quit_dialog.dialog_text = ("タイトル画面に戻りますか?" if _game_over
-			else "投了しますか?")
+		_quit_dialog.dialog_text = ("タイトル画面に戻りますか？" if _game_over
+			else "投了しますか？")
 	_quit_dialog.popup_centered()
 
 # 入玉宣言: query the rule. Ok → end the game with the declarer winning.

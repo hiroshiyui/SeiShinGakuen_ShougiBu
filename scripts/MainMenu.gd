@@ -41,6 +41,7 @@ func _ready() -> void:
 	_tsume_btn.pressed.connect(func(): SceneTransition.go_to("res://scenes/TsumeShogi.tscn"))
 	_quit_dialog.confirmed.connect(_on_quit_confirmed)
 	ModalBlur.attach(_quit_dialog)
+	DialogStyle.prefer_cancel(_quit_dialog)
 	_title.gui_input.connect(_on_title_gui_input)
 	_ensure_default_character()
 	_refresh_opponent_label()

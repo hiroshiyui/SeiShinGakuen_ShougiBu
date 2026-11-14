@@ -300,7 +300,7 @@ func _handle_board_target(to: Vector2i) -> void:
 			plain = m
 	if has_promo and not plain.is_empty():
 		_pending_move = plain
-		_promo_dialog.dialog_text = "%d%s で成りますか?" % [to.x, Settings.RANK_KANJI[to.y]]
+		_promo_dialog.dialog_text = "%d%s で成りますか？" % [to.x, Settings.RANK_KANJI[to.y]]
 		_promo_dialog.popup_centered()
 	else:
 		_play(candidates[0])

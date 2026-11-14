@@ -100,6 +100,6 @@ theme_override_fonts/font = ExtResource("3_mplus2")
 unique_name_in_owner = true
 min_size = Vector2(560, 260)
 title = "削除"
-dialog_text = "この棋譜を削除しますか?"
+dialog_text = "この棋譜を削除しますか？"
 ok_button_text = "削除"
 cancel_button_text = "キャンセル"

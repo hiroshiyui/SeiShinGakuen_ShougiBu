@@ -273,7 +273,7 @@ ok_button_text = "再戦"
 unique_name_in_owner = true
 min_size = Vector2(560, 260)
 title = "投了"
-dialog_text = "投了してタイトル画面に戻りますか?"
+dialog_text = "投了してタイトル画面に戻りますか？"
 ok_button_text = "はい"
 cancel_button_text = "いいえ"
 
