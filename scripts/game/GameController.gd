@@ -293,38 +293,10 @@ func _refit_board_smooth(panel_visible_override: Variant = null) -> void:
 func _compute_board_side(panel_visible_override: Variant = null) -> float:
 	const GUTTER := 4.0        # breathing room inside BoardHolder
 	const LAYOUT_H := 12.0     # must match EXTRA_H in _apply_safe_area
-	const PAD := 16.0          # fixed breathing pad below the rows
-	# Height the Layout really gets: the viewport minus the camera-cutout
-	# and gesture-bar insets that _apply_safe_area puts on it. Using the
-	# bare viewport height overestimated the room by those insets, so on
-	# a tall phone (Pixel 8a) the first 先生 panel open computed a board
-	# that "still fits" and left it unzoomed, pushing the StatusBar off
-	# the bottom instead.
-	var vp: Vector2 = get_viewport_rect().size
-	var insets: Rect2 = Settings.safe_area_insets(vp)
-	var avail: float = vp.y - insets.position.y - insets.size.y - PAD
-	# Every visible row except the board takes its minimum height (none
-	# of them expands vertically). get_combined_minimum_size() is valid
-	# before a row's first layout pass, unlike size.y, which is 0 until
-	# the container has sorted it.
-	var sep: float = float(_layout.get_theme_constant("separation"))
-	var visible_items := 0
-	for child in _layout.get_children():
-		var c := child as Control
-		if c == null:
-			continue
-		var shown: bool = c.visible
-		if c == _suggestions_panel and panel_visible_override != null:
-			shown = bool(panel_visible_override)
-		if not shown:
-			continue
-		visible_items += 1
-		if c == _board_holder:
-			continue
-		avail -= c.get_combined_minimum_size().y
-	avail -= sep * max(0, visible_items - 1)
-	var side: float = min(vp.x - 2.0 * (GUTTER + LAYOUT_H), avail)
-	return clamp(side, 240.0, 1600.0)
+	var overrides := {}
+	if panel_visible_override != null:
+		overrides[_suggestions_panel] = bool(panel_visible_override)
+	return BoardFit.side(_layout, _board_holder, 2.0 * (GUTTER + LAYOUT_H), overrides)
 
 func _apply_board_side(side: float, animate: bool) -> void:
 	if _board_resize_tween != null and _board_resize_tween.is_valid():

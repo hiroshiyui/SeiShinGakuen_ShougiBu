@@ -273,16 +273,13 @@ func _finish_analysis() -> void:
 	# Restore the user's view + re-render with the fresh analysis label.
 	_replay_to_ply()
 
-# Match GameController's board-fit math so the reviewer board respects
-# the same hand / nav padding budget. Simpler than reusing the live
-# controller's heuristic — the reviewer only has a fixed set of rows.
+# Same measured board fit as 対局 and 詰将棋 (see BoardFit).
 func _refit_board() -> void:
-	var vw := get_viewport().get_visible_rect().size.x
-	var vh := get_viewport().get_visible_rect().size.y
-	var reserved: float = 72.0 + 72.0 + 72.0 + 40.0 + 72.0 + 32.0  # header, hands×2, status, nav, pad
-	if _analysis_label.visible or not _analyses.is_empty():
-		reserved += 56.0
-	if _eval_graph.visible:
-		reserved += _eval_graph.custom_minimum_size.y + 8.0
-	var side: float = clamp(min(vw - 40.0, vh - reserved), 240.0, 1600.0)
+	# Keep the analysis row reserved once an analysis exists, even on
+	# plies where the label hides, so stepping through moves doesn't
+	# make the board jump.
+	var overrides := {}
+	if not _analyses.is_empty():
+		overrides[_analysis_label] = true
+	var side: float = BoardFit.side($Layout, $Layout/BoardHolder, 40.0, overrides)
 	_board_view.custom_minimum_size = Vector2(side, side)
