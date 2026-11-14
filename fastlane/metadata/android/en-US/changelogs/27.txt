@@ -1,0 +1,4 @@
+• Fixed: the board didn't shrink the first time the teacher's suggestions opened (tall phones); the tsume shogi and kifu review boards now fit too.
+• "New game" asks before discarding a suspended game.
+• The status line shows the last move, and its squares are tinted more clearly.
+• Clearer, easier-to-tap dialogs, lists and Settings switches; the hand count sits in the piece's corner.

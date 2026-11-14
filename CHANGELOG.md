@@ -8,6 +8,8 @@ All notable changes to this project. Format follows
 
 ## [Unreleased]
 
+## [1.1.3] — 2026-11-14
+
 ### Changed
 - 棋譜検討の解析中、「解析中… n / m」の文字がゆっくり明滅し、処理が
   進んでいることが分かるように。「動きを減らす」設定では明滅しない。
@@ -37,6 +39,9 @@ All notable changes to this project. Format follows
   終了の確認まで開いていた問題を修正。
 - 棋譜の一覧で、いま表示している手の行が他の行と見分けにくかった問題を
   修正。
+
+[Full release notes](./docs/release-notes/1.1.3.md) ·
+[GitHub Release](https://github.com/hiroshiyui/SeiShinGakuen_ShougiBu/releases/tag/1.1.3)
 
 ## [1.1.2] — 2026-11-14
 
@@ -582,7 +587,8 @@ First public release.
 [Full release notes](./docs/release-notes/0.1.1.md) ·
 [GitHub Release](https://github.com/hiroshiyui/SeiShinGakuen_ShougiBu/releases/tag/0.1.1)
 
-[Unreleased]: https://github.com/hiroshiyui/SeiShinGakuen_ShougiBu/compare/1.1.2...HEAD
+[Unreleased]: https://github.com/hiroshiyui/SeiShinGakuen_ShougiBu/compare/1.1.3...HEAD
+[1.1.3]: https://github.com/hiroshiyui/SeiShinGakuen_ShougiBu/compare/1.1.2...1.1.3
 [1.1.2]: https://github.com/hiroshiyui/SeiShinGakuen_ShougiBu/compare/1.1.1...1.1.2
 [1.1.1]: https://github.com/hiroshiyui/SeiShinGakuen_ShougiBu/compare/1.1.0...1.1.1
 [1.1.0]: https://github.com/hiroshiyui/SeiShinGakuen_ShougiBu/compare/1.0.15...1.1.0
