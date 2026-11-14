@@ -15,6 +15,7 @@ func _ready() -> void:
 	_sound.toggled.connect(_on_sound_toggled)
 	_motion.button_pressed = Settings.reduce_motion
 	_motion.toggled.connect(func(pressed: bool): Settings.set_reduce_motion(pressed))
+	BackGuard.watch(_teacher_side)
 
 	_teacher_side.clear()
 	_teacher_side.add_item("右側", _TEACHER_RIGHT_ID)
@@ -47,6 +48,8 @@ func _handle_back() -> void:
 	if _back_handled_frame == f:
 		return
 	_back_handled_frame = f
+	if BackGuard.swallows_back([_teacher_side]):
+		return
 	_on_back()
 
 func _on_sound_toggled(pressed: bool) -> void:

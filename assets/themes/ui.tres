@@ -1,9 +1,11 @@
-[gd_resource type="Theme" load_steps=14 format=3]
+[gd_resource type="Theme" load_steps=18 format=3]
 
 [ext_resource type="FontFile" path="res://assets/fonts/noto-serif-jp/NotoSerifCJKjp-Medium.otf" id="1_medium"]
 [ext_resource type="FontFile" path="res://assets/fonts/noto-serif-jp/NotoSerifCJKjp-Bold.otf" id="2_bold"]
 [ext_resource type="Texture2D" path="res://assets/ui/dialog_close.svg" id="3_close"]
 [ext_resource type="Texture2D" path="res://assets/ui/dialog_close_pressed.svg" id="4_close_pressed"]
+[ext_resource type="Texture2D" path="res://assets/ui/radio_on.svg" id="7_radio_on"]
+[ext_resource type="Texture2D" path="res://assets/ui/radio_off.svg" id="8_radio_off"]
 
 [sub_resource type="FontVariation" id="title_font_variation"]
 base_font = ExtResource("2_bold")
@@ -123,6 +125,32 @@ expand_margin_top = 2.0
 expand_margin_right = 2.0
 expand_margin_bottom = 2.0
 
+[sub_resource type="StyleBoxFlat" id="popup_panel"]
+bg_color = Color(0.10, 0.08, 0.06, 0.98)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.78, 0.62, 0.30, 1)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+content_margin_left = 8.0
+content_margin_top = 8.0
+content_margin_right = 8.0
+content_margin_bottom = 8.0
+shadow_color = Color(0, 0, 0, 0.55)
+shadow_size = 8
+shadow_offset = Vector2(0, 3)
+
+[sub_resource type="StyleBoxFlat" id="popup_hover"]
+bg_color = Color(0.30, 0.23, 0.12, 1)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+
 [sub_resource type="StyleBoxFlat" id="dlg_frame"]
 bg_color = Color(0.10, 0.08, 0.06, 1)
 border_width_left = 2
@@ -181,4 +209,17 @@ ConfirmationDialog/colors/title_color = Color(0.98, 0.85, 0.45, 1)
 ConfirmationDialog/colors/title_outline_modulate = Color(0, 0, 0, 1)
 ConfirmationDialog/fonts/title_font = SubResource("title_font_variation")
 ConfirmationDialog/font_sizes/title_font_size = 56
+PopupMenu/styles/panel = SubResource("popup_panel")
+PopupMenu/styles/hover = SubResource("popup_hover")
+PopupMenu/font_sizes/font_size = 28
+PopupMenu/constants/v_separation = 36
+PopupMenu/constants/h_separation = 16
+PopupMenu/constants/item_start_padding = 12
+PopupMenu/constants/item_end_padding = 16
+PopupMenu/colors/font_color = Color(0.96, 0.88, 0.70, 1)
+PopupMenu/colors/font_hover_color = Color(1, 0.94, 0.78, 1)
+PopupMenu/icons/radio_checked = ExtResource("7_radio_on")
+PopupMenu/icons/radio_unchecked = ExtResource("8_radio_off")
+PopupMenu/icons/checked = ExtResource("7_radio_on")
+PopupMenu/icons/unchecked = ExtResource("8_radio_off")
 ModalBlur/styles/dialog_frame = SubResource("dlg_frame")

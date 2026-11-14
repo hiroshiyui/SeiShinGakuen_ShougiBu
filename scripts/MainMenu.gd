@@ -53,6 +53,7 @@ func _ready() -> void:
 	add_child(_new_game_dialog)
 	ModalBlur.attach(_new_game_dialog)
 	DialogStyle.prefer_cancel(_new_game_dialog)
+	BackGuard.watch(_mode)
 	_title.gui_input.connect(_on_title_gui_input)
 	_ensure_default_character()
 	_refresh_opponent_label()
@@ -129,6 +130,8 @@ func _handle_back() -> void:
 	if _back_handled_frame == f:
 		return
 	_back_handled_frame = f
+	if BackGuard.swallows_back([_mode]):
+		return
 	if _new_game_dialog.visible:
 		_new_game_dialog.hide()
 	elif _quit_dialog.visible:
