@@ -350,6 +350,17 @@ Test with `scripts/tests/net_tests.gd` (two sessions over loopback) and
   full-rect `Control` child — it auto-applies `Settings.apply_safe_area_to(self)`
   on `_ready` and on viewport resize, so per-scene boilerplate stays
   in `Settings`.
+- **New dialog** — use a built-in `AcceptDialog` / `ConfirmationDialog`
+  and call [`ModalBlur.attach()`](../scripts/ModalBlur.gd) on it. That
+  adds the blurred backdrop, draws the framed title panel, and applies
+  [`DialogStyle`](../scripts/DialogStyle.gd) (content-sized box; button
+  size comes from the theme). For an irreversible "yes", also call
+  `DialogStyle.prefer_cancel()`. A screen with an `OptionButton` wires
+  [`BackGuard`](../scripts/BackGuard.gd) into its back handler.
+- **New screen with a board** — size it with
+  [`BoardFit.side()`](../scripts/game/BoardFit.gd) on `_ready` and
+  `viewport.size_changed`. It measures the Layout's rows, so adding or
+  showing a row needs no constant to update.
 - **New Rule** — extend
   [`native/shogi_core/src/rules.rs`](../native/shogi_core/src/rules.rs).
   Add a parity test in `tests.rs`. Do not change `encode.rs` or

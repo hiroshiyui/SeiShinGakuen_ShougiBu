@@ -188,6 +188,13 @@ Details and gotchas: [`docs/linux-build.md`](./docs/linux-build.md).
   and `KifuReviewer` all use it. `GameController` and `CharacterPicker`
   intentionally still roll their own because their inset math is
   intertwined with board-sizing / custom display calculations.
+- **Dialogs, dropdown lists and board sizing have shared helpers.** Every
+  `AcceptDialog` / `ConfirmationDialog` goes through
+  `ModalBlur.attach()` (backdrop blur, framed title, touch-sized
+  buttons via `DialogStyle`). Destructive questions add
+  `DialogStyle.prefer_cancel()`. Screens with an `OptionButton` use
+  `BackGuard` so back only closes an open list. Board screens size the
+  board with `BoardFit.side()`. Why: `docs/android-gotchas.md`.
 - **Never call the global `seed()`.** It resets the RNG that
   background picks, the AI's per-move mood roll and think delays all
   draw from. For a repeatable pattern (e.g. per-piece wood grain), use

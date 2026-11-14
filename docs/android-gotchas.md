@@ -176,7 +176,14 @@ effective viewport height (or width on landscape) differs per device.
 
 **Fix:** compute sizes at runtime from `get_viewport_rect().size`, hook
 `get_viewport().size_changed` to re-fit on rotate / resize /
-split-screen / foldable unfold. Pattern in `GameController._refit_board`.
+split-screen / foldable unfold. For the shogi-ban use
+`BoardFit.side()` (`scripts/game/BoardFit.gd`), shared by 対局, 詰将棋
+and 棋譜検討. It subtracts the safe-area insets and every visible
+row's `get_combined_minimum_size()` from the viewport height. The
+earlier hard-coded row heights against the bare viewport height made
+the first 先生 panel open on a Pixel 8a leave the board unzoomed and push
+the status bar off-screen. Read `get_combined_minimum_size()`, not
+`size.y`: a row that has never been laid out reports `size.y == 0`.
 
 ## cargo-ndk: `Failed to load Cargo.toml in current directory`
 
@@ -271,6 +278,55 @@ adding the pad, so the bottom always reserves a navigation-bar-sized
 band (3-button height; the gesture zone is smaller). Every fullscreen
 screen goes through that helper, so don't hand-roll inset math in a
 new scene.
+
+## Button text colour override does nothing after a tap
+
+**Symptom:** a `font_color` override (e.g. the green 「解析中…」 text)
+shows in the theme's default colour instead, but only once the button
+has been tapped.
+
+**Cause:** Android emulates a mouse from touch, so after a tap the
+button sits in its hover / focus state and draws with
+`font_hover_color` / `font_focus_color`, not `font_color`.
+
+**Fix:** override every text state (`font_color`, `font_hover_color`,
+`font_pressed_color`, `font_focus_color`, `font_hover_pressed_color`),
+and the matching styleboxes if the background must change too. See
+`KifuReviewer._set_analyze_text_alpha` and
+`MoveHistoryDialog._mark_current`.
+
+## Back closes a dropdown list *and* runs the screen's back action
+
+**Symptom:** with an `OptionButton` list open, the back gesture closes
+the list and also opens the 終了 dialog (or leaves the screen).
+
+**Cause:** the popup handles `ui_cancel` itself, but Android still
+sends `NOTIFICATION_WM_GO_BACK_REQUEST` to the screen in the same
+press.
+
+**Fix:** `BackGuard.watch(option_button)` in `_ready`, and
+`if BackGuard.swallows_back([...]): return` at the top of the screen's
+back handler. It treats the press as the list's when the list is open or
+closed within the last two frames. Used by `MainMenu` and `SettingsScreen`.
+
+## Dialog title floats above the box; dialog buttons ignore their size
+
+**Symptom:** an `AcceptDialog` / `ConfirmationDialog` title is drawn
+above the dialog box, straight on the blurred backdrop, and
+`get_ok_button().custom_minimum_size` has no effect.
+
+**Cause:** the embedded window border (`Window/styles/embedded_border`)
+doesn't render, but the title bar above the content still does. The
+dialog also re-applies the theme's `AcceptDialog/constants/buttons_min_width`
+/ `buttons_min_height` to its buttons on every theme change,
+overwriting per-button sizes.
+
+**Fix:** call `ModalBlur.attach(dialog)` for every modal. It draws a framed panel
+(`ModalBlur/styles/dialog_frame` in `ui.tres`) behind the whole dialog,
+title bar included, and runs `DialogStyle.apply()` (content-sized box,
+reset on each open). Set button size in the theme, not per button.
+Destructive questions (quit, resign, delete, discard) also call
+`DialogStyle.prefer_cancel()` so 「いいえ」 is focused.
 
 ## Black screen on the Android emulator — `Couldn't present to Vulkan queue`
 
