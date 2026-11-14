@@ -54,6 +54,7 @@ const SPEECH_FADE_SEC := 0.25
 @onready var _quit_dialog: ConfirmationDialog = %QuitDialog
 @onready var _thinking_label: Label = %ThinkingLabel
 @onready var _layout: VBoxContainer = $Layout
+@onready var _board_holder: Control = $Layout/BoardHolder
 @onready var _opponent_label: Label = %OpponentLabel
 @onready var _opponent_strip: VBoxContainer = %OpponentStrip
 @onready var _opponent_portrait: TextureRect = %OpponentPortrait
@@ -292,36 +293,37 @@ func _refit_board_smooth(panel_visible_override: Variant = null) -> void:
 func _compute_board_side(panel_visible_override: Variant = null) -> float:
 	const GUTTER := 4.0        # breathing room inside BoardHolder
 	const LAYOUT_H := 12.0     # must match EXTRA_H in _apply_safe_area
-	# Hands (2×72) + status bar (72, ≈41 dp tap height) + fixed breathing
-	# pad (16). TeacherRow and SuggestionsPanel are measured live since
-	# they toggle visibility.
-	var base: float = 72.0 + 72.0 + 72.0 + 16.0
-	var teacher_visible := _teacher_row != null and _teacher_row.visible
-	var panel_visible: bool
-	if panel_visible_override == null:
-		panel_visible = _suggestions_panel != null and _suggestions_panel.visible
-	else:
-		panel_visible = bool(panel_visible_override)
-	var opponent_visible := _opponent_strip != null and _opponent_strip.visible
-	var player_visible := _player_strip != null and _player_strip.visible
-	var extras: float = 0.0
-	if teacher_visible:
-		extras += max(_teacher_row.size.y, _teacher_row.custom_minimum_size.y)
-	if panel_visible and _suggestions_panel != null:
-		extras += _suggestions_panel.size.y
-	if opponent_visible:
-		extras += max(_opponent_strip.size.y, _opponent_strip.custom_minimum_size.y)
-	if player_visible:
-		extras += max(_player_strip.size.y, _player_strip.custom_minimum_size.y)
-	# VBox separation (8) between every pair of visible children.
-	var visible_items := 4  # GoteHand, Board, SenteHand, StatusBar
-	if teacher_visible: visible_items += 1
-	if panel_visible: visible_items += 1
-	if opponent_visible: visible_items += 1
-	if player_visible: visible_items += 1
-	var separators: float = 8.0 * max(0, visible_items - 1)
+	const PAD := 16.0          # fixed breathing pad below the rows
+	# Height the Layout really gets: the viewport minus the camera-cutout
+	# and gesture-bar insets that _apply_safe_area puts on it. Using the
+	# bare viewport height overestimated the room by those insets, so on
+	# a tall phone (Pixel 8a) the first 先生 panel open computed a board
+	# that "still fits" and left it unzoomed, pushing the StatusBar off
+	# the bottom instead.
 	var vp: Vector2 = get_viewport_rect().size
-	var side: float = min(vp.x - 2.0 * (GUTTER + LAYOUT_H), vp.y - base - extras - separators)
+	var insets: Rect2 = Settings.safe_area_insets(vp)
+	var avail: float = vp.y - insets.position.y - insets.size.y - PAD
+	# Every visible row except the board takes its minimum height (none
+	# of them expands vertically). get_combined_minimum_size() is valid
+	# before a row's first layout pass, unlike size.y, which is 0 until
+	# the container has sorted it.
+	var sep: float = float(_layout.get_theme_constant("separation"))
+	var visible_items := 0
+	for child in _layout.get_children():
+		var c := child as Control
+		if c == null:
+			continue
+		var shown: bool = c.visible
+		if c == _suggestions_panel and panel_visible_override != null:
+			shown = bool(panel_visible_override)
+		if not shown:
+			continue
+		visible_items += 1
+		if c == _board_holder:
+			continue
+		avail -= c.get_combined_minimum_size().y
+	avail -= sep * max(0, visible_items - 1)
+	var side: float = min(vp.x - 2.0 * (GUTTER + LAYOUT_H), avail)
 	return clamp(side, 240.0, 1600.0)
 
 func _apply_board_side(side: float, animate: bool) -> void:
@@ -1647,6 +1649,9 @@ func _finish_teacher_think() -> void:
 
 func _populate_suggestions(suggestions: Array) -> void:
 	for child in _suggestions_list.get_children():
+		# Detach now: a queued-for-free button still counts towards the
+		# panel's minimum size, which _compute_board_side reads this frame.
+		_suggestions_list.remove_child(child)
 		child.queue_free()
 	for m in suggestions:
 		var btn := Button.new()
@@ -1660,9 +1665,9 @@ func _populate_suggestions(suggestions: Array) -> void:
 
 # Fade the panel in and zoom the board to its smaller size in parallel.
 # The panel is flipped to visible at alpha=0 so the VBox reserves space
-# for it before we start the alpha tween. The board-resize tween is
-# deferred so the panel has a frame to lay out — only then is its real
-# size.y available for the target calculation.
+# for it before we start the alpha tween. The board-resize target comes
+# from the panel's minimum size (see _compute_board_side), which is
+# valid before the panel's first layout pass.
 func _show_suggestions_panel() -> void:
 	if _suggestions_tween != null and _suggestions_tween.is_valid():
 		_suggestions_tween.kill()
