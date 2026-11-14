@@ -856,7 +856,13 @@ func _refresh_all() -> void:
 		var ply: int = int(_core.move_log_size()) + 1
 		if _lan and not _game_over:
 			mover = "相手" if _is_remote_turn() else "あなた"
-		_status.text = "%s の手番 (%d手目)" % [mover, ply]
+		# Lead with the move just played (e.g. "☖3四歩") so the AI's
+		# reply can be read off the status line, not only the board tint.
+		var last := _last_move_text()
+		if last != "":
+			_status.text = "%s　%sの手番 (%d手目)" % [last, mover, ply]
+		else:
+			_status.text = "%s の手番 (%d手目)" % [mover, ply]
 	_undo_btn.disabled = int(_core.move_log_size()) == 0 or _game_over or _in_review or _lan
 	_history_btn.disabled = int(_core.move_log_size()) == 0 or _thinking
 	var ai_turn := _ai_enabled and Settings.side_is_ai(side_gote)
@@ -875,6 +881,15 @@ func _refresh_all() -> void:
 		and not _lan_waiting
 		and bool(view_core.king_entered(side_gote))
 	)
+
+# The latest move in 棋譜 notation ("☖3四歩"), or "" before the first.
+func _last_move_text() -> String:
+	var lines: PackedStringArray = _core.move_log_kifu_lines()
+	if lines.is_empty():
+		return ""
+	var line: String = lines[lines.size() - 1]
+	var at: int = maxi(line.find("☗"), line.find("☖"))
+	return (line.substr(at) if at >= 0 else line).replace(" ", "")
 
 func _active_core() -> Object:
 	return _review_core if _in_review and _review_core != null else _core
