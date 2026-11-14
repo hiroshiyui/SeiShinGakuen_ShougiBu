@@ -74,7 +74,7 @@ func show_with(lines: PackedStringArray, live_ply: int) -> void:
 			btn.custom_minimum_size = Vector2(0, 72)
 			btn.add_theme_font_size_override("font_size", 24)
 			if ply == _live_ply:
-				btn.add_theme_color_override("font_color", Color(0.98, 0.85, 0.45, 1))
+				_mark_current(btn)
 			btn.pressed.connect(_on_row_pressed.bind(ply))
 			_list.add_child(btn)
 	visible = true
@@ -124,3 +124,20 @@ func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("ui_cancel"):
 		get_viewport().set_input_as_handled()
 		_on_close()
+
+# The row of the position on screen. A gold font alone didn't show —
+# every row's text is already gold — so fill and outline the row and
+# keep that look in every button state (after a tap Android leaves
+# buttons in hover / focus).
+func _mark_current(btn: Button) -> void:
+	var box := StyleBoxFlat.new()
+	box.bg_color = Color(0.45, 0.33, 0.12, 0.95)
+	box.border_color = Color(1.0, 0.86, 0.5, 1)
+	box.set_border_width_all(3)
+	box.set_corner_radius_all(10)
+	box.content_margin_left = 18
+	box.content_margin_right = 18
+	for state in [&"normal", &"hover", &"pressed", &"focus", &"hover_pressed"]:
+		btn.add_theme_stylebox_override(state, box)
+	for state in [&"font_color", &"font_hover_color", &"font_pressed_color", &"font_focus_color"]:
+		btn.add_theme_color_override(state, Color(1, 0.97, 0.88, 1))

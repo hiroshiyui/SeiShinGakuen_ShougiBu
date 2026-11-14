@@ -27,7 +27,10 @@ func set_selected(on: bool) -> void:
 
 func _update_ui() -> void:
 	if _count_label:
-		_count_label.text = "×%d" % count if count > 1 else ""
+		# A number badge in the piece's empty top-right corner; "×N"
+		# at the bottom used to sit on the kanji.
+		_count_label.text = str(count)
+		_count_label.visible = count > 1
 
 # Android delivers a tap twice (touch + emulated mouse); listen to one
 # source per platform, as Square.gd does (docs/android-gotchas.md).
