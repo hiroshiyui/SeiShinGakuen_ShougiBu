@@ -162,6 +162,11 @@ var _board_resize_tween: Tween = null
 var _pending_zoom_back: bool = false
 
 const _SUGGESTIONS_FADE := 0.18
+# Fade used when the panel closes together with the board zoom-back.
+const _SUGGESTIONS_CLOSE_FADE := 0.3
+# Stands in for the closing panel's VBox slot and shrinks as the board
+# grows — see _begin_collapse.
+var _close_spacer: Control = null
 # Slower than the panel fade so the shogi-ban zooms back smoothly after a
 # move (the player has just committed → suggestions auto-close, then the
 # board grows over ~0.8 s, drawing the eye back to the next position).
@@ -297,6 +302,9 @@ func _compute_board_side(panel_visible_override: Variant = null) -> float:
 	var overrides := {}
 	if panel_visible_override != null:
 		overrides[_suggestions_panel] = bool(panel_visible_override)
+	if _close_spacer != null:
+		# The collapsing slot is on its way out; size the board without it.
+		overrides[_close_spacer] = false
 	return BoardFit.side(_layout, _board_holder, 2.0 * (GUTTER + LAYOUT_H), overrides)
 
 func _apply_board_side(side: float, animate: bool) -> void:
@@ -304,14 +312,20 @@ func _apply_board_side(side: float, animate: bool) -> void:
 		_board_resize_tween.kill()
 	var target := Vector2(side, side)
 	if not animate or Settings.reduce_motion:
+		_board_view.unfreeze_layout()
 		_board_view.custom_minimum_size = target
 		_place_thinking_label.call_deferred()
 		return
+	# Only the container's size is tweened; the board content keeps one
+	# layout (the larger end, so kanji are never upscaled) and is scaled
+	# by the GPU. Re-laying out 81 squares per frame made the zoom shimmer.
+	_board_view.freeze_layout(maxf(_board_view.custom_minimum_size.x, side))
 	_board_resize_tween = create_tween()
 	_board_resize_tween.set_trans(Tween.TRANS_SINE)
 	_board_resize_tween.set_ease(Tween.EASE_OUT)
 	_board_resize_tween.tween_property(
 		_board_view, "custom_minimum_size", target, _BOARD_RESIZE_DURATION)
+	_board_resize_tween.tween_callback(_board_view.unfreeze_layout)
 	_board_resize_tween.tween_callback(_place_thinking_label)
 
 # The 王手 banner is a root-level overlay (so it never perturbs the VBox)
@@ -1659,6 +1673,7 @@ func _populate_suggestions(suggestions: Array) -> void:
 func _show_suggestions_panel() -> void:
 	if _suggestions_tween != null and _suggestions_tween.is_valid():
 		_suggestions_tween.kill()
+	_end_collapse()  # reopened mid-close
 	_suggestions_panel.modulate.a = 0.0
 	_suggestions_panel.visible = true
 	_refit_board_smooth.bind(true).call_deferred()
@@ -1709,26 +1724,77 @@ func _clear_suggestion_preview() -> void:
 
 func _close_suggestions(animate_board: bool = true) -> void:
 	_clear_suggestion_preview()
-	if not _suggestions_panel.visible:
-		return
+	if not _suggestions_panel.visible or _close_spacer != null:
+		return  # hidden, or already closing
 	if _suggestions_tween != null and _suggestions_tween.is_valid():
 		_suggestions_tween.kill()
+	# Closed by hand: the panel fades while the board zooms back and the
+	# rows under it slide down, all at once. Callers that follow with a
+	# real move (commit path) pass false — the board stays small through
+	# the AI's reply and the deferred zoom-back grows it afterwards.
+	var collapse := animate_board and not Settings.reduce_motion
+	if collapse:
+		_begin_collapse()
 	_suggestions_tween = create_tween()
-	_suggestions_tween.tween_property(
-		_suggestions_panel, "modulate:a", 0.0, Settings.anim(_SUGGESTIONS_FADE))
+	_suggestions_tween.tween_property(_suggestions_panel, "modulate:a", 0.0,
+		_SUGGESTIONS_CLOSE_FADE if collapse else Settings.anim(_SUGGESTIONS_FADE))
 	_suggestions_tween.tween_callback(_finalize_close_suggestions)
-	# Run the board zoom AFTER the panel is fully hidden. Tweening the
-	# board's custom_minimum_size while the panel still occupies its VBox
-	# slot makes the layout reflow every frame — visually "clicky". Once
-	# the panel's `visible = false`, the slot is freed and the board can
-	# grow into it cleanly. Callers that follow with a real move (commit
-	# path) skip this and rely on the deferred zoom-back instead.
-	if animate_board:
+	if animate_board and not collapse:
 		_suggestions_tween.tween_callback(_refit_board_smooth)
+
+# Take the panel out of the VBox flow (it stays where it is and fades as
+# an overlay) and leave a spacer in its slot. The spacer shrinks on the
+# same curve as the board grows, so the two always add up to the same
+# height: the rows between them slide instead of jumping and StatusBar
+# never moves. A PanelContainer can't do this itself — it can't be
+# smaller than its content.
+func _begin_collapse() -> void:
+	var rect: Rect2 = _suggestions_panel.get_global_rect()
+	var sep := float(_layout.get_theme_constant("separation"))
+	_close_spacer = Control.new()
+	_close_spacer.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_close_spacer.custom_minimum_size = Vector2(0, rect.size.y)
+	_layout.add_child(_close_spacer)
+	_layout.move_child(_close_spacer, _suggestions_panel.get_index())
+	_suggestions_panel.top_level = true
+	_suggestions_panel.global_position = rect.position
+	_suggestions_panel.size = rect.size
+	_layout.queue_sort()
+	# Bound to the spacer, so freeing it stops the tween.
+	var tw := _close_spacer.create_tween()
+	tw.set_trans(Tween.TRANS_SINE)
+	tw.set_ease(Tween.EASE_OUT)
+	tw.tween_method(_set_close_spacer.bind(rect.size.y + sep, sep),
+		0.0, 1.0, _BOARD_RESIZE_DURATION)
+	tw.tween_callback(_end_collapse)
+	_refit_board_smooth()
+
+# The board gains the panel's height plus one VBox separation; the
+# spacer gives up the height and, by hiding for the last few pixels,
+# the separation.
+func _set_close_spacer(t: float, total: float, sep: float) -> void:
+	if _close_spacer == null:
+		return
+	var h := total * (1.0 - t) - sep
+	if h <= 0.0:
+		_close_spacer.visible = false
+	else:
+		_close_spacer.custom_minimum_size.y = h
+
+func _end_collapse() -> void:
+	if _suggestions_panel.top_level:
+		_suggestions_panel.top_level = false
+		_layout.queue_sort()
+	if _close_spacer == null:
+		return
+	_layout.remove_child(_close_spacer)
+	_close_spacer.queue_free()
+	_close_spacer = null
 
 func _finalize_close_suggestions() -> void:
 	_suggestions_panel.visible = false
 	_suggestions_panel.modulate.a = 1.0
+	_suggestions_panel.top_level = false
 
 # Wait for the piece-slide animation in BoardView.animate_move (~0.22 s)
 # to land before tweening the board size — otherwise the slide and the

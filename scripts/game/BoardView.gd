@@ -39,8 +39,67 @@ func flash_invalid(key: Vector2i) -> void:
 	if sq != null:
 		sq.flash_invalid()
 
+# --- Zoom without re-layout ------------------------------------------------
+#
+# Tweening the board's size the plain way re-lays out all 81 squares and
+# redraws every piece on every frame: cell edges snap to whole pixels at
+# a different rate from the grid lines, and each new size rasterises the
+# piece kanji at a new integer font size. That reads as shimmer, and the
+# glyph work drops frames on phones.
+#
+# While frozen, the content keeps the layout it has at `side` and is
+# only scaled (one canvas transform) to whatever size the container is
+# given. Freeze at the larger end of a zoom so glyphs are only ever
+# scaled down.
+var _frozen_side: float = 0.0
+var _frozen_child_size: Vector2 = Vector2.ZERO
+
+func freeze_layout(side: float) -> void:
+	var cur := minf(size.x, size.y)
+	if side <= 0.0 or cur <= 0.0:
+		return
+	# The fitted child rect as it is on screen right now, frozen or not.
+	var live: Vector2 = _background.size * _background.scale
+	_frozen_side = side
+	_frozen_child_size = live * (side / cur)
+	_apply_frozen()
+	_on_resized()
+
+func unfreeze_layout() -> void:
+	if _frozen_side == 0.0:
+		return
+	_frozen_side = 0.0
+	for c: Control in _fitted_children():
+		c.size = c.size * c.scale
+		c.scale = Vector2.ONE
+	_on_resized()
+	queue_sort()
+
+func _fitted_children() -> Array[Control]:
+	var out: Array[Control] = []
+	for child in get_children():
+		var c := child as Control
+		if c != null and not c.top_level:
+			out.append(c)
+	return out
+
+func _apply_frozen() -> void:
+	var k := minf(size.x, size.y) / _frozen_side
+	for c: Control in _fitted_children():
+		c.size = _frozen_child_size
+		c.scale = Vector2(k, k)
+
+# Runs after AspectRatioContainer's own sort (native notification
+# handlers go first), which has just fitted the children at scale 1.
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_SORT_CHILDREN and _frozen_side > 0.0:
+		_apply_frozen()
+
 func _on_resized() -> void:
 	var s := size
+	if _frozen_side > 0.0 and minf(s.x, s.y) > 0.0:
+		# Margins belong to the frozen layout, not the on-screen size.
+		s *= _frozen_side / minf(s.x, s.y)
 	# Match the 0.04 MARGIN_PERCENT in BoardBackground.gd
 	var margin_x := int(s.x * 0.04)
 	var margin_y := int(s.y * 0.04)
@@ -166,6 +225,8 @@ func animate_move(from: Vector2i, to: Vector2i, text: String, is_gote: bool, dur
 	add_child(ghost)
 	ghost.top_level = true
 	ghost.size = to_sq.size
+	# Squares are scaled while the board is mid-zoom (see freeze_layout).
+	ghost.scale = _margin_container.scale
 	ghost.global_position = from_sq.global_position
 	ghost.text = text
 	ghost.is_gote = is_gote != flipped
