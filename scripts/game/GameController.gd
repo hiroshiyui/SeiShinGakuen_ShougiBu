@@ -119,6 +119,13 @@ var _portrait_fade_tween: Tween = null
 var _teacher_thread: Thread
 var _thinking: bool = false
 var _teacher_thinking: bool = false
+# Thought balloon over 加藤先生's icon while the suggestion search runs.
+const _TEACHER_THOUGHT := "先生が考え中"
+const _TEACHER_DOT_MSEC := 400
+var _teacher_bubble: PanelContainer = null
+var _teacher_bubble_label: Label = null
+var _teacher_bubble_tween: Tween = null
+var _teacher_bubble_since_msec: int = 0
 var _ai_enabled: bool = false
 # 通信対戦 (ROADMAP Phase 8): the other side is a person on another device,
 # reached through the NetSession autoload. `_lan_waiting` is true while
@@ -266,6 +273,7 @@ func _ready() -> void:
 	_close_suggestions_btn.pressed.connect(_close_suggestions)
 	_apply_teacher_side()
 	_teacher_row.visible = _ai_enabled
+	_build_teacher_bubble()
 	if _lan:
 		_setup_lan()
 	_setup_player_strip()
@@ -802,6 +810,8 @@ func _process(_delta: float) -> void:
 		_place_speech_bubble()
 	if _player_speech.modulate.a > 0.0:
 		_place_player_speech()
+	if _teacher_bubble.modulate.a > 0.0:
+		_update_teacher_bubble()
 	if _comment_thread != null and not _comment_thread.is_alive():
 		_finish_gameover_comment()
 	if _teacher_thinking and _teacher_thread != null and not _teacher_thread.is_alive():
@@ -1535,6 +1545,8 @@ func _join_workers() -> void:
 	_think_thread = null
 	_teacher_thread = null
 	_thinking = false
+	if _teacher_thinking:
+		_hide_teacher_bubble()
 	_teacher_thinking = false
 
 func _on_quit_confirmed() -> void:
@@ -1602,6 +1614,70 @@ func _apply_teacher_side() -> void:
 	_teacher_left_spacer.visible = right
 	_teacher_right_spacer.visible = not right
 
+# Same balloon as the speech lines, drawn as a thought balloon. Built in
+# code: it is a root-level overlay like OpponentSpeech, so it never
+# perturbs the VBox.
+func _build_teacher_bubble() -> void:
+	_teacher_bubble = PanelContainer.new()
+	_teacher_bubble.set_script(_speech_bubble.get_script())
+	_teacher_bubble.thought = true
+	_teacher_bubble.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_teacher_bubble.modulate.a = 0.0
+	_teacher_bubble_label = Label.new()
+	_teacher_bubble_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	_teacher_bubble_label.add_theme_color_override(
+		"font_color", _speech_label.get_theme_color("font_color"))
+	_teacher_bubble_label.add_theme_font_size_override(
+		"font_size", _speech_label.get_theme_font_size("font_size"))
+	_teacher_bubble_label.add_theme_font_override(
+		"font", _speech_label.get_theme_font("font"))
+	# Reserve the width of all three dots so the balloon doesn't resize
+	# as they cycle.
+	_teacher_bubble_label.text = _TEACHER_THOUGHT + "..."
+	_teacher_bubble.add_child(_teacher_bubble_label)
+	add_child(_teacher_bubble)
+	_teacher_bubble_label.custom_minimum_size.x = _teacher_bubble_label.get_minimum_size().x
+
+func _show_teacher_bubble() -> void:
+	if _teacher_bubble_tween != null and _teacher_bubble_tween.is_valid():
+		_teacher_bubble_tween.kill()
+	_teacher_bubble_since_msec = Time.get_ticks_msec()
+	_update_teacher_bubble()
+	_teacher_bubble_tween = create_tween()
+	_teacher_bubble_tween.tween_property(
+		_teacher_bubble, "modulate:a", 1.0, Settings.anim(0.12))
+
+func _hide_teacher_bubble() -> void:
+	if _teacher_bubble_tween != null and _teacher_bubble_tween.is_valid():
+		_teacher_bubble_tween.kill()
+	_teacher_bubble_tween = create_tween()
+	_teacher_bubble_tween.tween_property(
+		_teacher_bubble, "modulate:a", 0.0, Settings.anim(0.12))
+
+# Cycles the dots ("." → ".." → "...") and parks the balloon above the
+# teacher button, its bubble trail on 加藤先生's icon. Runs every frame
+# while it shows, so it follows the button when the layout moves.
+func _update_teacher_bubble() -> void:
+	const EDGE := 12.0
+	var dots := 3
+	if not Settings.reduce_motion:
+		dots = 1 + ((Time.get_ticks_msec() - _teacher_bubble_since_msec)
+			/ _TEACHER_DOT_MSEC) % 3
+	var text := _TEACHER_THOUGHT + ".".repeat(dots)
+	if _teacher_bubble_label.text != text:
+		_teacher_bubble_label.text = text
+	var btn: Rect2 = _teacher_btn.get_global_rect()
+	var icon_w := float(_teacher_btn.icon.get_width()) if _teacher_btn.icon != null else 0.0
+	var center_x: float = (btn.position.x + icon_w * 0.5
+		+ _teacher_btn.get_theme_stylebox("normal").get_margin(SIDE_LEFT))
+	var sz: Vector2 = _teacher_bubble.get_combined_minimum_size()
+	var x: float = clampf(center_x - sz.x * 0.5, EDGE,
+		maxf(EDGE, get_viewport_rect().size.x - sz.x - EDGE))
+	_teacher_bubble.size = sz
+	_teacher_bubble.global_position = Vector2(
+		x, maxf(EDGE, btn.position.y - _teacher_bubble.TAIL_LENGTH - sz.y))
+	_teacher_bubble.set_tail_x(center_x - x)
+
 func _on_teacher_pressed() -> void:
 	if _game_over or _thinking or _teacher_thinking or not _ai_enabled:
 		return
@@ -1615,9 +1691,7 @@ func _on_teacher_pressed() -> void:
 	_thinking = true
 	_teacher_thinking = true
 	_set_player_expression("thinking")
-	_thinking_label.text = "先生が考え中..."
-	_thinking_label.visible = true
-	_place_thinking_label.call_deferred()
+	_show_teacher_bubble()
 	_undo_btn.disabled = true
 	_teacher_btn.disabled = true
 	_history_btn.disabled = true
@@ -1635,8 +1709,7 @@ func _finish_teacher_think() -> void:
 	_teacher_thinking = false
 	_set_player_expression(PLAYER_MIRROR.get(_expression, "neutral"))
 	_thinking = false
-	_thinking_label.visible = false
-	_thinking_label.text = "思考中…"
+	_hide_teacher_bubble()
 	# Resync the UI with the authoritative Rust state. If the main thread
 	# ever touched `_core` while the worker held `&mut self` (a deferred
 	# signal, a resize callback, etc.), godot-rust may have returned default
