@@ -1,0 +1,3 @@
+• The board no longer flickers while it shrinks and grows in teacher mode.
+• Closing the teacher's suggestions now fades them out as the board zooms back, in one smooth motion.
+• While Kato-sensei is thinking, a cloud-shaped thought balloon with animated dots appears above the teacher's icon.

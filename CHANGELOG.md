@@ -8,6 +8,25 @@ All notable changes to this project. Format follows
 
 ## [Unreleased]
 
+## [1.1.4] — 2026-11-16
+
+### Changed
+- 先生モードで盤が縮む・戻るときのちらつきを解消。盤全体をひとつの絵として
+  拡大縮小するので、駒の文字やマス目が小刻みに揺れない。
+- 「閉じる」でお薦めの手を閉じると、表示が消えるのと同時に盤が元の大きさへ
+  戻り、盤の下の段もなめらかに下がる（以前は段が一度に跳んでから盤が
+  戻っていた）。
+- 加藤先生が考えている間、先生のアイコンの上に雲形の吹き出し
+  「先生が考え中...」を表示。点が 1 つ → 2 つ → 3 つと繰り返す。
+  「動きを減らす」設定では点は動かない。
+
+### Docs
+- README に効果音の出典とライセンス（freedesktop.org sound theme、
+  sound-icons）を明記。
+
+[Full release notes](./docs/release-notes/1.1.4.md) ·
+[GitHub Release](https://github.com/hiroshiyui/SeiShinGakuen_ShougiBu/releases/tag/1.1.4)
+
 ## [1.1.3] — 2026-11-14
 
 ### Changed
@@ -587,7 +606,8 @@ First public release.
 [Full release notes](./docs/release-notes/0.1.1.md) ·
 [GitHub Release](https://github.com/hiroshiyui/SeiShinGakuen_ShougiBu/releases/tag/0.1.1)
 
-[Unreleased]: https://github.com/hiroshiyui/SeiShinGakuen_ShougiBu/compare/1.1.3...HEAD
+[Unreleased]: https://github.com/hiroshiyui/SeiShinGakuen_ShougiBu/compare/1.1.4...HEAD
+[1.1.4]: https://github.com/hiroshiyui/SeiShinGakuen_ShougiBu/compare/1.1.3...1.1.4
 [1.1.3]: https://github.com/hiroshiyui/SeiShinGakuen_ShougiBu/compare/1.1.2...1.1.3
 [1.1.2]: https://github.com/hiroshiyui/SeiShinGakuen_ShougiBu/compare/1.1.1...1.1.2
 [1.1.1]: https://github.com/hiroshiyui/SeiShinGakuen_ShougiBu/compare/1.1.0...1.1.1
