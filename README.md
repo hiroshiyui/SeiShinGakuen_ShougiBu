@@ -261,6 +261,18 @@ Android 初期セットアップ（NDK の入手、キーストア生成、`expo
 - [`assets/fonts/m-plus-2/`](./assets/fonts/m-plus-2/) — M PLUS 2 Regular、UI ラベル / バージョン表示。SIL OFL 1.1。
 - [`assets/fonts/mochiy-pop-one/`](./assets/fonts/mochiy-pop-one/) — Mochiy Pop One、タイトル / 見出し / 対戦相手名の表示用。SIL OFL 1.1。
 
+効果音（[`assets/sounds/`](./assets/sounds/)）は、次の音源を加工せずにファイル名だけ変えて同梱している:
+
+| ファイル | 用途 | 出典 | 著作権者 | ライセンス |
+| --- | --- | --- | --- | --- |
+| `move.ogg` | 駒を指す音 | [freedesktop.org sound theme](https://www.freedesktop.org/wiki/Specifications/sound-theme-spec/) の `power-unplug.oga`（原典は "Borealis" sound theme） | Ivica Bukvic | CC BY-SA 3.0 |
+| `checkmate.ogg` | 詰み | freedesktop.org sound theme の `bell.oga`（原典は [Berklee44v12](http://www.archive.org/details/Berklee44v12)） | Dr. Richard Boulanger et al | CC BY 3.0 |
+| `check.wav` | 王手 | [sound-icons](https://www.freebsoft.org/pub/projects/sound-icons/) の `prompt.wav` | Brailcom, o.p.s. | GPL-2.0-or-later |
+| `promote.wav` | 成り | sound-icons の `percussion-50.wav` | Brailcom, o.p.s. | GPL-2.0-or-later |
+| `click.wav` | ボタンを押す音 | sound-icons の `percussion-12.wav` | Brailcom, o.p.s. | GPL-2.0-or-later |
+
+`capture.wav`（駒を取る音）は第三者の音源ではなく、[`tools/gen_sounds.py`](./tools/gen_sounds.py) で合成した本プロジェクトの生成物（GPL-3.0-or-later）。
+
 AI モデル `models/bonanza.onnx`（Bonanza v2、10 ブロック × 128 フィルタ、約 12 MB）は姉妹プロジェクト
 [ShogiDojo](https://github.com/hiroshiyui/ShogiDojo/)（GPL-3.0-or-later）で学習したもので、本リポジトリと同じ
 GPL-3.0-or-later で配布する。学習データは [shogi-server](https://github.com/shogi-server/shogi-server) プロジェクトが
